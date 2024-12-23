@@ -99,7 +99,7 @@ export default function WhyWize() {
             />
           ))}
         </div>
-        <div className="md:border-l-4 md:border-[#baa1eb] lg:px-[60px] xl:px-[100px] relative">
+        <div className="md:border-l-2 md:border-[#8252ff] lg:px-[60px] xl:px-[100px] relative">
           <div
             id="allroundguidance"
             className="pb-[50px] sm:pb-[100px] sm:min-h-[700px] px-4"

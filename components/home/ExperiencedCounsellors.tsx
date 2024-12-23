@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/carousel";
 
 import AutoPlay from "embla-carousel-autoplay";
+import { Quote, Star } from "lucide-react";
 interface CounsellorCardProps {
   name: string;
   image: string;
@@ -16,7 +17,7 @@ interface CounsellorCardProps {
 
 const carouselData = [
   {
-    name: "Fiona Claudia",
+    name: "Fiona ",
     image: "/home/profile.jpg",
     experience:
       "I landed my dream job as a graphic designer through this platform! The personalized job matches and seamless application process made everything effortless. Employers truly recognized my talents, and within weeks, I received multiple offers. I'm grateful for the boost in confidence and the career breakthrough!",
@@ -30,21 +31,21 @@ const carouselData = [
     ranking: "Lead Counsellor",
   },
   {
-    name: "Fdia",
+    name: "Miachel",
     image: "/home/profile.jpg",
     experience:
       "As a software developer, I struggled to find roles that suited my niche. This platform's tailored recommendations were a game-changer. I secured a position at a top company that values my skills. It’s the best resource for showcasing your talents and standing out in today’s competitive job market",
     ranking: "Lead Counsellor",
   },
   {
-    name: "nadia",
+    name: "Liam",
     image: "/home/profile.jpg",
     experience:
       "I always doubted online job platforms until I tried this one. Its unique approach to highlighting my creative writing skills caught the attention of my current employer. The whole process was smooth, and now I have a fulfilling job where my talents truly shine. Highly recommended!",
     ranking: "Lead Counsellor",
   },
   {
-    name: "Fiona Claudia",
+    name: "Olivia",
     image: "/home/profile.jpg",
     experience:
       "Through this platform, I transformed my freelance photography passion into a full-time career. The talent profile builder was incredibly insightful, helping me land a job with a prestigious media house. I couldn’t have asked for a better platform to kickstart my professional journey!",
@@ -60,22 +61,27 @@ const CounsellorCard: React.FC<CounsellorCardProps> = ({
 }) => {
   return (
     <div className="w-full max-w-[260px] flex flex-col items-center bg-white rounded-lg overflow-hidden shadow-lg">
-      <div className="w-full h-16 bg-primary relative flex items-center justify-center">
-        <Image
-          src={image}
-          alt="profile"
-          width={200}
-          height={200}
-          className=" absolute bottom-0 translate-y-1/2 h-20 w-20 rounded-lg object-cover border-2 border-primary"
-        />
+      <div className="w-full h-14 bg-primary relative flex items-center justify-center">
+        <div className="flex items-end gap-2 absolute bottom-0 translate-y-1/2 left-0 px-4 right-0">
+          <Image
+            src={image}
+            alt="profile"
+            width={200}
+            height={200}
+            className=" h-14 w-14 rounded-lg object-cover border-2 border-primary"
+          />
+          <div className="flex items-center gap-2 justify-between w-full">
+            <div className="font-medium">{name}</div>
+            <Star className="w-3 h-3 text-primary" />
+          </div>
+        </div>
       </div>
-      <div className="h-12"></div>
-      <div className="text-xl font-semibold">{name}</div>
-      <div className="text-xs px-4 my-2 text-justify text-muted-foreground line-clamp-4 font-medium">
-        {experience}
+      <div className="mt-14 pb-8 flex gap-2 flex-col items-center relative">
+        <div className="text-xs px-4 text-muted-foreground line-clamp-4 ">
+          {experience}
+        </div>
+        <Quote className="w-5 h-5 text-primary absolute right-2 bottom-2" />
       </div>
-      <div className="h-[1px] w-full bg-black my-2"></div>
-      <div className="mb-4 mt-2 font-medium text-muted-foreground">{ranking}</div>
     </div>
   );
 };
@@ -128,7 +134,7 @@ const ExperiencedCounsellors: React.FC = () => {
         >
           <CarouselContent className="px-4 pb-8">
             {carouselData.map((item, index) => (
-              <CarouselItem key={index} className="basis-1/2 xl:basis-1/3">
+              <CarouselItem key={index} className=" sm:basis-1/3 xl:basis-1/4">
                 <CounsellorCard
                   name={item.name}
                   image={item.image}

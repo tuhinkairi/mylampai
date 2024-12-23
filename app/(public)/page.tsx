@@ -3,6 +3,7 @@ import HeroSection from "@/components/home/HeroSection";
 // import AboutWize from "@/components/home/AboutWize";
 // import WizeCamp from "@/components/home/WizeCamp";
 import WhyWize from "@/components/home/WhyWize";
+import VideoComponent from "@/components/home/VideoComponent";
 import BackedByBest from "@/components/home/BackedByBest";
 import HowWizeWork from "@/components/home/HowWizeWork";
 // import PowerOfWize from "@/components/home/PowerOfWize";
@@ -68,6 +69,7 @@ export default function Page() {
         {/* <SectionWrapper>
         </SectionWrapper> */}
         {/* <HomeSlider /> */}
+        <VideoComponent />
         <HowWizeWork />
         <WhyWize />
         {/* <SectionWrapper> */}
