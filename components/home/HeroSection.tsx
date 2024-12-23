@@ -68,7 +68,7 @@ export default function HeroSection() {
                 IIM Banglore
               </div>
               {/* <Typing /> <br />{" "} */}
-              <span className="font-semibold sm:text-xl sm:text-[40px] leading-4 sm:leading-10">
+              <span className="font-semibold text-xl sm:text-[40px] leading-4 sm:leading-10">
                 We nurture, assess & match
                 <div className="mt-2">
                   {" "}

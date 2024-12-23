@@ -112,7 +112,7 @@ const HomeNavbar = () => {
         className={`md:flex relative text-sm hidden justify-end border items-center w-${
           scrolled ? "full" : "[600px]"
         } gap-${
-          userData ? 8 : 4
+          userData ? 6 : 4
         } px-[5px] my-2 min-h-[45px] backdrop-blur-md font-medium rounded-lg shadow-sm`}
       >
         <Link
