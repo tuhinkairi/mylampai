@@ -13,11 +13,6 @@
 /.vscode
 .deployment
 
-
-#docker
-/.dockerignore
-Dockerfile
-
 # next.js
 /.next/
 /out/
