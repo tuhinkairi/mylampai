@@ -128,7 +128,7 @@ export default function HowWizeWork() {
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/49.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/offer.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
               </div>
-              <div className="md:hidden flex gap-4 p-2 justify-center items-center flex-col">
+              <div className="md:hidden flex gap-4 p-2 pb-12 pt-8 justify-center items-center flex-col">
                 <Image
                   src={"/home/howwizework/50.svg"}
                   alt="how wize works"
@@ -208,7 +208,7 @@ export default function HowWizeWork() {
             <div
               className={`col-span-12 md:col-span-5 flex flex-col gap-4 md:px-12 md:pt-12`}
             >
-              <h2 className="text-3xl md:text-[40px] font-semibold uppercase">
+              <h2 className="text-[28px] md:text-[40px] font-semibold uppercase">
                 AI CV Reviewer
               </h2>
               <p className="text-[#efefef]">
@@ -291,7 +291,7 @@ export default function HowWizeWork() {
             <div
               className={`col-span-12 sm:col-span-5 flex flex-col gap-4 sm:px-12 sm:pt-12`}
             >
-              <h2 className="text-[40px] font-semibold uppercase">
+              <h2 className="text-[28px] text-nowrap md:text-[40px] font-semibold uppercase">
                 AI Mock Interviewer
               </h2>
               <p className="text-[#efefef]">

@@ -49,8 +49,7 @@ import "./home.css";
 
 export const metadata: Metadata = {
   title: "wiZe (myLampAI) | Home",
-  description:
-    "wiZe is a career guidance platform that helps you find your dream career.",
+  description: "We nurture, assess & match talent with premium opportunities.",
 };
 
 export default function Page() {

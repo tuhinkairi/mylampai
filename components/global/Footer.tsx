@@ -57,7 +57,7 @@ export default function Footer() {
                 alt="logo"
               />
             </div>
-            <div className="flex w-full flex-col md:flex-row md:gap-0 items-start justify-between p-2 ">
+            <div className="flex w-full flex-col md:flex-row gap-6 md:gap-0 items-start justify-between p-2 ">
               <div className="w-full flex flex-col items-start justify-between gap-4">
                 <h3 className="text-[#8C52FF] font-semibold uppercase">
                   Stay Connected
@@ -129,7 +129,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="w-full flex flex-col text-[#697386] justify-between items-start font-medium">
-          <div className="w-full flex justify-evenly pt-8 mx-auto min-h-32">
+          <div className="w-full flex justify-evenly pt-4 md:pt-8 mx-auto min-h-32">
             <div className="flex flex-col justify-start">
               <div className="uppercase mb-4">Talent</div>
               {/* <ul>
