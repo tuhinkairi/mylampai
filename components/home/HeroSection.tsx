@@ -51,10 +51,10 @@ export default function HeroSection() {
   return (
     <>
       <div className="flex flex-col select-none bg-[url('/home/herosection-background.svg')] max-w-screen overflow-hidden relative min-h-dvh">
-        <div className="absolute w-full h-[50px] bottom-0 bg-gradient-to-b from-transparent to-white z-20"></div>
-        <div className="flex mt-16 relative justify-evenly items-center min-h-1/2 sm:min-h-[calc(100vh-80px)] px-8 gap-6 w-full m-auto">
+        <div className="absolute w-full h-[150px] bottom-0 bg-gradient-to-b from-transparent to-white z-20"></div>
+        <div className="flex flex-col lg:flex-row mt-[70px] relative justify-evenly items-center min-h-1/2 sm:min-h-[calc(100vh-80px)] px-8 gap-6 w-full m-auto">
           <div className="flex flex-col justify-center flex-1 w-full z-10">
-            <div className=" relative font-bold lg:ml-10 mb-6 mt-16 sm:mt-0">
+            <div className=" relative font-bold lg:ml-10 mb-6 mt-24 sm:mt-0">
               <div className="flex items-center justify-evenly text-sm font-light absolute top-0 -translate-y-[150%] rounded-lg px-4 py-1 gap-2 bg-[#fafafa] border max-w-[300px]">
                 Backed by{" "}
                 <Image
@@ -74,13 +74,13 @@ export default function HeroSection() {
                   Opportunities
                 </div>
               </div>
-              <div className="sm:hidden font-medium text-xl sm:text-[40px]">
+              <div className="sm:hidden font-bold text-[27px] sm:text-[40px]">
                 We nurture, assess & match
                 <span className="text-primary"> Talent</span> with premium
                 Opportunities
               </div>
             </div>
-            <div className="text-muted-foreground text-sm sm:text-base lg:ml-10 mb-9 max-w-[640px]">
+            <div className="text-muted-foreground text-xs sm:text-base lg:ml-10 mb-9 max-w-[640px]">
               Join the exclusive talent pool with just one application and
               assessment, unlocking access to thousands of premium opportunities
               worldwide.
@@ -121,13 +121,13 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <div className="lg:block bg-[#f1eaff] hidden z-10 p-6 w-full max-w-[600px] rounded-2xl">
+          <div className="bg-[#f1eaff] z-10 p-6 w-full aspect-square max-w-[600px] rounded-2xl">
             <Image
               src={"/home/herosection/wize_hero.svg"}
               alt="HeroSection"
               width={100}
               height={100}
-              className="w-full bg-white min-h-[552px] rounded-2xl py-2 px-5"
+              className="w-full bg-white rounded-2xl py-2 px-2"
             ></Image>
           </div>
         </div>

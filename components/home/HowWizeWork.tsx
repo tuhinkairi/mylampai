@@ -63,11 +63,11 @@ export default function HowWizeWork() {
       </div>
 
       <div className="m-auto border rounded-2xl bg-white shadow-[0_0px_40px_rgba(140,82,255,0.2)]">
-        <div>
+        <div className="">
           <div className="md:h-[330vh]">
             <div
               ref={stickyRef}
-              className="overflow-hidden md:sticky md:top-6 md:h-screen"
+              className="md:overflow-hidden relative md:sticky md:top-6 md:h-screen"
             >
               <h2 className="text-center pt-10 pb-2 font-bold text-2xl md:text-[40px] px-4 md:px-8">
                 Get matched with the right job in just 3 steps
@@ -119,6 +119,7 @@ export default function HowWizeWork() {
                   Get Hired
                 </div>
               </div>
+
               <div
                 ref={containerRef}
                 className="absolute top-20 will-change-transform left-0 w-[300vw] h-full hidden md:flex justify-start items-center"
@@ -127,7 +128,7 @@ export default function HowWizeWork() {
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/49.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/offer.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
               </div>
-              <div className="md:hidden flex gap-4 p-2 justify-start items-center flex-col">
+              <div className="md:hidden flex gap-4 p-2 justify-center items-center flex-col">
                 <Image
                   src={"/home/howwizework/50.svg"}
                   alt="how wize works"
@@ -135,6 +136,11 @@ export default function HowWizeWork() {
                   height={250}
                   className="w-full rounded-lg overflow-hidden"
                 ></Image>
+                <div className="my-2 flex flex-col items-center">
+                  <div className="bg-primary h-4 w-4 rounded-full"></div>
+                  <div className="bg-primary h-8 w-1 "></div>
+                  <div className="bg-primary h-4 w-4 rounded-full"></div>
+                </div>
                 <Image
                   src={"/home/howwizework/49.svg"}
                   alt="how wize works"
@@ -142,6 +148,11 @@ export default function HowWizeWork() {
                   height={250}
                   className="w-full rounded-lg overflow-hidden"
                 ></Image>
+                <div className="my-2 flex flex-col items-center">
+                  <div className="bg-primary h-4 w-4 rounded-full"></div>
+                  <div className="bg-primary h-8 w-1 "></div>
+                  <div className="bg-primary h-4 w-4 rounded-full"></div>
+                </div>
                 <Image
                   src={"/home/howwizework/offer.svg"}
                   alt="how wize works"
