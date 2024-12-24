@@ -10,7 +10,7 @@ export default function CommunitySection() {
   const { role, setRole } = useRoleStore();
   return (
     <>
-      <div className="flex relative justify-between flex-col-reverse sm:flex-row items-center mx-8 text-white h-[265px] px-6 sm:px-[50px] rounded-lg bg-[#0d2126] mt-[200px]">
+      <div className="flex relative justify-between flex-col-reverse sm:flex-row items-center mx-8 text-white min-h-[265px] px-6 sm:px-[50px] rounded-lg bg-[#0d2126] mt-[200px]">
         <div className="flex flex-col items-start justify-center gap-4 max-w-[600px] h-full ">
           <h2 className="text-2xl sm:text-[32px] font-bold w-full sm:max-w-[400px]">
             Onboard best <br /> <span className="text-primary">talent</span>{" "}
@@ -20,7 +20,7 @@ export default function CommunitySection() {
             Hire top talent from our exclusive pool or <br /> evaluate
             candidates instantly with our AI-powered solution.
           </p>
-          <div className="flex mt-4">
+          <div className="flex flex-col md:flex-row gap-4 mt-4">
             <Dialog>
               <DialogTrigger className="z-10">
                 <div
@@ -38,7 +38,7 @@ export default function CommunitySection() {
             </Dialog>
             <Link
               href="/recruit"
-              className=" flex gap-4 items-center w-[200px] h-[35px] justify-center border-2 rounded-lg text-sm font-semibold md:py-3 pl-4 md:pl-8 px-2 md:px-3 hover:bg-gray-700 duration-100 md:max-w-[300px] ml-5"
+              className=" flex gap-4 items-center w-[200px] h-[35px] justify-center border-2 rounded-lg text-sm font-semibold md:py-3 md:pl-8 px-2 md:px-3 hover:bg-gray-700 duration-100 md:max-w-[300px] ml-5"
             >
               Know More
               <ArrowRight size={24} />

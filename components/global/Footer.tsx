@@ -57,7 +57,7 @@ export default function Footer() {
                 alt="logo"
               />
             </div>
-            <div className="flex w-full md:gap-0 items-start justify-between p-2 ">
+            <div className="flex w-full flex-col md:flex-row md:gap-0 items-start justify-between p-2 ">
               <div className="w-full flex flex-col items-start justify-between gap-4">
                 <h3 className="text-[#8C52FF] font-semibold uppercase">
                   Stay Connected
@@ -80,7 +80,7 @@ export default function Footer() {
                   </a>
                 </div>
               </div>
-              <div className="w-full hidden sm:flex flex-col items-start justify-between gap-2 text-[#00000090]">
+              <div className="w-full flex flex-col items-start justify-between gap-2 text-[#00000090]">
                 <h3 className="text-[#8C52FF] font-semibold uppercase ">
                   Stay Updated
                 </h3>
@@ -115,8 +115,13 @@ export default function Footer() {
                   <div className="text-xs text-left w-full text-[#697386]">
                     Know everything about wiZe in just one call
                   </div>
-                  <a href="https://calendly.com/mylamp/wize" target="_blank" className="group absolute flex items-center bottom-0 gap-1 right-4 text-primary text-xs px-2 py-1">
-                    Schedule Call <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-all" />
+                  <a
+                    href="https://calendly.com/mylamp/wize"
+                    target="_blank"
+                    className="group absolute flex items-center bottom-0 gap-1 right-4 text-primary text-xs px-2 py-1"
+                  >
+                    Schedule Call{" "}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-all" />
                   </a>
                 </div>
               </div>

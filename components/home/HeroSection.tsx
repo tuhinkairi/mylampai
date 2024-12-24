@@ -67,7 +67,6 @@ export default function HeroSection() {
                 />{" "}
                 IIM Banglore
               </div>
-              {/* <Typing /> <br />{" "} */}
               <span className="font-semibold text-xl sm:text-[40px] leading-4 sm:leading-10">
                 We nurture, assess & match
                 <div className="mt-2">
@@ -100,11 +99,6 @@ export default function HeroSection() {
                   <LoginComponent />
                 </DialogContent>
               </Dialog>
-
-              {/* <Link href={"/login?role=recruiter"}>
-                Recruiter
-                <MoveRight size={24} />
-              </Link> */}
               <Dialog>
                 <DialogTrigger className="z-10">
                   <div

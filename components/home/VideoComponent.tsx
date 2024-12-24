@@ -18,7 +18,7 @@ export default function VideoComponent() {
   };
 
   return (
-    <div className="mb-16">
+    <div className="mb-16 px-4">
       <h3 className="w-full font-medium text-center">
         Feel the magic
       </h3>

@@ -1,4 +1,3 @@
-// # Draggable & Auto Rotate
 "use client";
 import createGlobe from "cobe";
 import { useEffect, useRef } from "react";
@@ -17,46 +16,53 @@ export default function Cobe({ glowColor = [1.2, 1.2, 1.2], baseColor = [1, 1, 1
       precision: 0.001,
     },
   }));
-  
+
   useEffect(() => {
     let phi = 0;
     let width = 0;
     const onResize = () =>
       canvasRef.current && (width = canvasRef.current.offsetWidth);
+
     window.addEventListener("resize", onResize);
     onResize();
-    const globe = createGlobe(canvasRef.current, {
-      devicePixelRatio: 2,
-      width: width * 2,
-      height: width * 2,
-      phi: 0,
-      theta: 0.3,
-      dark: 0,
-      diffuse: 1,
-      mapSamples: 16000,
-      mapBrightness: 1.2,
-      baseColor,
-      markerColor: [251 / 255, 100 / 255, 21 / 255],
-      glowColor,
-      markers: [],
-      onRender: (state) => {
-        // This prevents rotation while dragging
-        if (!pointerInteracting.current) {
-          // Called on every animation frame.
-          // `state` will be an empty object, return updated params.
-          phi += 0.005;
-        }
-        state.phi = phi + r.get();
-        state.width = width * 2;
-        state.height = width * 2;
-      },
-    });
+
+    let globe = null;
+
+    if (canvasRef.current)
+      globe = createGlobe(canvasRef.current, {
+        devicePixelRatio: 2,
+        width: width * 2,
+        height: width * 2,
+        phi: 0,
+        theta: 0.3,
+        dark: 0,
+        diffuse: 1,
+        mapSamples: 16000,
+        mapBrightness: 1.2,
+        baseColor,
+        markerColor: [251 / 255, 100 / 255, 21 / 255],
+        glowColor,
+        markers: [],
+        onRender: (state) => {
+          // This prevents rotation while dragging
+          if (!pointerInteracting.current) {
+            // Called on every animation frame.
+            // `state` will be an empty object, return updated params.
+            phi += 0.005;
+          }
+          state.phi = phi + r.get();
+          state.width = width * 2;
+          state.height = width * 2;
+        },
+      });
+
     setTimeout(() => (canvasRef.current.style.opacity = "1"));
     return () => {
-      globe.destroy();
+      // if (globe)
+      //   globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [glowColor, baseColor, r]);
+  }, []);
 
   return (
     <div

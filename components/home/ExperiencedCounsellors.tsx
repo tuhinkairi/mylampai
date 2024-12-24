@@ -77,7 +77,7 @@ const CounsellorCard: React.FC<CounsellorCardProps> = ({
         </div>
       </div>
       <div className="mt-14 pb-8 flex gap-2 flex-col items-center relative">
-        <div className="text-xs px-4 text-muted-foreground line-clamp-4 ">
+        <div className="text-xs px-4 text-muted-foreground line-clamp-4">
           {experience}
         </div>
         <Quote className="w-5 h-5 text-primary absolute right-2 bottom-2" />
@@ -94,10 +94,10 @@ interface BulletCardProps {
 const BulletCard: React.FC<BulletCardProps> = ({ title, description }) => {
   return (
     <div className="w-full max-w-[360px] flex p-4 gap-4 items-center bg-white rounded-xl overflow-hidden shadow-lg">
-      <div className="bg-[#2E66D3] w-6 h-6 rounded-full backdrop-blur-sm"></div>
+      <div className="bg-primary w-6 h-6 rounded-full backdrop-blur-sm"></div>
       <div>
         <div className="text-xl font-semibold">{title}</div>
-        <div className="text-[#000000BB] font-medium text-sm">
+        <div className="text-muted-foreground font-medium text-sm">
           {description}
         </div>
       </div>
@@ -132,9 +132,9 @@ const ExperiencedCounsellors: React.FC = () => {
             }),
           ]}
         >
-          <CarouselContent className="px-4 pb-8">
+          <CarouselContent className="px-4 pb-8 w-screen md:w-auto">
             {carouselData.map((item, index) => (
-              <CarouselItem key={index} className=" sm:basis-1/3 xl:basis-1/4">
+              <CarouselItem key={index} className="sm:basis-1/3 xl:basis-1/4">
                 <CounsellorCard
                   name={item.name}
                   image={item.image}
@@ -145,7 +145,7 @@ const ExperiencedCounsellors: React.FC = () => {
             ))}
           </CarouselContent>
         </Carousel>
-        <div className="flex flex-wrap gap-4 justify-evenly bg-primary-foreground w-full py-8 px-4 rounded-lg shadow-lg">
+        <div className="flex flex-wrap gap-4 justify-evenly bg-primary-foreground w-full py-8 px-4 rounded-b-lg shadow-lg">
           <BulletCard title="10k+" description="Successful Premium Admits" />
           <BulletCard title="10k+" description="Successful Premium Admits" />
           <BulletCard title="10k+" description="Successful Premium Admits" />

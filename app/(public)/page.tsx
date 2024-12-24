@@ -73,7 +73,7 @@ export default function Page() {
         <HowWizeWork />
         <WhyWize />
         {/* <SectionWrapper> */}
-        <BackedByBest />
+        {/* <BackedByBest /> */}
         {/* </SectionWrapper> */}
         {/* <SectionWrapper> */}
         {/* <PowerOfWize /> */}

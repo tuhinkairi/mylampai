@@ -53,7 +53,7 @@ export default function HowWizeWork() {
   }, []);
 
   return (
-    <div className="px-8 pb-12 bg-[url('/home/herosection-background.svg')] bg-center">
+    <div className="p-2 md:px-8 pb-12 bg-[url('/home/herosection-background.svg')] bg-center">
       <div className="m-auto max-w-[1300px] h-[100px] flex justify-center items-center w-full gap-4 my-4">
         <div className="h-1 bg-black w-full max-w-[150px] sm:max-w-[200px] md:max-w-[33%] bg-gradient-to-r from-white to-primary"></div>
         <h3 className="w-full text-3xl md:text-4xl font-medium text-center">
@@ -69,15 +69,15 @@ export default function HowWizeWork() {
               ref={stickyRef}
               className="overflow-hidden sticky top-6 h-screen"
             >
-              <h2 className="text-center pt-10 pb-2 font-bold text-[40px] px-8">
+              <h2 className="text-center pt-10 pb-2 font-bold text-xl md:text-[40px] px-4 md:px-8">
                 Get matched with the right job in just 3 steps
               </h2>
-              <p className="text-center mb-8 text-muted-foreground px-8">
+              <p className="text-center mb-8 text-sm md:text-base text-muted-foreground mt-4 px-4 md:px-8 ">
                 Upload your resume or create a profile, complete the AI
                 interview, and get matched with a job or opportunity based on
                 your performance
               </p>
-              <div className="flex justify-between items-center max-w-[80%] mx-auto text-sm relative">
+              <div className="flex justify-between items-center md:max-w-[80%] mx-auto text-sm relative">
                 <div className="absolute h-[1px] z-0 w-full bg-gray-200">
                   <div
                     className={`h-[1px] z-0 bg-primary transition-all ease-in-out ${
@@ -149,7 +149,7 @@ export default function HowWizeWork() {
           </div> */}
 
           {/* <div className="text-center text-muted-foreground my-8">or</div> */}
-          <div>
+          {/* <div>
             <h2 className="text-center mb-2 font-bold text-[40px] px-8">
               Ace Your Next Opportunity the Smarter Way with Us
             </h2>
@@ -158,11 +158,13 @@ export default function HowWizeWork() {
               have to practise for your next interview, improve your chances by
               using our AI CV Reviewer and AI Mock Interviewer
             </p>
-          </div>
+          </div> */}
         </div>
-        <div className="px-8 pb-8">
+        <div className="px-2 md:px-8 pb-8">
           <div className="border bg-primary text-white rounded-[1rem] gap-x-4 gap-y-6 p-4 mt-8 grid grid-cols-12">
-            <div className={`col-span-5 flex flex-col gap-4 px-12 pt-12`}>
+            <div
+              className={`col-span-12 sm:col-span-5 flex flex-col gap-4 sm:px-12 sm:pt-12`}
+            >
               <h2 className="text-[40px] font-semibold uppercase">
                 AI CV Reviewer
               </h2>
@@ -223,10 +225,9 @@ export default function HowWizeWork() {
                 >
                   Try it!
                 </Link>
-                {/* <Link href="/cvreviewer" className="bg-primary hover:bg-primary-dark w-[118px] text-sm h-10 py-2 px-4 text-white rounded-md">Learn More</Link> */}
               </div>
             </div>
-            <div className="col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
+            <div className="col-span-12 sm:col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
               <Image
                 src={"/home/howwizework/46.svg"}
                 alt="cv review"
@@ -235,7 +236,7 @@ export default function HowWizeWork() {
                 className="w-full aspect-[3/2]"
               ></Image>
             </div>
-            <div className="col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
+            <div className="col-span-12 sm:col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
               <Image
                 src={"/home/howwizework/47.svg"}
                 alt="ai interview"
@@ -244,7 +245,9 @@ export default function HowWizeWork() {
                 className="w-full aspect-[3/2]"
               ></Image>
             </div>
-            <div className={`col-span-5 flex flex-col gap-4 px-12 pt-12`}>
+            <div
+              className={`col-span-12 sm:col-span-5 flex flex-col gap-4 sm:px-12 sm:pt-12`}
+            >
               <h2 className="text-[40px] font-semibold uppercase">
                 AI Mock Interviewer
               </h2>
@@ -305,7 +308,6 @@ export default function HowWizeWork() {
                 >
                   Try it!
                 </Link>
-                {/* <Link href="/interview" className="bg-primary hover:bg-primary-dark w-[118px] text-sm h-10 py-2 px-4 text-white rounded-md">Learn More</Link> */}
               </div>
             </div>
           </div>
