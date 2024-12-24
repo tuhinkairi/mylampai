@@ -98,7 +98,7 @@ const HomeNavbar = () => {
         href={"/"}
         className={`flex items-center h-11 overflow-hidden ${
           scrolled ? "p-1 px-2" : "p-0"
-        } max-w-[150px] w-full absolute left-8 z-10 transition-all duration-300`}
+        } md:max-w-[150px] max-w-24 w-full absolute left-8 z-10 transition-all duration-300`}
       >
         <Image
           src={"/home/navbar/wizelogo.svg"}
@@ -108,6 +108,33 @@ const HomeNavbar = () => {
           className="w-auto h-full drop-shadow-md"
         />
       </Link>
+
+      <div className="block md:hidden">
+        {userData ? (
+          <Link
+            href={"/talentmatch"}
+            className="flex items-center bg-primary h-[35px] text-white text-sm pl-2 pr-2 gap-1 rounded-lg "
+          >
+            {initials}
+            <Image src={"/home/userNavbar.svg"} alt="" height={20} width={20} />
+          </Link>
+        ) : (
+          <Dialog>
+            <DialogTrigger>
+              <div
+                onClick={() => setRole("user")}
+                className="flex items-center bg-primary h-[35px] text-white text-sm px-2  gap-1 rounded-lg"
+              >
+                Login / Sign Up
+              </div>
+            </DialogTrigger>
+            <DialogContent className="bg-transparent border-none max-w-3xl">
+              <LoginComponent />
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+
       <div
         className={`md:flex relative text-sm hidden justify-end border items-center w-${
           scrolled ? "full" : "[600px]"
