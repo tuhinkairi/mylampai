@@ -50,6 +50,17 @@ import "./home.css";
 export const metadata: Metadata = {
   title: "wiZe (myLampAI) | Home",
   description: "We nurture, assess & match talent with premium opportunities.",
+  metadataBase: new URL("https://wize.co.in"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-IN": "/en-IN",
+      "en-US": "/en-US",
+    },
+  },
+  openGraph: {
+    images: "/og-image.png",
+  },
 };
 
 export default function Page() {

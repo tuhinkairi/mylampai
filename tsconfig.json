@@ -36,7 +36,6 @@
     "app/(protected)/cvreviewer/Highlighter.jsx",
     "types/pdfjs-dist.d.ts",
     "components/ui/globe.jsx",
-    "build/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"

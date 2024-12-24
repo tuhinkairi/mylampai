@@ -7,6 +7,53 @@ import Script from "next/script";
 
 const openSans = Open_Sans({ subsets: ["latin"], display: "swap" });
 
+export const metadata = {
+  title: "wiZe (myLampAI)",
+  description: "We nurture, assess & match talent with premium opportunities.",
+  url: "https://wize.co.in",
+  metadataBase: new URL("https://wize.co.in"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-US": "/en-US",
+      "en-IN": "/en-IN",
+    },
+  },
+  openGraph: {
+    title: "wiZe (myLampAI) ",
+    description: "We nurture, assess & match talent with premium opportunities.",
+    url: "https://wize.co.in",
+    siteName: "wiZe (myLampAI)",
+    images: [
+      {
+        url: "https://wize.co.in/og.png", // Must be an absolute URL
+        width: 800,
+        height: 600,
+      },
+      {
+        url: "https://wize.co.in/og-alt.png", // Must be an absolute URL
+        width: 1800,
+        height: 1600,
+        alt: "My custom alt",
+      },
+    ],
+    videos: [
+      {
+        url: "https://wize.co.in/video.mp4", // Must be an absolute URL
+        width: 800,
+        height: 600,
+      },
+    ],
+    audio: [
+      {
+        url: "https://wize.co.in/audio.mp3", // Must be an absolute URL
+      },
+    ],
+    locale: "en_US",
+    type: "website",
+  },
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

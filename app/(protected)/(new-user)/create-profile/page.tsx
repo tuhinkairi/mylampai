@@ -35,7 +35,7 @@ const formSchema = z.object({
   skills: z.array(z.string()).min(1, "At least one skill is required"),
 });
 
-export default function CreateProfile() {
+function CreateProfile() {
   const { id, setId, setResumeUrl } = useProfileStore();
   const { userData } = useUserStore();
   const [step, setStep] = useState(1);
@@ -79,15 +79,14 @@ export default function CreateProfile() {
 
     try {
       const res = await createTalentProfile(data, userData.id);
-
-      if (res.status !== 200) {
-        toast.error(res.error);
-      } else {
+      if (res.status === 200) {
         if (res.data) {
           setResumeUrl(res.data.resumeUrl);
           setId(res.data.id);
         }
         setStep(2);
+      } else {
+        toast.error(res.error);
       }
     } catch (error) {
       console.error(error);
@@ -394,3 +393,5 @@ export default function CreateProfile() {
     </div>
   );
 }
+
+export default CreateProfile;
