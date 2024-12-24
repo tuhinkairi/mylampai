@@ -22,7 +22,7 @@ export default function VideoComponent() {
       <h3 className="w-full font-medium text-center">
         Feel the magic
       </h3>
-      <h2 className="text-center pb-2 font-bold text-[40px] px-8">
+      <h2 className="text-center pb-2 font-bold text-3xl md:text-[40px] sm:px-8">
         Embed the worlds{" "}
       </h2>
       <div className="max-w-4xl mt-8 rounded-xl overflow-hidden mx-auto shadow-[0_0px_40px_rgba(140,82,255,0.2)] relative">
@@ -36,7 +36,7 @@ export default function VideoComponent() {
             alt="play button"
             height={100}
             width={100}
-            className="cursor-pointer"
+            className="cursor-pointer md:w-24 w-16"
             onClick={onVideoRefClick}
           ></Image>
         </div>

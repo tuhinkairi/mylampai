@@ -64,12 +64,12 @@ export default function HowWizeWork() {
 
       <div className="m-auto border rounded-2xl bg-white shadow-[0_0px_40px_rgba(140,82,255,0.2)]">
         <div>
-          <div className="h-[330vh]">
+          <div className="md:h-[330vh]">
             <div
               ref={stickyRef}
-              className="overflow-hidden sticky top-6 h-screen"
+              className="overflow-hidden md:sticky md:top-6 md:h-screen"
             >
-              <h2 className="text-center pt-10 pb-2 font-bold text-xl md:text-[40px] px-4 md:px-8">
+              <h2 className="text-center pt-10 pb-2 font-bold text-2xl md:text-[40px] px-4 md:px-8">
                 Get matched with the right job in just 3 steps
               </h2>
               <p className="text-center mb-8 text-sm md:text-base text-muted-foreground mt-4 px-4 md:px-8 ">
@@ -121,11 +121,34 @@ export default function HowWizeWork() {
               </div>
               <div
                 ref={containerRef}
-                className="absolute top-20 will-change-transform left-0 w-[300vw] h-full flex justify-start items-center"
+                className="absolute top-20 will-change-transform left-0 w-[300vw] h-full hidden md:flex justify-start items-center"
               >
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/50.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/49.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
                 <div className="flex shadow-lg flex-col bg-[url('/home/howwizework/offer.svg')] bg-cover bg-center items-center justify-center gap-4 h-[400px] w-[720px] m-auto border rounded-lg"></div>
+              </div>
+              <div className="md:hidden flex gap-4 p-2 justify-start items-center flex-col">
+                <Image
+                  src={"/home/howwizework/50.svg"}
+                  alt="how wize works"
+                  width={250}
+                  height={250}
+                  className="w-full rounded-lg overflow-hidden"
+                ></Image>
+                <Image
+                  src={"/home/howwizework/49.svg"}
+                  alt="how wize works"
+                  width={250}
+                  height={250}
+                  className="w-full rounded-lg overflow-hidden"
+                ></Image>
+                <Image
+                  src={"/home/howwizework/offer.svg"}
+                  alt="how wize works"
+                  width={250}
+                  height={250}
+                  className="w-full rounded-lg overflow-hidden"
+                ></Image>
               </div>
             </div>
           </div>
@@ -162,10 +185,19 @@ export default function HowWizeWork() {
         </div>
         <div className="px-2 md:px-8 pb-8">
           <div className="border bg-primary text-white rounded-[1rem] gap-x-4 gap-y-6 p-4 mt-8 grid grid-cols-12">
+            <div className="col-span-12 md:col-span-7 md:hidden block h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
+              <Image
+                src={"/home/howwizework/46.svg"}
+                alt="cv review"
+                width={600}
+                height={400}
+                className="w-full aspect-[3/2]"
+              ></Image>
+            </div>
             <div
-              className={`col-span-12 sm:col-span-5 flex flex-col gap-4 sm:px-12 sm:pt-12`}
+              className={`col-span-12 md:col-span-5 flex flex-col gap-4 md:px-12 md:pt-12`}
             >
-              <h2 className="text-[40px] font-semibold uppercase">
+              <h2 className="text-3xl md:text-[40px] font-semibold uppercase">
                 AI CV Reviewer
               </h2>
               <p className="text-[#efefef]">
@@ -173,7 +205,7 @@ export default function HowWizeWork() {
                 for personalized feedback and optimization tips!
               </p>
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 ">
+                <div className="flex items-start md:items-center gap-2 flex-col md:flex-row">
                   <div className="flex items-center gap-2 w-44">
                     <Image
                       src={"/home/herosection/tickwhite.svg"}
@@ -195,7 +227,7 @@ export default function HowWizeWork() {
                     <span>Analysis on 10+ parameters</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ">
+                <div className="flex items-start md:items-center gap-2 flex-col md:flex-row">
                   <div className="flex items-center gap-2 w-44">
                     <Image
                       src={"/home/herosection/tickwhite.svg"}
@@ -221,13 +253,13 @@ export default function HowWizeWork() {
               <div className="mt-2 flex">
                 <Link
                   href="/cvreviewer"
-                  className="max-w-[150px] w-full text-sm py-2 bg-white px-4 text-primary text-center hover:bg-gray-50 rounded-md"
+                  className="md:max-w-[150px] w-full text-sm py-2 bg-white px-4 text-primary text-center hover:bg-gray-50 rounded-md"
                 >
                   Try it!
                 </Link>
               </div>
             </div>
-            <div className="col-span-12 sm:col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
+            <div className="col-span-12 md:col-span-7 hidden md:block h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
               <Image
                 src={"/home/howwizework/46.svg"}
                 alt="cv review"
@@ -236,7 +268,7 @@ export default function HowWizeWork() {
                 className="w-full aspect-[3/2]"
               ></Image>
             </div>
-            <div className="col-span-12 sm:col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
+            <div className="col-span-12 md:col-span-7 h-full bg-[#ffffff40] backdrop-blur-lg rounded-lg bg-no-repeat bg-cover bg-center ">
               <Image
                 src={"/home/howwizework/47.svg"}
                 alt="ai interview"
@@ -256,7 +288,7 @@ export default function HowWizeWork() {
                 practice, real feedback, and real results!
               </p>
               <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-2 ">
+                <div className="flex md:items-center items-start flex-col md:flex-row gap-2 ">
                   <div className="flex items-center gap-2 w-44">
                     <Image
                       src={"/home/herosection/tickwhite.svg"}
@@ -278,7 +310,7 @@ export default function HowWizeWork() {
                     <span>Realistic experience</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 ">
+                <div className="flex md:items-center items-start flex-col md:flex-row gap-2 ">
                   <div className="flex items-center gap-2 w-44">
                     <Image
                       src={"/home/herosection/tickwhite.svg"}
@@ -304,7 +336,7 @@ export default function HowWizeWork() {
               <div className="mt-2 flex">
                 <Link
                   href="/interview"
-                  className="max-w-[150px] w-full text-sm py-2 bg-white px-4 text-primary text-center hover:bg-gray-50 rounded-md"
+                  className="md:max-w-[150px] w-full text-sm py-2 bg-white px-4 text-primary text-center hover:bg-gray-50 rounded-md"
                 >
                   Try it!
                 </Link>

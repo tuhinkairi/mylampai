@@ -145,6 +145,9 @@ const ExperiencedCounsellors: React.FC = () => {
             ))}
           </CarouselContent>
         </Carousel>
+      </div>
+
+      <div className="w-full my-8 rounded-2xl px-4">
         <div className="flex flex-wrap gap-4 justify-evenly bg-primary-foreground w-full py-8 px-4 rounded-b-lg shadow-lg">
           <BulletCard title="10k+" description="Successful Premium Admits" />
           <BulletCard title="10k+" description="Successful Premium Admits" />
