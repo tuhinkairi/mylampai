@@ -36,9 +36,9 @@ const PracticeCards = () => {
             Practice coding problems from top comapnies
           </p>
           <div className="text-xs">400+ Questions</div>
-          <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
+          {/* <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
             Start Now{" "}
-          </button>
+          </button> */}
         </div>
 
         <div
@@ -65,9 +65,9 @@ const PracticeCards = () => {
             Practice & ace the hiring assessments of top companies
           </p>
           <div className="text-xs">400+ Questions</div>
-          <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
+          {/* <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
             Start Now{" "}
-          </button>
+          </button> */}
         </div>
 
         <div
@@ -94,9 +94,9 @@ const PracticeCards = () => {
             Prepare for interviews with mock interviews & feedback
           </p>
           <div className="text-xs">400+ Questions</div>
-          <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
+          {/* <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
             Start Now{" "}
-          </button>
+          </button> */}
         </div>
       </div>
     </>

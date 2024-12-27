@@ -1,5 +1,6 @@
 "use client";
 import Image from "next/image";
+import Link from "next/link";
 // import Typing from "./Typing";
 import { useEffect } from "react";
 import InfiniteLogoSlide from "./InfiniteLogoSlide";
@@ -22,7 +23,7 @@ export default function HeroSection() {
 
   const { role, setRole } = useRoleStore();
 
-  const { setUserData } = useUserStore();
+  const { userData, setUserData } = useUserStore();
 
   useEffect(() => {
     if (role === null) return;
@@ -89,35 +90,58 @@ export default function HeroSection() {
               <div className="hidden md:block absolute bottom-0 z-0 translate-y-full left-1/2 -translate-x-1/2 scale-125 w-[600px] h-[600px] overflow-hidden">
                 <Globe />
               </div>
-              <Dialog>
-                <DialogTrigger className="z-10">
-                  <div
-                    onClick={() => setRole("user")}
-                    className=" flex gap-4 items-center md:w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark lg:ml-10"
-                  >
-                    Get hired instantly
-                    <ArrowRight size={24} />
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
-                  <LoginComponent />
-                </DialogContent>
-              </Dialog>
-              <Dialog>
-                <DialogTrigger className="z-10">
-                  <div
-                    onClick={() => setRole("recruiter")}
-                    className="flex gap-4 z-10 items-center md:w-[225px] h-[45px] justify-center rounded-lg border-2 text-sm font-semibold py-2 md:py-3 pl-4  px-2 md:px-3 md:max-w-[300px] lg:ml-5 hover:bg-gray-50"
-                  >
-                    {" "}
-                    Recruit in no time
-                    <ArrowRight size={24} />
-                  </div>
-                </DialogTrigger>
-                <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
-                  <LoginComponent />
-                </DialogContent>
-              </Dialog>
+
+              {userData ? (
+                <Link
+                  href={"/talentmatch"}
+                  className="z-10 flex gap-4 items-center md:w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark lg:ml-10"
+                >
+                  Get hired instantly
+                  <ArrowRight size={24} />
+                </Link>
+              ) : (
+                <>
+                  <Dialog>
+                    <DialogTrigger className="z-10">
+                      <div
+                        onClick={() => setRole("user")}
+                        className=" flex gap-4 items-center md:w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark lg:ml-10"
+                      >
+                        Get hired instantly
+                        <ArrowRight size={24} />
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                      <LoginComponent />
+                    </DialogContent>
+                  </Dialog>
+                </>
+              )}
+              {userData ? (
+                <Link
+                  href={"/recruit"}
+                  className="flex gap-4 z-10 items-center md:w-[225px] h-[45px] justify-center rounded-lg border-2 text-sm font-semibold py-2 md:py-3 pl-4  px-2 md:px-3 md:max-w-[300px] lg:ml-5 hover:bg-gray-50"
+                >
+                  Recruit in no time
+                  <ArrowRight size={24} />
+                </Link>
+              ) : (
+                <Dialog>
+                  <DialogTrigger className="z-10">
+                    <div
+                      onClick={() => setRole("recruiter")}
+                      className="flex gap-4 z-10 items-center md:w-[225px] h-[45px] justify-center rounded-lg border-2 text-sm font-semibold py-2 md:py-3 pl-4  px-2 md:px-3 md:max-w-[300px] lg:ml-5 hover:bg-gray-50"
+                    >
+                      {" "}
+                      Recruit in no time
+                      <ArrowRight size={24} />
+                    </div>
+                  </DialogTrigger>
+                  <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                    <LoginComponent />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
 

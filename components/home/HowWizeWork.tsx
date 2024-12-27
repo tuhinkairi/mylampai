@@ -72,7 +72,7 @@ export default function HowWizeWork() {
               <h2 className="text-center pt-10 pb-2 font-bold text-2xl md:text-[40px] px-4 md:px-8">
                 Get matched with the right job in just 3 steps
               </h2>
-              <p className="text-center mb-8 text-sm md:text-base text-muted-foreground mt-4 px-4 md:px-8 ">
+              <p className="text-center mb-6 text-sm md:text-base text-muted-foreground mt-4 px-4 md:px-8 ">
                 Upload your resume or create a profile, complete the AI
                 interview, and get matched with a job or opportunity based on
                 your performance
@@ -90,7 +90,7 @@ export default function HowWizeWork() {
                   ></div>
                 </div>
                 <div
-                  className={`px-4 py-2 w-full max-w-[120px] text-center font-medium rounded-full z-0 duration-500 ${
+                  className={`p-2 w-full max-w-[90px] aspect-square text-center font-medium rounded-lg flex justify-center items-center z-0 duration-500 ${
                     activeTab === 1
                       ? "text-white bg-primary"
                       : "border border-primary text-muted-foreground bg-white"
@@ -99,7 +99,7 @@ export default function HowWizeWork() {
                   Upload CV
                 </div>
                 <div
-                  className={`px-4 py-2 w-full max-w-[120px] text-muted-foreground text-center font-medium rounded-full border z-10 duration-500 ${
+                  className={`p-2 w-full max-w-[90px] aspect-square text-muted-foreground text-center font-medium rounded-lg flex justify-center items-center border z-10 duration-500 ${
                     activeTab === 3
                       ? "border-primary z-20 bg-white"
                       : activeTab === 2
@@ -110,7 +110,7 @@ export default function HowWizeWork() {
                   AI Interview
                 </div>
                 <div
-                  className={`px-4 py-2 w-full max-w-[120px] text-center font-medium rounded-full z-10 duration-500 ${
+                  className={`p-2 w-full max-w-[90px] aspect-square text-center font-medium rounded-lg flex justify-center items-center z-10 duration-500 ${
                     activeTab === 3
                       ? "text-white bg-primary"
                       : "text-muted-foreground border-gray-200 border bg-white"

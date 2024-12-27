@@ -5,9 +5,12 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import LoginComponent from "../global/Login";
 import { ArrowRight } from "lucide-react";
 import { useRoleStore } from "@/utils/loginStore";
+import { useUserStore } from "@/utils/userStore";
 
 export default function CommunitySection() {
   const { role, setRole } = useRoleStore();
+  const { userData } = useUserStore();
+
   return (
     <>
       <div className="flex relative justify-between flex-col-reverse sm:flex-row items-center mx-8 text-white min-h-[265px] px-6 sm:px-[50px] rounded-lg bg-[#0d2126] mt-[200px]">
@@ -21,21 +24,31 @@ export default function CommunitySection() {
             candidates instantly with our AI-powered solution.
           </p>
           <div className="flex flex-col md:flex-row gap-4 mt-4 w-full">
-            <Dialog>
-              <DialogTrigger className="z-10">
-                <div
-                  onClick={() => setRole("recruiter")}
-                  className="flex gap-4 z-10 items-center w-full md:w-[200px] h-[35px] justify-center rounded-lg bg-primary hover:bg-primary-dark text-white text-sm font-semibold md:py-3 pl-4 duration-100 px-2 md:px-3 "
-                >
-                  {" "}
-                  Recruit in no time
-                  <ArrowRight size={24} />
-                </div>
-              </DialogTrigger>
-              <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
-                <LoginComponent />
-              </DialogContent>
-            </Dialog>
+            {userData ? (
+              <Link
+                href={"/talentmatch"}
+                className="flex gap-4 z-10 items-center w-full md:w-[200px] h-[35px] justify-center rounded-lg bg-primary hover:bg-primary-dark text-white text-sm font-semibold md:py-3 pl-4 duration-100 px-2 md:px-3 "
+              >
+                Recruit in no time
+                <ArrowRight size={24} />
+              </Link>
+            ) : (
+              <Dialog>
+                <DialogTrigger className="z-10">
+                  <div
+                    onClick={() => setRole("recruiter")}
+                    className="flex gap-4 z-10 items-center w-full md:w-[200px] h-[35px] justify-center rounded-lg bg-primary hover:bg-primary-dark text-white text-sm font-semibold md:py-3 pl-4 duration-100 px-2 md:px-3 "
+                  >
+                    {" "}
+                    Recruit in no time
+                    <ArrowRight size={24} />
+                  </div>
+                </DialogTrigger>
+                <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                  <LoginComponent />
+                </DialogContent>
+              </Dialog>
+            )}
             <Link
               href="/recruit"
               className=" flex gap-4 items-center w-full md:w-[200px] h-[35px] justify-center border-2 rounded-lg text-sm font-semibold md:py-3 md:pl-8 px-2 md:px-3 hover:bg-gray-700 duration-100 "
@@ -66,20 +79,30 @@ export default function CommunitySection() {
           </p>
         </div>
         <div className="gap-4 flex flex-col">
-          <Dialog>
-            <DialogTrigger className="z-10">
-              <div
-                onClick={() => setRole("user")}
-                className=" flex gap-4  items-center w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 my-2 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark"
-              >
-                Get hired instantly
-                <ArrowRight size={24} />
-              </div>
-            </DialogTrigger>
-            <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
-              <LoginComponent />
-            </DialogContent>
-          </Dialog>
+          {userData ? (
+            <Link
+              href={"/talentmatch"}
+              className=" flex gap-4  items-center w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 my-2 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark"
+            >
+              Get hired instantly
+              <ArrowRight size={24} />
+            </Link>
+          ) : (
+            <Dialog>
+              <DialogTrigger className="z-10">
+                <div
+                  onClick={() => setRole("user")}
+                  className=" flex gap-4  items-center w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 my-2 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark"
+                >
+                  Get hired instantly
+                  <ArrowRight size={24} />
+                </div>
+              </DialogTrigger>
+              <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                <LoginComponent />
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
     </>

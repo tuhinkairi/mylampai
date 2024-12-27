@@ -4,7 +4,7 @@ import Image from 'next/image';
 import useStore from '../left/zustandleft/storeleft';
 import { useEffect } from 'react';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+// import { motion } from 'framer-motion';
 import useStoreright from '../right/zustandright/storeright';
 const Middle: React.FC = () => {
   const {isOpen, toggleOpen } = useStore();
