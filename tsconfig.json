@@ -24,7 +24,8 @@
     "paths": {
       "@/*": [
         "./*"
-      ]
+      ],
+      "pdfjs-dist": ["./node_modules/pdfjs-dist"]
     }
   },
   "include": [

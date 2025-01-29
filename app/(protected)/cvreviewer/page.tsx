@@ -6,7 +6,8 @@ import StepOneTwo from "./StepOneTwo";
 import PDFViewer from "./StepThree";
 import { toast } from "sonner";
 
-const baseUrl = "https://optim-cv-judge.onrender.com";
+// const baseUrl = "https://optim-cv-judge.onrender.com";
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 
 const Page: React.FC = () => {
   const { setResumeFile, setJobDescriptionFile, resumeFile } =
@@ -41,6 +42,7 @@ const Page: React.FC = () => {
   };
 
   const handleNextClick = () => {
+    console.log("next triggered : ",step)
     setStep((prevStep) => prevStep + 1);
   };
 

@@ -266,6 +266,7 @@ export const updateEmployment = async (
   }
 };
 
+
 export const getProfileProjects = async (talentProfileId: string) => {
   try {
     const projects = await prisma.project.findMany({

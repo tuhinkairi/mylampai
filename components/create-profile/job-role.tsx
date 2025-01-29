@@ -37,7 +37,8 @@ export function ProfessionalRole({
       if (!id) {
         throw new Error("Profile ID is missing");
       }
-
+  
+      
       const res = await updateTitle(values.role, id);
 
       if (res.status === 200) {

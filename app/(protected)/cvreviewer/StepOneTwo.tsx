@@ -167,7 +167,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              await uploadCVAndJobDescription(base64String, extractedText);
+              // await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -271,7 +271,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              await uploadCVAndJobDescription(base64String, extractedText);
+              // await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -371,7 +371,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
       }
       
       const result = await response.json();
-      // console.log("Response received:", result);
+      console.log("Response received:", result);
       
       // Return result if needed
       Setnext(true)
@@ -495,7 +495,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
                 </div>
 
                 <p className="text-slate-500 text-sm mt-2">
-                  Supported file format: PDF. File size limit 1MB.
+                  Supported file format: .PDF File size limit 1MB.
                 </p>
               </div>
 

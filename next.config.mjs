@@ -13,6 +13,9 @@ const nextConfig = {
     config.resolve.alias.canvas = false
     config.resolve.alias.encoding = false
     net : false
+    if(!isServer){
+      config.resolve.alias['pdfjs-dist']='pdfjs-dist/webpack';
+    }
     return config
   },
   reactStrictMode: true,

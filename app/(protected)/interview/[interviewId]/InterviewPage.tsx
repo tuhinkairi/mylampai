@@ -34,6 +34,7 @@ import { useWebSocketContext } from "@/hooks/interviewersocket/webSocketContext"
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { toast } from "sonner";
+import {readBlobAsBase64} from '@/utils/readBlobAsBase64'
 
 type ChatMessage = {
   user: string;
@@ -207,7 +208,11 @@ const InterviewPage = () => {
             { user: "Analysis", message: JSON.stringify(data.result) },
           ]);
           break;
-
+        case "greeting_from_ws":
+          console.log("Greeting from ws");
+          break;
+        case "transcription_result":
+          console.log("transcripted text--> ",data.result)  
         default:
           break;
       }
@@ -235,6 +240,7 @@ const InterviewPage = () => {
   }, [handleSendMessage]);
 
   const startTranscribing = useCallback(async () => {
+    console.log("debug 111")
     if (emptyTranscribeCnt.current >= 6) {
       stopAudioRecording();
       toast.error("Enable mic to continue Interview");
@@ -248,15 +254,13 @@ const InterviewPage = () => {
     try {
       if (!audioStream.current) {
         audioStream.current = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            sampleRate: 44100,
-            channelCount: 1,
-          },
+          audio: true,
         });
       }
 
       mediaRecorder.current = new MediaRecorder(audioStream.current, {
         mimeType: "audio/webm; codecs=opus",
+        audioBitsPerSecond: 16000,
       });
 
       mediaRecorder.current.ondataavailable = (e: BlobEvent) => {
@@ -275,15 +279,27 @@ const InterviewPage = () => {
         if (recordedBlob.size === 0) {
           return;
         }
+        
+        const base64Audio=await readBlobAsBase64(recordedBlob)
 
-        console.log("Audio recorded:", recordedBlob);
+
+        // console.log("Audio recorded:", base64Audio);
 
         const formData = new FormData();
         formData.append("audio", recordedBlob);
-
+        
         try {
-          const res = await handleAudioTranscribe(formData); //trnascribing candidate audio
 
+          ws?.send(JSON.stringify({
+            type: "speech_to_text",
+            audioData: base64Audio,
+            contentType: recordedBlob.type // Include the mime type
+          }));
+
+
+          // const res = await handleAudioTranscribe(formData); //trnascribing candidate audio
+          const res = await handleAudioTranscribe(formData); //trnascribing candidate audio
+          
           if (res.status === "success") {
             if (res.transcript) resTranscript.current += res.transcript;
             else if (resTranscript.current) stopAudioRecording();
@@ -610,7 +626,7 @@ const InterviewPage = () => {
             variant={isMuted ? "destructive" : "secondary"}
             size="icon"
             onClick={startAudioRecording}
-            disabled={!isMuted}
+            disabled={isMuted}
           >
             {isMuted ? (
               <MicOff className="h-4 w-4" />

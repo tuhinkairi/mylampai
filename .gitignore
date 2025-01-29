@@ -44,3 +44,5 @@ next-env.d.ts
 
 #credentials
 credential.json
+
+structured_data.json

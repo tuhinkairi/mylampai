@@ -1,3 +1,4 @@
+'use client'
 import TalentPoolForm from "./TalentPoolForm";
 import { getRecruiterTalentPool } from "@/actions/talentPoolActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

@@ -59,7 +59,7 @@ const formSchema = z.object({
     .array(z.string())
     .min(1, "Select at least one specialty")
     .max(3, "You can select up to 3 specialties"),
-});
+});  
 
 export function JobCategoriesSelector({
   setStep,

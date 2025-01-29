@@ -82,7 +82,7 @@ export function WorkExperiences({
   const handleSubmit = async () => {
     try {
       if (!id) return;
-
+      
       const res = await createEmployments(prevExperiences, id);
 
       if (res.status === 200) {
