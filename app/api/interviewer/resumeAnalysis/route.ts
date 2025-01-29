@@ -103,23 +103,24 @@ export const POST = async (req: NextRequest) => {
                 console.log(element, data)
                 switch (element) {
                     case "responsibility_checker":
-                        summary.responsibility = data ?? {}
+                        summary.responsibility = {}
                         break;
                     case "personal_info":
-                        summary.personal_info = data ?? body.structuredData["Personal Information"];
+                            summary.personal_info = 
+                             body.structuredData["Personal Information"] as object;
                         break;
                     case "total_bullet_points":
-                        summary.total_bullet_points = data ?? [""]
+                        summary.total_bullet_points = [""]
                         break;
                     case "bullet_points_improver":
-                        summary.bullet_point_improver = data ?? [""]
+                        summary.bullet_point_improver = [""]
                         break;
                     case "bullet_point_length":
-                        summary.bullet_point_length = data ?? [""]
+                        summary.bullet_point_length = [""]
                     case "resume_length":
-                        summary.resume_length =data ?? [""]
+                        summary.resume_length = [""]
                     case "resume_score":
-                        summary.resume_score =data ?? {}
+                        summary.resume_score = {}
                     default:
                         break;
                 }
