@@ -83,51 +83,59 @@ export const POST = async (req: NextRequest) => {
             const summary = transformKeys(result.message) as AnalysisDataType;
             summary.cvId = body.id as string;
 
-
-
-
             // Send the POST request to the external API with the response of the summary
             const endpoint = ["responsibility_checker", "personal_info", "total_bullet_points", "bullet_points_improver", "bullet_point_length", "resume_length", "resume_score"]
 
-            // console.log("body content",body.structuredData)
-            endpoint.forEach(async (element) => {
-                const response = await fetch(baseUrl.concat(`/${element}`), {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ extracted_data: body.structuredData }),
-                });
-                const data = await response.json();
+            console.log("body content",body.structuredData)
+            // endpoint.forEach(async (element) => {
+            //     const response = await fetch(baseUrl.concat(`/${element}`), {
+            //         method: "POST",
+            //         headers: {
+            //             "Content-Type": "application/json",
+            //         },
+            //         body: JSON.stringify({ extracted_data: body.structuredData }),
+            //     });
+            //     const data = await response.json();
 
-                console.log(element, data)
-                switch (element) {
-                    case "responsibility_checker":
-                        summary.responsibility = data ?? {}
-                        break;
-                    case "personal_info":
-                        summary.personal_info = data ?? body.structuredData["Personal Information"];
-                        break;
-                    case "total_bullet_points":
-                        summary.total_bullet_points = data ?? [""]
-                        break;
-                    case "bullet_points_improver":
-                        summary.bullet_point_improver = data ?? [""]
-                        break;
-                    case "bullet_point_length":
-                        summary.bullet_point_length = data ?? [""]
-                    case "resume_length":
-                        summary.resume_length =data ?? [""]
-                    case "resume_score":
-                        summary.resume_score =data ?? {}
-                    default:
-                        break;
-                }
-            })
+            //     console.log(element, data)
+            //     switch (element) {
+            //         case "responsibility_checker":
+            //             summary.responsibility = data ?? {}
+            //             break;
+            //         case "personal_info":
+            //             summary.personal_info = data ?? body.structuredData["Personal Information"];
+            //             break;
+            //         case "total_bullet_points":
+            //             summary.total_bullet_points = data ?? [""]
+            //             break;
+            //         case "bullet_points_improver":
+            //             summary.bullet_point_improver = data ?? [""]
+            //             break;
+            //         case "bullet_point_length":
+            //             summary.bullet_point_length = data ?? [""]
+            //         case "resume_length":
+            //             summary.resume_length =data ?? [""]
+            //         case "resume_score":
+            //             summary.resume_score =data ?? {}
+            //         default:
+            //             break;
+            //     }
+            // })
             // Save the analysis result
-
+            
+            console.log("debuging the cv analysis",summary)
+            summary.personal_info =  body.structuredData["Personal Information"] as object;
+            summary.bullet_point_length =  [""]
+            summary.bullet_point_improver = [""]
+            summary.total_bullet_points =  {}
+            summary.responsibility = [""]
+            summary.resume_length = [""]
+            summary.resume_score = {}
+            
+            console.log("debuging the cv analysis",summary)
             const summaryResponse = await analysisResume(summary);
-            console.log(summaryResponse)
+            
+            // console.log(summaryResponse)
             return NextResponse.json(summaryResponse, { status: 200 });
         }
 

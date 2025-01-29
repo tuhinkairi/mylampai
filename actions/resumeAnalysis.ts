@@ -30,6 +30,7 @@ export const analysisResume = async (data: AnalysisDataType) => {
         if (!data || typeof data !== "object") {
             throw new Error("Data is missing or invalid");
         }
+        console.log(data)
         const {
             sectionanalysis,
             skillsassessment,
@@ -53,30 +54,30 @@ export const analysisResume = async (data: AnalysisDataType) => {
         } = data;
 
         // Validate required fields
-        if (
-            !sectionanalysis ||
-            !skillsassessment ||
-            !quantification ||
-            !repetition ||
-            !verbstrength ||
-            !verbtense ||
-            !overusedphrases ||
-            !spellingerrors.length ||
-            !genericpoints.length ||
-            !summary ||
-            !cvId ||
-            !personal_info ||
-            !bullet_point_length ||
-            !bullet_point_improver ||
-            !total_bullet_points ||
-            !responsibility ||
-            !resume_length ||
-            !resume_score ||
-            typeof score !== "number"
-        ) {
-            console.log({ error: "Missing required fields", status: 400 })
-            return { error: "Missing required fields", status: 400 };
-        }
+        // if (
+        //     !sectionanalysis ||
+        //     !skillsassessment ||
+        //     !quantification ||
+        //     !repetition ||
+        //     !verbstrength ||
+        //     !verbtense ||
+        //     !overusedphrases ||
+        //     !spellingerrors.length ||
+        //     !genericpoints.length ||
+        //     !summary ||
+        //     !cvId ||
+        //     !personal_info ||
+        //     !bullet_point_length ||
+        //     !bullet_point_improver ||
+        //     !total_bullet_points ||
+        //     !responsibility ||
+        //     !resume_length ||
+        //     !resume_score ||
+        //     typeof score !== "number"
+        // ) {
+        //     console.log({ error: "Missing required fields", status: 400 })
+        //     return { error: "Missing required fields", status: 400 };
+        // }
         // console.log(userId)
         // Create ResumeAnalysis and link it with the user
         const response = await prisma.resumeAnalysis.create({
@@ -109,6 +110,7 @@ export const analysisResume = async (data: AnalysisDataType) => {
             return { error: "Failed to create resume analysis", status: 500 };
         }
 
+        console.log("uploaded")
         return { success: true, data: response, status: 200 };
     } catch (error) {
         console.error("Error in analysisResume:", error);

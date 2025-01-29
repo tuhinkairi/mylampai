@@ -989,7 +989,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Total Bullet Points </DialogTitle>
                       <DialogDescription>
                         {reviewedData?.data?.total_bullet_points ?
-                          reviewedData?.data?.total_bullet_points.Result : <h1>data not found</h1>}
+                          reviewedData?.data?.total_bullet_points.detail : <h1>data not found</h1>}
                       </DialogDescription>
                     </DialogHeader>
                   </DialogContent>
