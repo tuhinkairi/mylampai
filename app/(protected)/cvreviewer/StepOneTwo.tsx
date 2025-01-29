@@ -167,7 +167,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              // await uploadCVAndJobDescription(base64String, extractedText);
+              await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -271,7 +271,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              // await uploadCVAndJobDescription(base64String, extractedText);
+              await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);

@@ -59,7 +59,7 @@ export const POST = async (req: NextRequest) => {
     }
 
     try {
-
+        console.log("args in body for summary: ",body)
         const response = await fetch(baseUrl.concat("/summary"), {
             method: "POST",
             headers: {
@@ -84,7 +84,7 @@ export const POST = async (req: NextRequest) => {
             summary.cvId = body.id as string;
 
 
-
+            console.log("debug summary :",summary)
 
             // Send the POST request to the external API with the response of the summary
             const endpoint = ["responsibility_checker", "personal_info", "total_bullet_points", "bullet_points_improver", "bullet_point_length", "resume_length", "resume_score"]
@@ -100,7 +100,8 @@ export const POST = async (req: NextRequest) => {
                 });
                 const data = await response.json();
 
-                console.log(element, data)
+                console.log("element & data:: ",element, data)
+
                 switch (element) {
                     case "responsibility_checker":
                         summary.responsibility = {}
@@ -113,7 +114,7 @@ export const POST = async (req: NextRequest) => {
                         summary.total_bullet_points = [""]
                         break;
                     case "bullet_points_improver":
-                        summary.bullet_point_improver = [""]
+                        summary.bullet_point_improver =data.message [""]
                         break;
                     case "bullet_point_length":
                         summary.bullet_point_length = [""]
@@ -126,7 +127,7 @@ export const POST = async (req: NextRequest) => {
                 }
             })
             // Save the analysis result
-
+            console.log("summary in /resumeAnalysis route: ",summary)
             const summaryResponse = await analysisResume(summary);
             console.log(summaryResponse)
             return NextResponse.json(summaryResponse, { status: 200 });
