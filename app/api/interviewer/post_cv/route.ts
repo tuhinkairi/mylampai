@@ -49,7 +49,7 @@ export const POST = async (req: NextRequest) => {
         userId,
       },
     });
-
+    console.log("newcv: ",newCV)
     return NextResponse.json(
       { message: 'CV created successfully', cv: newCV },
       { status: 201 }

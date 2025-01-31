@@ -331,25 +331,24 @@ model ResumeAnalysis {
   id                    String   @id @default(auto()) @map("_id") @db.ObjectId
   cvId                  String?  @db.ObjectId
   cv                    CV?      @relation(fields: [cvId], references: [id], onDelete: Cascade)
-  sectionanalysis       Json
-  skillsassessment      Json
-  quantification        Json
-  repetition            Json
-  verbstrength          Json
-  verbtense             Json
-  overusedphrases       Json
-  spellingerrors        String[]
-  genericpoints         String[]
-  summary               String
-  personal_info         Json
-  bullet_point_length   String[]
-  bullet_point_improver String[]
-  total_bullet_points   Json
-  responsibility        Json
-  resume_length         String[]
-  resume_score          Json
-  score                 Int
+  sectionanalysis       Json?
+  skillsassessment      Json?
+  quantification        Json?
+  repetition            Json?
+  verbstrength          Json?
+  verbtense             Json?
+  spellingerrors        Json?
+  summary               String?
+  personal_info         Json?
+  bullet_point_length   Json?  
+  bullet_point_improver Json?
+  total_bullet_points   Json?
+  responsibility        Json?
+  resume_length         Json?
+  resume_score          Json?
+  score                 Int?
   createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 model CVAnalysis {
