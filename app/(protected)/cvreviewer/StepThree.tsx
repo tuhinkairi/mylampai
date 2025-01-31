@@ -22,6 +22,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { fetchResumeAnalysis, updateResumeAnalysis } from "@/actions/resumeAnalysis";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -31,10 +32,10 @@ interface PDFViewerProps {
   profile: string | null;
   structuredData: any;
   localResume: any;
-  cvId:string;
+  cvId: string;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
+const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
   const { userData } = useUserStore();
   const { extractedText, structuredData, resumeFile, resumeId } = useInterviewStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -48,10 +49,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
     []
   );
   const { token } = useUserStore();
+  const [experience, setExperience] = useState<string>("FRESHER")
 
   // fetch resume analysis data via id from db and then update the reviewedData state 
-  // console.log("fetching",structuredData)
-  const fetchResumeAnalysis = async (resumeId: string) => {
+  // console.log("\ncvId: ", cvId, "\nprofile:: ", profile)
+
+  const fetchResumeAnalysis2 = async (resumeId: string) => {
     try {
       const response = await fetch(`/api/interviewer/fetchAnalysis`, {
         method: "POST",
@@ -62,9 +65,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
         body: JSON.stringify({ id: resumeId }),
       });
       const result = await response.json();
+      console.log("result in 3rd step:: ", result)
       if (response.ok) {
         setReviewedData((data: any) => ({ ...data, ...result }));
-        console.log("reviewedData", reviewedData);
+        console.log("reviewedData:: ", reviewedData);
       } else {
         console.error("Failed to fetch resume analysis:", result);
       }
@@ -79,7 +83,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
   const analyzeResume = useCallback(
     async (endpoint: string, data: any, query: string) => {
       setLoading(true)
-      console.log("data here", data)
+      // console.log("data here", data)
       try {
         const response = await fetch(`${baseUrl}${endpoint}${query}`, {
           method: "POST",
@@ -89,7 +93,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
           body: JSON.stringify(data),
         });
         const result = await response.json();
-        console.log("result here", result)
+        // console.log("result here", result)
         if (response.ok) {
 
           setLoading(false)
@@ -105,6 +109,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
     },
     []
   );
+
+  useEffect(() => {
+    console.log("reviewed Data:: ", reviewedData)
+  }, [reviewedData])
 
   const runAnalysis = useCallback(
     async (analysisType: string) => {
@@ -122,30 +130,76 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
       switch (analysisType) {
         case "resume_score":
           if (!reviewedData.resume_score) {
-            endpoint = "/job_description_resume_score";
-            data = {
-              cv_text: {
-                cv_text: extractedText,
-              },
-              job_text: {
-                job_text: profile,
-              },
-            };
-            result = await analyzeResume(endpoint, data, query);
-            //console.log("resume score", result.message)
-            if (!reviewedData?.data?.resume_score) {
-              if (result?.message["Result"]) {
-                setSentencesToHighlight(result.message["Result"]);
+            // First check if data exists in DB
+            console.log("call for /resume_score")
+            const dbResult = await fetchResumeAnalysis({
+              cvId: cvId,
+              section: "resume_score"
+            });
+
+            if (dbResult.success && dbResult?.data?.resume_score) {
+              // If data exists in DB, update the state and highlight sentences
+              const resumeScoreData = dbResult.data.resume_score;
+
+              if (resumeScoreData["Result"]) {
+                setSentencesToHighlight(resumeScoreData["Result"]);
                 highlightSentences(
-                  result.message["Result"],
+                  resumeScoreData["Result"],
                   "highlighted",
                   false
                 );
               }
+
               setReviewedData((prevData: any) => ({
                 ...prevData,
-                resume_score: result?.message ? result?.message : "not available",
+                resume_score: resumeScoreData
               }));
+            } else {
+              // If not in DB, make API call
+              console.log("resume_score not found in DB")
+              endpoint = "/resume_score";
+              data = {
+                cv_text: {
+                  cv_text: extractedText,
+                },
+                job_text: {
+                  job_text: profile,
+                },
+              };
+
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Handle sentence highlighting
+                console.log("resume_score: ", result.message)
+                if (result.message["Result"]) {
+                  setSentencesToHighlight(result.message["Result"]);
+                  highlightSentences(
+                    result.message["Result"],
+                    "highlighted",
+                    false
+                  );
+                }
+
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  resume_score: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId: cvId,
+                  section: "resume_score",
+                  data: result.message
+                });
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  resume_score: "not available"
+                }));
+              }
             }
           }
           break;
@@ -179,116 +233,322 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
           }
           break;
         case "bullet_point_length":
-          if (!reviewedData?.data?.bullet_point_length) {
-            endpoint = "/bullet_point_length";
-            data = {
-              extracted_data: structuredData,
-            };
-            result = await analyzeResume(endpoint, data, query);
-            if (!reviewedData.resume_score) {
-              if (result?.message["Result"]) {
-                setSentencesToHighlight(result.message["Result"]);
+          if (!reviewedData?.bullet_point_length) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "bullet_point_length"
+            });
+
+            if (dbResult.success && dbResult?.data?.bullet_point_length) {
+              // If data exists in DB, update state and highlight sentences
+              const bulletPointData = dbResult.data.bullet_point_length;
+
+              if (bulletPointData["Result"]) {
+                setSentencesToHighlight(bulletPointData["Result"]);
                 highlightSentences(
-                  result.message["Result"],
+                  bulletPointData["Result"],
                   "highlighted",
                   false
                 );
               }
+
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                bullet_point_length: bulletPointData
+              }));
+            } else {
+              // If not in DB, make API call
+              console.log("bullentpoint length not found in DB ")
+              endpoint = "/bullet_point_length";
+              data = {
+                extracted_data: structuredData,
+              };
+
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Handle sentence highlighting
+                if (result.message["Result"]) {
+                  setSentencesToHighlight(result.message["Result"]);
+                  highlightSentences(
+                    result.message["Result"],
+                    "highlighted",
+                    false
+                  );
+                }
+
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  bullet_point_length: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "bullet_point_length",
+                  data: result.message
+                });
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  bullet_point_length: "not available"
+                }));
+              }
             }
-            setReviewedData((prevData: any) => ({
-              ...prevData,
-              bullet_point_length: result?.message ? result?.message : "not available",
-            }));
           } else {
-            setSentencesToHighlight(reviewedData.data.bullet_point_length.Result);
+            console.log("found bullet point length: ", reviewedData.bullet_point_length)
+            setSentencesToHighlight(reviewedData.bullet_point_length.Result);
+            highlightSentences(
+              reviewedData.bullet_point_length,
+              "highlighted",
+              false
+            );
           }
           break;
-        case "bullet_points_improver":
-          if (!reviewedData.bullet_points_improver) {
-            endpoint = "/bullet_points_improver";
-            data = {
-              extracted_data: structuredData,
-            };
-            result = await analyzeResume(endpoint, data, query);
-            if (result?.message?.bulletPoints) {
-              // Loop through each object in the bulletPoints array
-              result.message.bulletPoints.forEach((bulletPoint: any) => {
-                const textToHighlight = [bulletPoint.original]; // Wrap in array
-                setSentencesToHighlight((prevState) => [
-                  ...prevState,
-                  ...textToHighlight,
-                ]);
-                highlightSentences(textToHighlight, "highlighted", false);
-              });
+        case "bullet_point_improver":
+          if (!reviewedData.bullet_point_improver) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "bullet_point_improver"
+            });
+
+            if (dbResult.success && dbResult?.data?.bullet_point_improver) {
+              // If data exists in DB, update state and highlight sentences
+              const bulletPointsImproverData = dbResult.data.bullet_point_improver;
+
+              if ((bulletPointsImproverData as any)?.bulletPoints) {
+                (bulletPointsImproverData as any)?.bulletPoints.forEach((bulletPoint: any) => {
+                  const textToHighlight = [bulletPoint.original];
+                  setSentencesToHighlight((prevState) => [
+                    ...prevState,
+                    ...textToHighlight
+                  ]);
+                  highlightSentences(textToHighlight, "highlighted", false);
+                });
+              }
+
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                bullet_point_improver: bulletPointsImproverData
+              }));
+            } else {
+              // If not in DB, make API call
+              endpoint = "/bullet_points_improver";
+              data = {
+                extracted_data: structuredData,
+              };
+
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Handle highlighting
+                if (result.message?.bulletPoints) {
+                  result.message.bulletPoints.forEach((bulletPoint: any) => {
+                    const textToHighlight = [bulletPoint.original];
+                    setSentencesToHighlight((prevState) => [
+                      ...prevState,
+                      ...textToHighlight
+                    ]);
+                    highlightSentences(textToHighlight, "highlighted", false);
+                  });
+                }
+
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  bullet_point_improver: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "bullet_point_improver",
+                  data: result.message
+                });
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  bullet_point_improver: "not available"
+                }));
+              }
             }
-            setReviewedData((prevData: any) => ({
-              ...prevData,
-              bullet_points_improver: result?.message ? result?.message : "not available",
-            }));
           } else {
-            const bulletPoints = reviewedData.bullet_points_improver.bulletPoints;
-            bulletPoints.forEach((bulletPoint: any) => {
+            const bulletPoints = reviewedData.bullet_point_improver.bulletPoints;
+            bulletPoints?.forEach((bulletPoint: any) => {
               const textToHighlight = [bulletPoint.original]; // Wrap in array
               setSentencesToHighlight((prevState) => [
                 ...prevState,
                 ...textToHighlight,
               ]);
+              highlightSentences(textToHighlight, "highlighted", false);
             });
           }
           break;
         case "total_bullet_points":
           if (!reviewedData.total_bullet_points) {
-            endpoint = "/total_bullet_list";
-            query = `?experience=FRESHER`;
-            data = {
-              extracted_data: structuredData,
-            };
-            result = await analyzeResume(endpoint, data, query);
-            setReviewedData((prevData: any) => ({
-              ...prevData,
-              total_bullet_points: result?.message ? result?.message : "not available",
-            }));
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "total_bullet_points"
+            });
+
+            if (dbResult.success && dbResult?.data?.total_bullet_points) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                total_bullet_points: dbResult.data.total_bullet_points
+              }));
+            } else {
+              // If not in DB, make API call
+              endpoint = "/total_bullet_points";
+              data = {
+                extracted_data: structuredData,
+                experience: experience
+              };
+
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  total_bullet_points: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "total_bullet_points",
+                  data: result.message
+                });
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  total_bullet_points: "not available"
+                }));
+              }
+            }
           }
           break;
         case "personal_info":
           if (!reviewedData.personal_info) {
-            endpoint = "/personal_info";
-            console.log(structuredData)
-            data = {
-              extracted_data: structuredData,
-            };
-            result = await analyzeResume(endpoint, data, query);
-            setReviewedData((prevData: any) => ({
-              ...prevData,
-              personal_info: result?.message ? result?.message : "not available",
-            }));
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "personal_info"
+            });
+
+            if (dbResult.success && dbResult?.data?.personal_info) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                personal_info: dbResult.data.personal_info
+              }));
+            } else {
+              // If not in DB, make API call
+              endpoint = "/personal_info";
+              console.log(structuredData);
+              data = {
+                extracted_data: structuredData,
+              };
+
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  personal_info: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "personal_info",
+                  data: result.message
+                });
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  personal_info: "not available"
+                }));
+              }
+            }
           }
           break;
-        case "responsibility_checker":
-          if (!reviewedData.responsibility_checker) {
-            endpoint = "/responsibility";
-            data = {
-              extracted_data: structuredData,
-            };
-            result = await analyzeResume(endpoint, data, query);
-            if (result?.message) {
+        case "responsibility":
+          if (!reviewedData.responsibility) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "responsibility"
+            });
+
+            if (dbResult.success && dbResult?.data?.responsibility) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                responsibility: dbResult.data.responsibility
+              }));
+
+              // Extract and set sentences to highlight from DB data
               const sentencesToHighlight = Object.values(
-                result.message
-              ).flatMap((item: any) => item?.correction);
+                dbResult.data.responsibility
+              ).flatMap((item: any) => item.correction);
 
               if (sentencesToHighlight.length > 0) {
                 setSentencesToHighlight(sentencesToHighlight);
                 highlightSentences(sentencesToHighlight, "highlighted", false);
               }
-            }
+            } else {
+              // If not in DB, make API call
+              endpoint = "/responsibility_checker";
+              data = {
+                extracted_data: structuredData,
+              };
+              result = await analyzeResume(endpoint, data, query);
 
-            setReviewedData((prevData: any) => ({
-              ...prevData,
-              responsibility_checker: result?.message ? result?.message : "not available",
-            }));
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  responsibility: result.message["mistakes"]
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "responsibility",
+                  data: result.message["mistakes"]
+                });
+
+                // Extract and set sentences to highlight
+                const sentencesToHighlight = Object.values(
+                  result.message["mistakes"]
+                ).flatMap((item: any) => item?.correction);
+
+                if (sentencesToHighlight.length > 0) {
+                  setSentencesToHighlight(sentencesToHighlight);
+                  highlightSentences(sentencesToHighlight, "highlighted", false);
+                }
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  responsibility: "not available"
+                }));
+              }
+            }
           } else {
             const sentencesToHighlight = Object.values(
-              reviewedData.responsibility_checker
+              reviewedData.responsibility
             ).flatMap((item: any) => item.correction);
 
             if (sentencesToHighlight.length > 0) {
@@ -297,231 +557,566 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
           }
           break;
 
-        // case "summary":
-        //   if (!reviewedData.summary) {
-        //     endpoint = "/summary";
-        //     data = {
-        //       cv_text: extractedText,
-        //     };
-        //     result = await analyzeResume(endpoint, data, query);
+        case "summary":
+          if (!reviewedData.summary) {
+            // First check if data exists in DB
+            console.log("call for /summary")
+            const dbResult = await fetchResumeAnalysis({
+              cvId: cvId, // Ensure you have access to the current CV ID
+              section: ["summary", "score"]
+            });
 
-        //     // if (!reviewedData.summary) {
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       summary: result?.message,
-        //     }));
-        //     // }
-        //   }
-        //   break;
-        // case "quantification_checker":
-        //   if (!reviewedData.quantification_checker) {
-        //     endpoint = "/quantification";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     result = await analyzeResume(endpoint, data, query);
-        //     //console.log("qualification", result.message)
-        //     if (result?.message?.["Not Quantify"]) {
-        //       setSentencesToHighlight(result.message["Not Quantify"]);
-        //       highlightSentences(
-        //         result.message["Not Quantify"],
-        //         "highlighted",
-        //         false
-        //       );
-        //     }
+            if (dbResult.success && dbResult?.data?.summary) {
+              // If data exists in DB, update the state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                summary: dbResult.data.summary,
+                score: dbResult.data.score
+              }));
+            } else {
+              // If not in DB, make API call and store result
+              console.log("summary and score not found in DB")
+              endpoint = "/summary";
+              data = {
+                cv_text: extractedText,
+              };
 
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       quantification_checker: result?.message,
-        //     }));
-        //   } else {
-        //     //console.log(
-        //     //   "Sentences to highlight:",
-        //     //   reviewedData.quantification_checker["Not Quantify"]
-        //     // );
-        //     setSentencesToHighlight(
-        //       reviewedData.quantification_checker["Not Quantify"]
-        //     );
-        //   }
-        //   break;
+              result = await analyzeResume(endpoint, data, query);
 
-        // case "verb_tense_checker":
-        //   if (!reviewedData.verb_tense_checker) {
-        //     endpoint = "/verb_tense";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     query = "";
-        //     result = await analyzeResume(endpoint, data, query);
-        //     if (result?.message) {
-        //       const sentencesToHighlight = Object.values(
-        //         result.message
-        //       ).flatMap((item: any) => item.correction);
+              if (result?.message) {
+                // Update state with new data
+                console.log("summary: ", result.message["Summary"], "\nscore: ", result.message["Score"])
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  summary: result.message["Summary"],
+                  score: result.message["Score"]
+                }));
 
-        //       if (sentencesToHighlight.length > 0) {
-        //         setSentencesToHighlight(sentencesToHighlight);
-        //         highlightSentences(sentencesToHighlight, "highlighted", false);
-        //       }
-        //     }
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId: cvId,
+                  section: "summary",
+                  data: result.message["Summary"]
+                });
 
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       verb_tense_checker: result?.message,
-        //     }));
-        //   } else {
-        //     const sentencesToHighlight = Object.values(
-        //       reviewedData.verb_tense_checker
-        //     ).flatMap((item: any) => item.correction);
+                // Store score separately
+                await updateResumeAnalysis({
+                  cvId: cvId,
+                  section: "score",
+                  data: result.message["Score"]
+                });
+              }
+            }
+          }
+          break;
+        case "quantification_checker":
+          // console.log("quantifincation: ", reviewedData.quantification)
+          if (!reviewedData.quantification) {
+            try {
+              // First check if data exists in DB
+              const dbResult = await fetchResumeAnalysis({
+                cvId: cvId,
+                section: "quantification"
+              });
 
-        //     if (sentencesToHighlight.length > 0) {
-        //       setSentencesToHighlight(sentencesToHighlight);
-        //     }
-        //   }
-        //   break;
-        // case "weak_verb_checker":
-        //   if (!reviewedData.weak_verb_checker) {
-        //     endpoint = "/weak_verb_checker";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     result = await analyzeResume(endpoint, data, query);
-        //     if (result?.message) {
-        //       const sentencesToHighlight = Object.keys(result.message);
-        //       //console.log("Sentences to Highlight:", sentencesToHighlight);
+              if (dbResult.success && dbResult?.data?.quantification) {
+                // If data exists in DB, update state and highlight sentences
+                const quantificationData = dbResult.data.quantification;
 
-        //       if (sentencesToHighlight.length > 0) {
-        //         setSentencesToHighlight(sentencesToHighlight);
-        //         highlightSentences(sentencesToHighlight, "highlighted", false);
-        //       } else {
-        //         console.error("No sentences to highlight found.");
-        //       }
-        //     }
+                if (quantificationData["Not Quantify"]) {
+                  setSentencesToHighlight(quantificationData["Not Quantify"]);
+                  highlightSentences(
+                    quantificationData["Not Quantify"],
+                    "highlighted",
+                    false
+                  );
+                }
 
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       weak_verb_checker: result?.message,
-        //     }));
-        //   } else {
-        //     const sentencesToHighlight = Object.keys(
-        //       reviewedData.weak_verb_checker
-        //     );
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  quantification: quantificationData
+                }));
+              } else {
+                // If not in DB, make API call
+                console.log("quantification is not found in DB")
+                endpoint = "/quantification";
+                data = {
+                  extracted_data: structuredData,
+                };
 
-        //     if (sentencesToHighlight.length > 0) {
-        //       setSentencesToHighlight(sentencesToHighlight);
-        //     }
-        //   }
-        //   break;
-        // case "section_checker":
-        //   if (!reviewedData.section_checker) {
-        //     endpoint = "/section_checker";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     result = await analyzeResume(endpoint, data, query);
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       section_checker: result.message,
-        //     }));
-        //   }
-        //   break;
-        // case "skill_checker":
-        //   if (!reviewedData?.data?.skillsassessment) {
-        //     endpoint = "/skill_checker";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     query = `?profile=${profile}`;
-        //     result = await analyzeResume(endpoint, data, query);
-        //     if (result?.message?.["HARD"]) {
-        //       setSentencesToHighlight(result.message["HARD"]);
-        //       highlightSentences(result.message["HARD"], "highlighted", false);
-        //     }
-        //     if (result?.message?.["SOFT"]) {
-        //       setSentencesToHighlight(result.message["SOFT"]);
-        //       highlightSentences(result.message["SOFT"], "highlighted", false);
-        //     }
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       skill_checker: result?.message,
-        //     }));
-        //   } else {
-        //     const hardSkills = reviewedData?.data?.skillsassessment.HARD;
-        //     const softSkills = reviewedData?.data?.skillsassessment.SOFT;
+                result = await analyzeResume(endpoint, data, query);
 
-        //     if (hardSkills.length > 0) {
-        //       setSentencesToHighlight(hardSkills);
-        //       highlightSentences(hardSkills, "highlighted", false);
-        //     }
-        //     if (softSkills.length > 0) {
-        //       setSentencesToHighlight(softSkills);
-        //       highlightSentences(softSkills, "highlighted", false);
-        //     }
-        //   }
-        //   break;
-        // case "repetition_checker":
-        //   if (!reviewedData.repetition_checker) {
-        //     endpoint = "/repetition";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     query = "";
-        //     result = await analyzeResume(endpoint, data, query);
-        //     if (result?.message) {
-        //       const sentencesToHighlight = Object.values(
-        //         result.message
-        //       ).flatMap((item: any) => item.text);
+                if (result?.message) {
+                  // Handle sentence highlighting
+                  if (result.message["Not Quantify"]) {
+                    setSentencesToHighlight(result.message["Not Quantify"]);
+                    highlightSentences(
+                      result.message["Not Quantify"],
+                      "highlighted",
+                      false
+                    );
+                  }
 
-        //       if (sentencesToHighlight.length > 0) {
-        //         setSentencesToHighlight(sentencesToHighlight);
-        //         highlightSentences(sentencesToHighlight, "highlighted", false);
-        //       }
-        //     }
+                  // Update state
+                  setReviewedData((prevData: any) => ({
+                    ...prevData,
+                    quantification: JSON.parse(result.message)
+                  }));
 
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       repetition_checker: result?.message,
-        //     }));
-        //   } else {
-        //     const sentencesToHighlight = Object.values(
-        //       reviewedData.repetition_checker
-        //     ).flatMap((item: any) => item.text);
+                  // Store in DB for future use
+                  await updateResumeAnalysis({
+                    cvId: cvId,
+                    section: "quantification",
+                    data: JSON.parse(result.message)
+                  });
+                }
+              }
+            } catch (error) {
+              console.error("Error processing quantification analysis:", error);
+              // Optionally show error to user through your notification system
+            }
+          } else {
+            // console.log(
+            //   "Sentences to highlight:",
+            //   reviewedData.quantification["Not Quantify"]
+            // )
+            setSentencesToHighlight(
+              reviewedData.quantification["Not Quantify"]
+            );
+            highlightSentences(
+              reviewedData.quantification["Not Quantify"],
+              "highlighted",
+              false
+            );
+          }
+          break;
 
-        //     if (sentencesToHighlight.length > 0) {
-        //       setSentencesToHighlight(sentencesToHighlight);
-        //     }
-        //   }
-        //   break;
+        case "verb_tense_checker":
+          if (!reviewedData.verbtense) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "verbtense"
+            });
 
-        // case "spelling_checker":
-        //   if (!reviewedData.spelling_checker) {
-        //     endpoint = "/spelling_checker";
-        //     data = {
-        //       extracted_data: structuredData,
-        //     };
-        //     result = await analyzeResume(endpoint, data, query);
-        //     if (result?.message?.["Result"]) {
-        //       setSentencesToHighlight(result.message["Result"]);
-        //       highlightSentences(
-        //         result.message["Result"],
-        //         "highlighted",
-        //         false
-        //       );
-        //     }
-        //     setReviewedData((prevData: any) => ({
-        //       ...prevData,
-        //       spelling_checker: result?.message,
-        //     }));
-        //   } else {
-        //     setSentencesToHighlight(reviewedData.spelling_checker.Result);
-        //   }
-        //   break;
+            if (dbResult.success && dbResult?.data?.verbtense) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                verbtense: dbResult.data.verbtense
+              }));
+
+              // Extract and set sentences to highlight from DB data
+              const sentencesToHighlight = Object.values(
+                dbResult.data.verbtense
+              ).flatMap((item: any) => item.correction);
+
+              if (sentencesToHighlight.length > 0) {
+                setSentencesToHighlight(sentencesToHighlight);
+                highlightSentences(sentencesToHighlight, "highlighted", false);
+              }
+            } else {
+              // If not in DB, make API call
+              endpoint = "/verb_tense_checker";
+              data = {
+                extracted_data: structuredData,
+              };
+              query = "";
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  verbtense: result.message["mistakes"]
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "verbtense",
+                  data: result.message["mistakes"]
+                });
+
+                // Extract and set sentences to highlight
+                const sentencesToHighlight = Object.values(
+                  result.message["mistakes"]
+                ).flatMap((item: any) => item.correction);
+
+                if (sentencesToHighlight.length > 0) {
+                  setSentencesToHighlight(sentencesToHighlight);
+                  highlightSentences(sentencesToHighlight, "highlighted", false);
+                }
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  verbtense: "not available"
+                }));
+              }
+            }
+          } else {
+            const sentencesToHighlight = Object.values(
+              reviewedData.verbtense
+            ).flatMap((item: any) => item.correction);
+
+            
+            if (sentencesToHighlight.length > 0) {
+              console.log("debug in verb_: ",sentencesToHighlight)
+              setSentencesToHighlight(sentencesToHighlight);
+              highlightSentences(sentencesToHighlight, "highlighted", false);
+            }
+          }
+          break;
+        case "weak_verb_checker":
+          if (!reviewedData.verbstrength) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "verbstrength"
+            });
+
+            if (dbResult.success && dbResult?.data?.verbstrength) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                verbstrength: dbResult.data.verbstrength
+              }));
+
+              // Extract and set sentences to highlight from DB data
+              const sentencesToHighlight = Object.keys(
+                dbResult.data.verbstrength
+              );
+
+              if (sentencesToHighlight.length > 0) {
+                setSentencesToHighlight(sentencesToHighlight);
+                highlightSentences(sentencesToHighlight, "highlighted", false);
+              } else {
+                console.error("No sentences to highlight found.");
+              }
+            } else {
+              // If not in DB, make API call
+              endpoint = "/weak_verb_checker";
+              data = {
+                extracted_data: structuredData,
+              };
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  verbstrength: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "verbstrength",
+                  data: result.message
+                });
+
+                // Extract and set sentences to highlight
+                const sentencesToHighlight = Object.keys(result.message);
+
+                if (sentencesToHighlight.length > 0) {
+                  setSentencesToHighlight(sentencesToHighlight);
+                  highlightSentences(sentencesToHighlight, "highlighted", false);
+                } else {
+                  console.error("No sentences to highlight found.");
+                }
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  verbstrength: "not available"
+                }));
+              }
+            }
+          } else {
+            const sentencesToHighlight = Object.keys(
+              reviewedData.verbstrength
+            );
+
+            if (sentencesToHighlight.length > 0) {
+              setSentencesToHighlight(sentencesToHighlight);
+              highlightSentences(sentencesToHighlight, "highlighted", false);
+            }
+          }
+          break;
+        case "section_checker":
+          if (!reviewedData.sectionanalysis) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "sectionanalysis"
+            });
+
+            if (dbResult.success && dbResult?.data?.sectionanalysis) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                sectionanalysis: dbResult.data.sectionanalysis
+              }));
+            } else {
+              // If not in DB, make API call
+              endpoint = "/section_checker";
+              data = {
+                extracted_data: structuredData,
+              };
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  sectionanalysis: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "sectionanalysis",
+                  data: result.message
+                });
+
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  sectionanalysis: "not available"
+                }));
+              }
+            }
+          }
+          break;
+        case "skill_checker":
+          if (!reviewedData?.skillsassessment) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "skillsassessment"
+            });
+
+            if (dbResult.success && dbResult?.data?.skillsassessment) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                skillsassessment: dbResult.data.skillsassessment
+              }));
+
+              // Handle highlighting for hard skills
+              const hardSkills = (dbResult.data.skillsassessment as any).HARD;
+              if (hardSkills?.length > 0) {
+                setSentencesToHighlight(hardSkills);
+                highlightSentences(hardSkills, "highlighted", false);
+              }
+
+              // Handle highlighting for soft skills
+              const softSkills = (dbResult.data.skillsassessment as any).SOFT;
+              if (softSkills?.length > 0) {
+                setSentencesToHighlight(softSkills);
+                highlightSentences(softSkills, "highlighted", false);
+              }
+            } else {
+              // If not in DB, make API call
+              endpoint = "/skill_checker";
+              data = {
+                extracted_data: structuredData,
+                profile: profile
+              };
+              query = '';
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  skillsassessment: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "skillsassessment",
+                  data: result.message
+                });
+
+                // Handle highlighting for hard skills
+                if (result.message?.["HARD"]) {
+                  setSentencesToHighlight(result.message["HARD"]);
+                  highlightSentences(result.message["HARD"], "highlighted", false);
+                }
+
+                // Handle highlighting for soft skills
+                if (result.message?.["SOFT"]) {
+                  setSentencesToHighlight(result.message["SOFT"]);
+                  highlightSentences(result.message["SOFT"], "highlighted", false);
+                }
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  skillsassessment: "not available"
+                }));
+              }
+            }
+          } else {
+            const hardSkills = reviewedData?.skillsassessment.HARD;
+            const softSkills = reviewedData?.skillsassessment.SOFT;
+
+            if (hardSkills.length > 0) {
+              setSentencesToHighlight(hardSkills);
+              highlightSentences(hardSkills, "highlighted", false);
+            }
+            if (softSkills.length > 0) {
+              setSentencesToHighlight(softSkills);
+              highlightSentences(softSkills, "highlighted", false);
+            }
+          }
+          break;
+        case "repetition_checker":
+          if (!reviewedData.repetition) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "repetition"
+            });
+
+            if (dbResult.success && dbResult?.data?.repetition) {
+              // If data exists in DB, update state
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                repetition: dbResult.data.repetition
+              }));
+
+              // Extract and set sentences to highlight from DB data
+              const sentencesToHighlight = Object.values(
+                dbResult.data.repetition
+              ).flatMap((item: any) => item.text);
+
+              if (sentencesToHighlight.length > 0) {
+                setSentencesToHighlight(sentencesToHighlight);
+                highlightSentences(sentencesToHighlight, "highlighted", false);
+              }
+            } else {
+              // If not in DB, make API call
+              endpoint = "/repetition_checker";
+              data = {
+                extracted_data: structuredData,
+              };
+              query = "";
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message) {
+                // Update state
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  repetition: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "repetition",
+                  data: result.message
+                });
+
+                // Extract and set sentences to highlight
+                const sentencesToHighlight = Object.values(
+                  result.message
+                ).flatMap((item: any) => item.text);
+
+                if (sentencesToHighlight.length > 0) {
+                  setSentencesToHighlight(sentencesToHighlight);
+                  highlightSentences(sentencesToHighlight, "highlighted", false);
+                }
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  repetition: "not available"
+                }));
+              }
+            }
+          } else {
+            const sentencesToHighlight = Object.values(
+              reviewedData.repetition
+            ).flatMap((item: any) => item.text);
+
+            if (sentencesToHighlight.length > 0) {
+              setSentencesToHighlight(sentencesToHighlight);
+            }
+          }
+          break;
+
+        case "spelling_checker":
+          if (!reviewedData.spellingerrors) {
+            // First check if data exists in DB
+            const dbResult = await fetchResumeAnalysis({
+              cvId,
+              section: "spellingerrors"
+            });
+
+            if (dbResult.success && dbResult?.data?.spellingerrors) {
+              // If data exists in DB, update states
+              setSentencesToHighlight(dbResult.data.spellingerrors["Result"]);
+              highlightSentences(
+                dbResult.data.spellingerrors["Result"],
+                "highlighted",
+                false
+              );
+              setReviewedData((prevData: any) => ({
+                ...prevData,
+                spellingerrors: dbResult.data.spellingerrors
+              }));
+            } else {
+              // If not in DB, make API call
+              endpoint = "/spelling_checker";
+              data = {
+                extracted_data: structuredData,
+              };
+
+              result = await analyzeResume(endpoint, data, query);
+
+              if (result?.message?.["Result"]) {
+                // Update states
+                setSentencesToHighlight(result.message["Result"]);
+                highlightSentences(
+                  result.message["Result"],
+                  "highlighted",
+                  false
+                );
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  spellingerrors: result.message
+                }));
+
+                // Store in DB for future use
+                await updateResumeAnalysis({
+                  cvId,
+                  section: "spellingerrors",
+                  data: result.message
+                });
+              } else {
+                // Handle case where API returns no message
+                setReviewedData((prevData: any) => ({
+                  ...prevData,
+                  spellingerrors: { Result: [] }
+                }));
+              }
+            }
+          } else {
+            setSentencesToHighlight(reviewedData.spellingerrors.Result);
+          }
+          break;
         default:
           //console.log("Unknown analysis type");
           return;
 
       }
       setIsTextLayerReady(true);
-      console.log("lorem", reviewedData)
+      // console.log("lorem", reviewedData)
     },
     [structuredData, extractedText, profile, reviewedData]
   );
@@ -672,14 +1267,30 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
     }
   }, [isTextLayerReady, sentencesToHighlight, resumeFile, resumeId, setLoading]);
 
-  console.log(structuredData)
+  // console.log("structuredData:: ", structuredData)
 
   //console.log("Reviewed Data:", reviewedData);
+  useEffect(() => {
+    let isMounted = true;
 
-  // useEffect(() => {
-  //   runAnalysis("resume_score");
-  //   runAnalysis("summary");
-  // }, []);
+    const runInitialAnalysis = async () => {
+      if (!isMounted) return;
+
+      try {
+        await runAnalysis("summary");
+        if (!isMounted) return;
+        await runAnalysis("resume_score");
+      } catch (error) {
+        console.error("Analysis error:", error);
+      }
+    };
+
+    runInitialAnalysis();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // No dependencies needed
 
   return (
     <div className="flex h-full justify-between bg-primary-foreground items-stretch gap-2 px-2 pl-0">
@@ -693,25 +1304,25 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
           >
             <div
               className={`w-full p-8 text-[1.6rem] font-semibold ${getColorClass(
-                reviewedData?.data?.score
+                reviewedData?.score
               )} rounded-lg`}
             >
               <CircularProgressbarWithChildren
                 strokeWidth={6}
                 value={
-                  reviewedData?.data?.score
-                    ? reviewedData?.data?.score.toFixed(1)
+                  reviewedData?.score
+                    ? reviewedData?.score.toFixed(1)
                     : 0
                 }
                 styles={{
                   path: {
-                    stroke: getColor(reviewedData?.data?.score),
+                    stroke: getColor(reviewedData?.score),
                     strokeLinecap: "round",
                   },
                 }}
               >
-                {reviewedData?.data?.score &&
-                  reviewedData?.data?.score.toFixed(0)}
+                {reviewedData?.score &&
+                  reviewedData?.score.toFixed(0)}
               </CircularProgressbarWithChildren>
             </div>
             <div className="h-full p-4 rounded-lg flex-grow">
@@ -722,13 +1333,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                   <span className="font-medium">Hard Skill:</span>
                   <span
                     className={`ml-2 ${getColorClass(
-                      reviewedData?.data?.resume_score?.DETAILS?.HARD_SKILLS_SCORE?.score
+                      reviewedData?.resume_score?.DETAILS?.HARD_SKILLS_SCORE?.score
                     )}`}
                   >
-                    {reviewedData?.data?.resume_score?.DETAILS?.HARD_SKILLS_SCORE?.score ??
+                    {reviewedData?.resume_score?.DETAILS?.HARD_SKILLS_SCORE?.score ??
                       "N/A"}
                     <div className="absolute right-0 min-h-full top-1/2 -translate-y-1/2 transform z-10 translate-x-full mb-2 hidden group-hover:block p-2 bg-gray-800 text-white text-sm rounded">
-                      {reviewedData?.data?.resume_score?.DETAILS?.HARD_SKILLS_SCORE
+                      {reviewedData?.resume_score?.DETAILS?.HARD_SKILLS_SCORE
                         ?.reason ?? "No details available"}
                     </div>
                   </span>
@@ -737,13 +1348,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                   <span className="font-medium">Soft Skill:</span>
                   <span
                     className={`ml-2 ${getColorClass(
-                      reviewedData?.data?.resume_score?.DETAILS?.SOFT_SKILLS_SCORE?.score
+                      reviewedData?.resume_score?.DETAILS?.SOFT_SKILLS_SCORE?.score
                     )}`}
                   >
-                    {reviewedData?.data?.resume_score?.DETAILS?.SOFT_SKILLS_SCORE?.score ??
+                    {reviewedData?.resume_score?.DETAILS?.SOFT_SKILLS_SCORE?.score ??
                       "N/A"}
                     <div className="absolute right-0 min-h-full top-1/2 -translate-y-1/2 transform z-10 translate-x-full mb-2 hidden group-hover:block p-2 bg-gray-800 text-white text-sm rounded">
-                      {reviewedData?.data?.resume_score?.DETAILS?.SOFT_SKILLS_SCORE
+                      {reviewedData?.resume_score?.DETAILS?.SOFT_SKILLS_SCORE
                         ?.reason ?? "No details available"}
                     </div>
                   </span>
@@ -752,13 +1363,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                   <span className="font-medium">Experience:</span>
                   <span
                     className={`ml-2 ${getColorClass(
-                      reviewedData?.data?.resume_score?.DETAILS?.EXPERIENCE_SCORE?.score
+                      reviewedData?.resume_score?.DETAILS?.EXPERIENCE_SCORE?.score
                     )}`}
                   >
-                    {reviewedData?.data?.resume_score?.DETAILS?.EXPERIENCE_SCORE?.score ??
+                    {reviewedData?.resume_score?.DETAILS?.EXPERIENCE_SCORE?.score ??
                       "N/A"}
                     <div className="absolute right-0 min-h-full top-1/2 -translate-y-1/2 transform z-10 translate-x-full mb-2 hidden group-hover:block p-2 bg-gray-800 text-white text-sm rounded">
-                      {reviewedData?.data?.resume_score?.DETAILS?.EXPERIENCE_SCORE
+                      {reviewedData?.resume_score?.DETAILS?.EXPERIENCE_SCORE
                         ?.reason ?? "No details available"}
                     </div>
                   </span>
@@ -767,18 +1378,18 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                   <span className="font-medium">Education:</span>
                   <span
                     className={`ml-2 ${getColorClass(
-                      reviewedData?.data?.resume_score?.DETAILS?.EDUCATION_SCORE?.score
+                      reviewedData?.resume_score?.DETAILS?.EDUCATION_SCORE?.score
                     )}`}
                   >
-                    {reviewedData?.data?.resume_score?.DETAILS?.EDUCATION_SCORE?.score ??
+                    {reviewedData?.resume_score?.DETAILS?.EDUCATION_SCORE?.score ??
                       "N/A"}
                     <div className="absolute right-0 min-h-full top-1/2 -translate-y-1/2 transform z-10 translate-x-full mb-2 hidden group-hover:block p-2 bg-gray-800 text-white text-sm rounded">
-                      {reviewedData?.data?.resume_score?.DETAILS?.EDUCATION_SCORE?.reason ??
+                      {reviewedData?.resume_score?.DETAILS?.EDUCATION_SCORE?.reason ??
                         "No details available"}
                     </div>
                   </span>
                 </div>
-                {!reviewedData?.data?.resume_score && (
+                {!reviewedData?.resume_score && (
                   <div className="text-sm text-gray-500">
                     Scores are not available at the moment.{" "}
                     <button
@@ -804,14 +1415,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
               <Dialog>
                 <DialogTrigger className="px-4 py-2 bg-white shadow rounded-lg ">
                   <div className="line-clamp-3 rounded-lg text-left text-sm font-medium text-[#333]">
-                    {reviewedData?.data?.summary || "No summary available"}
+                    {reviewedData?.summary || "No summary available"}
                   </div>
                 </DialogTrigger>
                 <DialogContent className="">
                   <DialogHeader>
                     <DialogTitle>Summary</DialogTitle>
                     <DialogDescription className="text-sm">
-                      {reviewedData?.data?.summary || "No summary available"}
+                      {reviewedData?.summary || "No summary available"}
                     </DialogDescription>
                   </DialogHeader>
                 </DialogContent>
@@ -823,7 +1434,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("quantification_checker")}
+                    onClick={() => runAnalysis("quantification_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -845,13 +1456,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogDescription className="">
                         <Accordion type="single" collapsible>
                           <AccordionItem value={`item-1`}>
-                            {reviewedData?.data?.quantification && (
+                            {reviewedData?.quantification && (
                               <AccordionTrigger>
                                 Needs Quantification
                               </AccordionTrigger>
                             )}
-                            {reviewedData?.data?.quantification &&
-                              reviewedData?.data?.quantification["Not Quantified"]?.map((data: string, index: number) => {
+                            {reviewedData?.quantification &&
+                              reviewedData?.quantification["Not Quantify"]?.map((data: string, index: number) => {
                                 return (
                                   <AccordionContent key={index}>
                                     {data}
@@ -860,11 +1471,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                               })}
                           </AccordionItem>
                           <AccordionItem value={`item-2`}>
-                            {reviewedData?.data?.quantification && (
+                            {reviewedData?.quantification && (
                               <AccordionTrigger>Quantified</AccordionTrigger>
                             )}
-                            {reviewedData?.data?.quantification ?
-                              reviewedData?.data?.quantification["Quantified"]?.map((data: string, index: number) => {
+                            {reviewedData?.quantification ?
+                              reviewedData?.quantification["Quantify"]?.map((data: string, index: number) => {
                                 return (
                                   <AccordionContent key={index}>
                                     {data}
@@ -882,9 +1493,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                    // onClick={() => {
-                    //   runAnalysis("bullet_point_length")
-                    // }}
+                    onClick={() => {
+                      runAnalysis("bullet_point_length")
+                    }}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -904,9 +1515,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                     <DialogHeader>
                       <DialogTitle>Bullet Point Length</DialogTitle>
                       <DialogDescription>
-                        {reviewedData?.data?.bullet_point_length &&
-                          reviewedData?.data?.bullet_point_length.length === 0 ? (
-                          reviewedData?.data?.bullet_point_length.Result.map(
+                        {reviewedData?.bullet_point_length &&
+                          reviewedData?.bullet_point_length["Result"].length !== 0 ? (
+                          reviewedData?.bullet_point_length["Result"]?.map(
                             (data: string, ind: number) => {
                               return <div key={ind}>{data}</div>;
                             }
@@ -921,7 +1532,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                    // onClick={() => runAnalysis("bullet_points_improver")}
+                    onClick={() => runAnalysis("bullet_point_improver")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -942,10 +1553,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Bullet Points Improver </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {console.log(reviewedData?.data)}
-                          {reviewedData?.data?.bullet_point_improver &&
-                            // reviewedData?.data?.bullet_points_improver?.bulletPoints?.map(
-                            reviewedData?.data?.bullet_point_improver?.map(
+                          {reviewedData?.bullet_point_improver &&
+                            reviewedData?.bullet_point_improver?.bulletPoints?.map(
+                              // reviewedData?.bullet_point_improver?.map(
                               (value: any, ind: number) => (
                                 <AccordionItem value={`item-${ind + 1}`} key={ind}>
                                   {value ?
@@ -969,7 +1579,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                    // onClick={() => runAnalysis("total_bullet_points")}
+                    onClick={() => runAnalysis("total_bullet_points")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -989,8 +1599,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                     <DialogHeader>
                       <DialogTitle> Total Bullet Points </DialogTitle>
                       <DialogDescription>
-                        {reviewedData?.data?.total_bullet_points ?
-                          reviewedData?.data?.total_bullet_points.Result : <h1>data not found</h1>}
+                        {reviewedData?.total_bullet_points ?
+                          reviewedData?.total_bullet_points.Result : <h1>data not found</h1>}
                       </DialogDescription>
                     </DialogHeader>
                   </DialogContent>
@@ -998,7 +1608,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("verb_tense_checker")}
+                    onClick={() => runAnalysis("verb_tense_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1019,10 +1629,10 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Verb Tense Checker </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {reviewedData?.data?.verbtense && (
+                          {reviewedData?.verbtense && (
                             <div>
                               {" "}
-                              {Object.keys(reviewedData?.data?.verbtense).map(
+                              {Object.keys(reviewedData?.verbtense).map(
                                 (key, ind: number) => (
                                   <AccordionItem
                                     value={`item-${ind + 1}`}
@@ -1031,25 +1641,25 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                                     <AccordionTrigger className="text-left">
                                       {key}
                                     </AccordionTrigger>
-                                    {Object.keys(reviewedData?.data?.verbtense[key]).map((key1, ind1: number) => (
+                                    {Object.keys(reviewedData?.verbtense[key]).map((key1, ind1: number) => (
                                       <>
                                         <AccordionContent>
                                           <span className="mr-2">Correction:</span>
                                           {
-                                            reviewedData?.data?.verbtense[key][key1].correction
+                                            reviewedData?.verbtense[key][key1].correction
                                           }
                                         </AccordionContent>
                                         <AccordionContent>
                                           <span className="mr-2">
                                             Reason:
                                           </span>
-                                          {reviewedData?.data?.verbtense[key][key1].explanation}
+                                          {reviewedData?.verbtense[key][key1].explanation}
                                         </AccordionContent>
                                         <AccordionContent>
                                           <span className="mr-2">
                                             Impact:
                                           </span>
-                                          {reviewedData?.data?.verbtense[key][key1].impact}
+                                          {reviewedData?.verbtense[key][key1].impact}
                                         </AccordionContent>
                                       </>
                                     ))}
@@ -1066,7 +1676,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("weak_verb_checker")}
+                    onClick={() => runAnalysis("weak_verb_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1087,15 +1697,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Weak Verb Checker </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {reviewedData?.data?.verbstrength &&
-                            Object.keys(reviewedData?.data?.verbstrength["Weak Verbs"]).map(
+                          {reviewedData?.verbstrength &&
+                            Object.keys(reviewedData?.verbstrength).map(
                               (key, ind: number) => (
                                 <AccordionItem value={`item-${ind + 1}`} key={ind}>
                                   <AccordionTrigger className="text-left">
                                     {key}
                                   </AccordionTrigger>
                                   <AccordionContent>
-                                    {reviewedData?.data?.verbstrength["Weak Verbs"][key].join(", ")}
+                                    {reviewedData?.verbstrength[key].join(", ")}
                                   </AccordionContent>
                                 </AccordionItem>
                               )
@@ -1108,7 +1718,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("section_checker")}
+                    onClick={() => runAnalysis("section_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1129,15 +1739,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Section Checker </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {reviewedData?.data?.sectionanalysis &&
-                            Object.keys(reviewedData?.data?.sectionanalysis).map(
+                          {reviewedData?.sectionanalysis &&
+                            Object.keys(reviewedData?.sectionanalysis).map(
                               (key, ind: number) => (
                                 <AccordionItem value={`item-${ind + 1}`} key={ind}>
                                   <AccordionTrigger className="text-left">
                                     {key}
                                   </AccordionTrigger>
                                   <AccordionContent>
-                                    {reviewedData?.data?.sectionanalysis[key]?.map((data: string) => { return <div key={data}>{data}</div> })}
+                                    {reviewedData?.sectionanalysis[key]}
                                   </AccordionContent>
                                 </AccordionItem>
                               )
@@ -1150,7 +1760,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("skill_checker")}
+                    onClick={() => runAnalysis("skill_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1171,15 +1781,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Skill Checker </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {reviewedData?.data?.skillsassessment &&
-                            Object.keys(reviewedData?.data?.skillsassessment).map(
+                          {reviewedData?.skillsassessment &&
+                            Object.keys(reviewedData?.skillsassessment).map(
                               (key, ind: number) => (
                                 <AccordionItem value={`item-${ind + 1}`} key={ind}>
                                   <AccordionTrigger className="text-left">
                                     {key}
                                   </AccordionTrigger>
                                   <AccordionContent>
-                                    {reviewedData?.data?.skillsassessment[key].join(", ")}
+                                    {reviewedData?.skillsassessment[key].join(", ")}
                                   </AccordionContent>
                                 </AccordionItem>
                               )
@@ -1192,7 +1802,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("repetition_checker")}
+                    onClick={() => runAnalysis("repetition_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1213,17 +1823,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Repetition Checker </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {reviewedData?.data?.repetition &&
-                            Object.keys(reviewedData?.data?.repetition).map(
+                          {reviewedData?.repetition &&
+                            Object.keys(reviewedData?.repetition).map(
                               (key, ind: number) => (
                                 <AccordionItem value={`item-${ind + 1}`} key={ind}>
-                                  {Object.keys(reviewedData?.data?.repetition[key])?.map((key1, ind1: number) => {
+                                  {Object.keys(reviewedData?.repetition[key])?.map((key1, ind1: number) => {
                                     return <>
                                       <AccordionTrigger className="text-left">
                                         {key1}
                                       </AccordionTrigger>
                                       <AccordionContent>
-                                        {reviewedData?.data?.repetition[key][key1]}
+                                        {reviewedData?.repetition[key][key1]}
                                       </AccordionContent>
                                     </>
                                   }
@@ -1240,7 +1850,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("personal_info")}
+                    onClick={() => runAnalysis("personal_info")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1260,15 +1870,15 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                     <DialogTitle> Personal Info </DialogTitle>
                     <DialogDescription>
                       <Accordion type="single" collapsible>
-                        {reviewedData?.data?.personal_info &&
-                          Object.keys(reviewedData?.data?.personal_info).map(
+                        {reviewedData?.personal_info &&
+                          Object.keys(reviewedData?.personal_info).map(
                             (key, ind: number) => (
                               <AccordionItem value={`item-${ind + 1}`} key={ind}>
                                 <AccordionTrigger className="text-left">
                                   {key}
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                  {reviewedData?.data?.personal_info[key]}
+                                  {reviewedData?.personal_info[key]}
                                 </AccordionContent>
                               </AccordionItem>
                             )
@@ -1281,7 +1891,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("responsibility_checker")}
+                    onClick={() => runAnalysis("responsibility")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1303,8 +1913,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                       <DialogTitle> Responsibility Checker </DialogTitle>
                       <DialogDescription>
                         <Accordion type="single" collapsible>
-                          {reviewedData?.data?.responsibility_checker &&
-                            Object.keys(reviewedData?.data?.responsibility_checker).map(
+                          {reviewedData?.responsibility &&
+                            Object.keys(reviewedData?.responsibility).map(
                               (key, ind: number) => (
                                 <AccordionItem value={`item-${ind + 1}`} key={ind}>
                                   {!key ? <h1>data not found</h1> :
@@ -1315,14 +1925,14 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                                       <AccordionContent>
                                         Correction:{" "}
                                         {
-                                          reviewedData?.data?.responsibility_checker[key]
+                                          reviewedData?.responsibility[key]
                                             .correction
                                         }
                                       </AccordionContent>
                                       <AccordionContent>
                                         Reason:{" "}
                                         {
-                                          reviewedData?.data?.responsibility_checker[key]
+                                          reviewedData?.responsibility[key]
                                             .reason
                                         }
                                       </AccordionContent>
@@ -1339,7 +1949,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                 <Dialog>
                   <DialogTrigger
                     className="max-w-[140px] bg-primary text-white rounded-lg font-semibold capitalize w-full min-h-[130px] flex items-center relative justify-center shadow-lg hover:scale-[1.02] duration-200 text-center "
-                  // onClick={() => runAnalysis("spelling_checker")}
+                    onClick={() => runAnalysis("spelling_checker")}
                   >
                     <div className="flex items-center justify-center flex-col">
                       <Image
@@ -1359,8 +1969,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile }) => {
                     <DialogHeader>
                       <DialogTitle>Spelling Checker</DialogTitle>
                       <DialogDescription>
-                        {reviewedData?.data?.spellingerrors &&
-                          reviewedData?.data?.spellingerrors.join(", ")}
+                        {reviewedData?.spellingerrors &&
+                          reviewedData?.spellingerrors["Result"].join(", ")}
                       </DialogDescription>
                     </DialogHeader>
                   </DialogContent>

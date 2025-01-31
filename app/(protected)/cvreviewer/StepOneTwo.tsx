@@ -167,7 +167,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              await uploadCVAndJobDescription(base64String, extractedText);
+              // await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -308,16 +308,22 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
             JobDescription: extractedText || manualJobDescription, // Depending on whether it's a file or manual entry
           }),
         });
-        const cvid = await response.json()
-        console.log(cvid)
-        const tempId: string = cvid.cv.id
+        const res = await response.json()
+        console.log("cvid checke: ",res)
+        const tempId: string = res.cv.id
         setResumeId(tempId)
-        await getSummary(extractedText, tempId)
-        console.log(extractedText)
-        console.log(resumeId)
-        setCvId(cvid.id)
+        console.log("profile check: ",profile)
+        // if (profile) {
+          // await getSummary(extractedText, tempId);
+        // } else {
+        //   console.log("Profile is required");
+        // }
+        // console.log(extractedText)
+        // console.log(resumeId)
+        console.log("cvid:: ",tempId)
+        setCvId(tempId)
 
-        
+        Setnext(true)
       } catch (error) {
         console.error("Error:", error);
         toast.error("summary analysis failed")
@@ -354,6 +360,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
       return null;
     }
   }, []);
+
   const getSummary = useCallback(async (text: string, ResumeId: string) => {
     try {
       const response = await fetch("/api/interviewer/resumeAnalysis", {
@@ -362,7 +369,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData:structuredData }),
+        body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData:structuredData,profile:profile }),
       });
 
       if (!response.ok) {
@@ -381,6 +388,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
       console.error("Error in getSummary:", error);
     }
   }, []);
+  
   return (
     <div className="md:h-screen bg-primary-foreground min-h-screen p-4 flex items-center md:justify-center justify-top w-full border-[#eeeeee] overflow-hidden">
       <div className="max-w-[1350px] h-full max-h-[570px]  w-full flex flex-col items-stretch md:flex-row justify-evenly">
