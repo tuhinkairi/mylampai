@@ -3,6 +3,7 @@ import HeroSection from "@/components/home/HeroSection";
 // import AboutWize from "@/components/home/AboutWize";
 // import WizeCamp from "@/components/home/WizeCamp";
 import WhyWize from "@/components/home/WhyWize";
+import VideoComponent from "@/components/home/VideoComponent";
 import BackedByBest from "@/components/home/BackedByBest";
 import HowWizeWork from "@/components/home/HowWizeWork";
 // import PowerOfWize from "@/components/home/PowerOfWize";
@@ -48,8 +49,18 @@ import "./home.css";
 
 export const metadata: Metadata = {
   title: "wiZe (myLampAI) | Home",
-  description:
-    "wiZe is a career guidance platform that helps you find your dream career.",
+  description: "We nurture, assess & match talent with premium opportunities.",
+  metadataBase: new URL("https://wize.co.in"),
+  alternates: {
+    canonical: "/",
+    languages: {
+      "en-IN": "/en-IN",
+      "en-US": "/en-US",
+    },
+  },
+  openGraph: {
+    images: "/og-image.png",
+  },
 };
 
 export default function Page() {
@@ -68,10 +79,11 @@ export default function Page() {
         {/* <SectionWrapper>
         </SectionWrapper> */}
         {/* <HomeSlider /> */}
+        <VideoComponent />
         <HowWizeWork />
         <WhyWize />
         {/* <SectionWrapper> */}
-        <BackedByBest />
+        {/* <BackedByBest /> */}
         {/* </SectionWrapper> */}
         {/* <SectionWrapper> */}
         {/* <PowerOfWize /> */}
