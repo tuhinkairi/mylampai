@@ -161,13 +161,13 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
               if (structuredDataResult && structuredDataResult.message) {
                 setStructuredData(structuredDataResult.message);
-                toast.success("extracted structured data");
+                // toast.success("extracted structured data");
               } else {
                 toast.error("Failed to extract structured data");
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              // await uploadCVAndJobDescription(base64String, extractedText);
+              await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -194,6 +194,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
     const file = event.target.files?.[0];
 
     setUploading(true);
+    setIsResumeUploaded(false);
 
     if (file && file.type === "application/pdf") {
       if (file.size > 1 * 1024 * 1024) {
@@ -265,7 +266,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
               if (structuredDataResult && structuredDataResult.message) {
                 setStructuredData(structuredDataResult.message);
-                toast.success("extracted structured data");
+                // toast.success("extracted structured data");
               } else {
                 toast.error("Failed to extract structured data");
               }
@@ -322,7 +323,8 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
         // console.log(resumeId)
         console.log("cvid:: ",tempId)
         setCvId(tempId)
-
+        setUploading(false)
+        setIsResumeUploaded(true);
         Setnext(true)
       } catch (error) {
         console.error("Error:", error);
@@ -346,7 +348,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       const result = await response.json();
       if (response.ok) {
-        setIsResumeUploaded(true);
+        
         toast.success("Resume uploaded successfully");
         // console.log(summary )
 
