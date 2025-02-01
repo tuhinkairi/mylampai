@@ -11,6 +11,56 @@ async function saveFileToDisk(file: File): Promise<string> {
   return filePath;
 }
 
+// const create_cloud_phrase_set = (self, project_id: str, location: str) => {
+//   const phrases = self.load_technical_phrases();
+
+//   const phrase_set_id = `${self.role.value.replace("_", "-")}-${
+//     self.experience_level
+//   }`.toLowerCase();
+//   const phrase_set_name = `projects/${project_id}/locations/${location}/phraseSets/${phrase_set_id}`;
+
+//   const client = new speech.AdaptationClient();
+
+//   try {
+//     const existing_phrase_set = client.getPhraseSet({
+//       name: phrase_set_name,
+//     });
+//     console.log(`Using existing phrase set: ${phrase_set_name}`);
+//     self.phrase_sets[self.role] = existing_phrase_set.name;
+//     return;
+//   } catch (e) {
+//     console.log(`Phrase set does not exist, creating a new one: {e}`);
+//   }
+
+//   const phrase_set = new speech.PhraseSet();
+
+//   const boost_value = {
+//     junior: 15.0,
+//     mid: 20.0,
+//     senior: 25.0,
+//     lead: 30.0,
+//   }.get(self.experience_level, 20.0);
+
+//   for (const phrase of phrases) {
+//     phrase_set.phrases.append(
+//       speech.PhraseSet.Phrase((value = phrase), (boost = boost_value))
+//     );
+//   }
+  
+//   const request = speech.CreatePhraseSetRequest(
+//     (parent = "projects/{project_id}/locations/{location}"),
+//     (phrase_set_id = phrase_set_id),
+//     (phrase_set = phrase_set)
+//   );
+
+//   const phrase_set_result = client.createPhraseSet({
+//     request: request,
+//   });
+
+//   self.phrase_sets[self.role] = phrase_set_result.name;
+//   console.log(`Created new phrase set: ${phrase_set_result.name}`);
+// };
+
 export async function handleAudioTranscribe(formData: FormData) {
   let inputFilePath: string | null = null;
   let monoFilePath: string | null = null;
