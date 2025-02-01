@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronDown, ChevronFirst,X } from "lucide-react";
 import { ReactNode } from "react";
 import {ScrollArea} from "@/components/ui/scroll-area"
+import { NavUser } from "../global/nav-user";
 
 
 interface SideBarProps {
@@ -90,6 +91,7 @@ export default function SideBar({ isOpen, toggleSidebar, children }: SideBarProp
               </button>
             </div>
           </div>
+          <div className="px-4 relative b-4"><NavUser/></div>
           
           </ScrollArea>
         </nav>

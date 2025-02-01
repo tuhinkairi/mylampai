@@ -13,8 +13,7 @@ type EducationData = {
   school: string;
   degree: string;
   field?: string;
-  percentage?: string;
-  cgpa?: string;
+  grade?:string;
   startDate?: Date;
   endDate?: Date;
   description?: string;

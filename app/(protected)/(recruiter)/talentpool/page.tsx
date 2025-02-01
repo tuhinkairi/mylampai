@@ -1,3 +1,4 @@
+'use client'
 import TalentPoolForm from "./TalentPoolForm";
 import { getRecruiterTalentPool } from "@/actions/talentPoolActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,6 +6,27 @@ import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, MapPinIcon, DollarSignIcon } from "lucide-react";
 import Link from "next/link";
 import { auth } from "@/lib/authlib";
+import InfiniteScroll from "react-infinite-scroll-component";
+import { useEffect, useState } from "react";
+import { parseJSON } from "date-fns";
+
+type TalentPool = {
+  id: string;
+  name: string;
+  skills: string[];
+  profiles:string[];
+  salary: number;
+  createdAt: string;
+  locationPref: string;
+};
+
+
+type TalentPoolResponse = {
+  data: TalentPool[];
+  currentPage: number;
+  totalPages: number;
+  totalItems: number;
+};
 
 export default async function TalentPoolPage() {
   const user = await auth();
@@ -12,15 +34,51 @@ export default async function TalentPoolPage() {
   if (!user || user.role !== "recruiter") {
     return <div>Unauthorized</div>;
   }
+  const [talentPools, setTalentPools] = useState<TalentPool[]>([]); 
+  const [page, setPage] = useState<number>(1); 
+  const [hasMore, setHasMore] = useState<boolean>(true); 
 
-  const pools = await getRecruiterTalentPool(user.id);
+  const fetchTalentPools = async (page: number): Promise<void> => {
+    try {
+      const response = await getRecruiterTalentPool({}, page, 10);
+      // if (!response.ok) {
+      //   throw new Error("Failed to fetch data");
+      // }
+
+      if (!Array.isArray(response)) {
+        const result: TalentPoolResponse = await response.json();
+        setTalentPools((prev) => [...prev, ...result.data]);
+        setHasMore(page < result.totalPages); 
+      } else {
+        throw new Error("Unexpected response format");
+      }
+    } catch (error) {
+      console.error("Error fetching talent pool data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTalentPools(page); 
+  }, [page]);
+
+  const fetchNextPage = () => {
+    setPage((prev) => prev + 1); 
+  };
+
 
   return (
     <div>
       <div>
         <h1>Talent Pools</h1>
         <div className="flex gap-4 p-4">
-          {pools.map((pool) => (
+        <InfiniteScroll
+        dataLength={talentPools.length} 
+        next={fetchNextPage} 
+        hasMore={hasMore} 
+        loader={<h4>Loading...</h4>} 
+        endMessage={<p>No more data to display.</p>} 
+      >
+          {talentPools.map((pool) => (
             <Link href={`/talentpool/${pool.id}`} key={pool.id}>
               <Card className="overflow-hidden">
                 <CardHeader>
@@ -67,6 +125,8 @@ export default async function TalentPoolPage() {
               </Card>
             </Link>
           ))}
+
+          </InfiniteScroll>
         </div>
       </div>
       <div>

@@ -66,6 +66,7 @@ export function LanguageSelector({
       if (!userData || !userData.id) {
         return;
       }
+      console.log("updating at id: ",userData.id)
       const res = await createLanguages(data.languages, userData.id);
 
       if (res.status === 200) {

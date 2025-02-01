@@ -6,7 +6,8 @@ import StepOneTwo from "./StepOneTwo";
 import PDFViewer from "./StepThree";
 import { toast } from "sonner";
 
-const baseUrl = "https://optim-cv-judge.onrender.com";
+// const baseUrl = "https://optim-cv-judge.onrender.com";
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 
 const Page: React.FC = () => {
   const { setResumeFile, setJobDescriptionFile, resumeFile } =
@@ -18,7 +19,8 @@ const Page: React.FC = () => {
   const { token } = useUserStore();
   const [profile, setProfile] = useState<string | null>(null);
   const [localResume, setLocalResume] = useState<File | null>(null);
-
+  const [cvId, setCvId] = useState("");
+  
   const handleResumeUpload = async (event: ChangeEvent<HTMLInputElement>) => {
     event.preventDefault();
     const file = event.target?.files?.[0];
@@ -40,6 +42,7 @@ const Page: React.FC = () => {
   };
 
   const handleNextClick = () => {
+    console.log("next triggered : ",step)
     setStep((prevStep) => prevStep + 1);
   };
 
@@ -133,6 +136,7 @@ const Page: React.FC = () => {
       });
 
       const result = await response.json();
+      setCvId(result.id);
 
       if (response.ok) {
       } else {
@@ -162,12 +166,15 @@ const Page: React.FC = () => {
           setManualJobDescription={setManualJobDescription}
           profile={profile}
           setProfile={setProfile}
+          cvId={cvId}
+          setCvId={setCvId}
         />
       ) : (
         <PDFViewer
           profile={profile}
           structuredData={structuredData}
           localResume={localResume}
+          cvId={cvId}
         />
       )}
     </div>

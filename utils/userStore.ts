@@ -7,6 +7,14 @@ interface User {
   email: string;
   image?: string;
   role: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  zipCode?: string;
 }
 
 interface UserState {

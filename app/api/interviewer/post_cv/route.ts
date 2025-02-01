@@ -26,15 +26,22 @@ export const POST = async (req: NextRequest) => {
       return NextResponse.json({ error: 'Resume and Job Description are required' }, { status: 400 });
     }
 
-    // const cv = await prisma.cV.findUnique({
+    // const existingCV = await prisma.cV.findFirst({
     //   where: {
-    //     userId
-    //   }})
+    //     userId,
+    //     Resume,
+    //     JobDescription,
+    //   },
+    // });
 
-    // if (cv) {
-    //   return NextResponse.json({error: "CV already exists"}, {status: 405})
+    // if (existingCV) {
+    //   return NextResponse.json(
+    //     { error: 'CV with the same resume and job description already exists' },
+    //     { status: 409 }
+    //   );
     // }
 
+    // Create a new CV entry
     const newCV = await prisma.cV.create({
       data: {
         Resume,
@@ -42,9 +49,11 @@ export const POST = async (req: NextRequest) => {
         userId,
       },
     });
-
-    return NextResponse.json({ message: 'CV created successfully', cv: newCV }, { status: 201 });
-
+    console.log("newcv: ",newCV)
+    return NextResponse.json(
+      { message: 'CV created successfully', cv: newCV },
+      { status: 201 }
+    );
   } catch (error) {
     console.error('Error creating CV:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

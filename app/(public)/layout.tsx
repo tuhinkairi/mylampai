@@ -15,9 +15,15 @@ export default function RootLayout({
 }>) {
   return (
     <>
-      <HomeNavbar />
-      <div className="min-h-screen w-full flex flex-1 flex-col">{children}</div>
+   <HomeNavbar/>
+   <RecruiterNavbar/>   
+
+      <div className="min-h-screen w-full flex flex-1 flex-col">
+        {children}
+      </div>
       <Footer />
+
+      <BottomNavBar />
     </>
   );
 }

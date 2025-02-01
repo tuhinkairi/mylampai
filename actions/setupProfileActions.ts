@@ -1,7 +1,6 @@
 "use server";
 import prisma from "@/lib/index";
 import { uploadFileToAzure } from "./uploadActions";
-import { useId } from "react";
 
 export const createTalentProfile = async (
   formData: FormData,
@@ -173,8 +172,7 @@ type EducationData = {
   school: string;
   degree: string;
   field?: string;
-  percentage?: string;
-  cgpa?: string;
+  grade?:string;
   startDate?: Date;
   endDate?: Date;
   description?: string;
@@ -341,6 +339,9 @@ export const uploadImage = async (formData: FormData, userId: string) => {
 };
 
 type UserProfileData = {
+  name?:string;
+  first_name?:string;
+  last_name?:string;
   dateOfBirth?: Date;
   phone?: string;
   street?: string;

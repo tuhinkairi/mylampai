@@ -2,6 +2,7 @@
 import prisma from "@/lib";
 import jwt from "jsonwebtoken";
 import { sendEmail } from "@/lib/nodemailer";
+import pathname from '../utils/otptemplate';
 
 export const handleSendOTP = async (
   email: string,
@@ -40,19 +41,20 @@ export const handleSendOTP = async (
         userId: user.id,
       },
     });
+    // const html = pathname.replace("{{USER_NAME}}",user?.name  || "" ).replace("{{OTP_CODE}}",otp).replace("{{USER_EMAIL}}",user?.email || "").replace("{{SERVER_URL}}","http://localhost:8080/api/newsletteremails");
+    const html = pathname.replace("{{USER_NAME}}",user?.name  || "" ).replace("{{OTP_CODE}}",otp);
+    const sub = "Your wiZe OTP Code";
+//     const html = `
+// <h1> Hi ${role === "recruiter" ? "recruiter" : "user"}, </h1>
+// <p> Your OTP is: <strong>${otp}</strong> </p>
 
-    const sub = "Login | wiZe (myLampAI)";
-    const html = `
-<h1> Hi ${role === "recruiter" ? "recruiter" : "user"}, </h1>
-<p> Your OTP is: <strong>${otp}</strong> </p>
+// <p> This OTP is valid for 5 minutes. </p>
 
-<p> This OTP is valid for 5 minutes. </p>
+// <p> If you didn't request this, please ignore this email. </p>
 
-<p> If you didn't request this, please ignore this email. </p>
-
-<p> Thanks, </p>
-<p> wiZe Team </p>
-`;
+// <p> Thanks, </p>
+// <p> wiZe Team </p>
+// `;
 
     const res = await sendEmail(email, sub, html);
 
@@ -248,4 +250,51 @@ export const nextAuthLogin = async ({
       message: "Internal Server Error",
     };
   }
+};
+
+export const handleGoogleLogin = async ({ email }: { email: string }) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        email: email,
+      },
+    });
+
+    if (!user) {
+      return {
+        message: "failed",
+      };
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email as string,
+        name: user.name as string,
+        role: user.role as string,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: "70d" }
+    );
+
+    const response = {
+      token,
+      user: {
+        id: user.id,
+        email: user.email as string,
+        name: user.name as string,
+        role: user.role as string,
+      },
+    };
+
+    return {
+      message: "success",
+      response,
+    };
+  } catch (error) {
+    console.log("error");
+  }
+  return {
+    message: "failed",
+  };
 };

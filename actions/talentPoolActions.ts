@@ -7,15 +7,41 @@ type UserMatchIdsType = {
   talentIds: string[];
 };
 
-export const getRecruiterTalentPool = async (userId: string) => {
-  try {
-    const talentPools = await prisma.talentPool.findMany({
-      where: {
-        userId,
-      },
-    });
 
-    return talentPools;
+// get list of candidates for recruiter based on search parameters like skills, salary, location preference,  JD
+// TODO: Implement semantic search based on recruiter search prompt
+export const getRecruiterTalentPool = async (searchParameter: { skills?: string; salary?: number; locationPref?: string },page:number,limit:number ) => {
+  try {
+    // const page = parseInt(url.searchParams.get("page") || "1", 10); 
+    // const limit = parseInt(url.searchParams.get("limit") || "10", 10); 
+    const offset = (page - 1) * limit;
+    const { skills, salary, locationPref } = searchParameter;
+    const whereClause: any = {};
+
+    //these are filter parameters
+    if (skills) whereClause.skills = skills;
+    if (salary) whereClause.salary = salary;
+    if (locationPref) whereClause.locationPref = locationPref;
+
+
+    const talentPools = await prisma.talentPool.findMany({
+      skip: offset,
+      take: limit,
+      where: whereClause
+    });
+    const totalItems = await prisma.talentPool.count({where:whereClause}); // Total number of items
+
+    return new Response(
+      JSON.stringify({
+        talentPools,
+        currentPage: page,
+        totalPages: Math.ceil(totalItems / limit),
+        totalItems,
+      }),
+      { status: 200 }
+    );
+
+    // return talentPools;
   } catch (error) {
     console.error(error);
     return [];
@@ -51,6 +77,21 @@ export const getTalentPoolData = async (talentPoolId: string) => {
     return null;
   }
 };
+
+//getting candidate profile for detailed analysis after fetching talent pool
+export const getCandidateProfile=async(candidateId:string)=>{
+  try {
+    const candidateProfile = await prisma.talentPool.findFirst({
+      where: {
+        id: candidateId
+      }
+    });
+    return candidateProfile;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
 export const getTalentPoolsData = async (targetPoolIds: string[]) => {
   try {

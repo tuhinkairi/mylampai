@@ -79,7 +79,7 @@ export default function WhyWize() {
   // }, [controls]);
 
   return (
-    <div className="flex flex-col items-center mb-4">
+    <div className="flex flex-col items-center mb-4 ">
       <div className="max-w-[1300px] h-[100px] flex justify-center items-center w-full gap-4 mb-8">
         <div className="h-1 bg-black w-full max-w-[150px] sm:max-w-[200px] md:max-w-[33%] bg-gradient-to-r from-white to-primary"></div>
         <div className="w-full text-3xl md:text-4xl font-medium text-center">
@@ -99,7 +99,7 @@ export default function WhyWize() {
             />
           ))}
         </div>
-        <div className="md:border-l-2 md:border-[#8252ff] lg:px-[60px] xl:px-[100px] relative">
+        <div className="md:border-l-4 md:border-[#baa1eb] lg:px-[60px] xl:px-[100px] relative w-screen">
           <div
             id="allroundguidance"
             className="pb-[50px] sm:pb-[100px] sm:min-h-[700px] px-4"

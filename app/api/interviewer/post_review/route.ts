@@ -7,7 +7,7 @@ export const POST = async (req: NextRequest) => {
 
     // Ensure the response from `submitanalysis` is properly structured.
     if (!result) {
-      return NextResponse.json(
+      return NextResponse.json( 
         { message: "No result from action function" },
         { status: 500 }
       );
