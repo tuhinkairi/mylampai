@@ -76,7 +76,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [otherProfile, setOtherProfile] = useState("");
-  const [next,Setnext] = useState<boolean>(false)
+  const [next, Setnext] = useState<boolean>(false)
 
   const { token } = useUserStore();
 
@@ -309,19 +309,27 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
             JobDescription: extractedText || manualJobDescription, // Depending on whether it's a file or manual entry
           }),
         });
+
+
         const res = await response.json()
-        console.log("cvid checke: ",res)
-        const tempId: string = res.cv.id
+        console.log("cvid checke: ", res)
+        let tempId: string = ""
+        if (res.status == 409) {
+          tempId = res.message.id
+        } else {
+          tempId = res.cv.id
+        }
+
         setResumeId(tempId)
-        console.log("profile check: ",profile)
+        console.log("profile check: ", profile)
         // if (profile) {
-          // await getSummary(extractedText, tempId);
+        // await getSummary(extractedText, tempId);
         // } else {
         //   console.log("Profile is required");
         // }
         // console.log(extractedText)
         // console.log(resumeId)
-        console.log("cvid:: ",tempId)
+        console.log("cvid:: ", tempId)
         setCvId(tempId)
         setUploading(false)
         setIsResumeUploaded(true);
@@ -333,7 +341,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       }
     },
-    [manualJobDescription,setCvId,token]
+    [manualJobDescription, setCvId, token]
   );
 
   const extractStructuredData = useCallback(async (text: string) => {
@@ -348,7 +356,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       const result = await response.json();
       if (response.ok) {
-        
+
         toast.success("Resume uploaded successfully");
         // console.log(summary )
 
@@ -363,34 +371,34 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
     }
   }, []);
 
-  const getSummary = useCallback(async (text: string, ResumeId: string) => {
-    try {
-      const response = await fetch("/api/interviewer/resumeAnalysis", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData:structuredData,profile:profile }),
-      });
+  // const getSummary = useCallback(async (text: string, ResumeId: string) => {
+  //   try {
+  //     const response = await fetch("/api/interviewer/resumeAnalysis", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData: structuredData, profile: profile }),
+  //     });
 
-      if (!response.ok) {
-        toast.error("Error in getSummary")
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("Response received:", result);
-      
-      // Return result if needed
-      Setnext(true)
-      toast.success("Summary uploaded successfully")
-      return result;
-    } catch (error) {
-      console.error("Error in getSummary:", error);
-    }
-  }, []);
-  
+  //     if (!response.ok) {
+  //       toast.error("Error in getSummary")
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+
+  //     const result = await response.json();
+  //     console.log("Response received:", result);
+
+  //     // Return result if needed
+  //     Setnext(true)
+  //     toast.success("Summary uploaded successfully")
+  //     return result;
+  //   } catch (error) {
+  //     console.error("Error in getSummary:", error);
+  //   }
+  // }, []);
+
   return (
     <div className="md:h-screen bg-primary-foreground min-h-screen p-4 flex items-center md:justify-center justify-top w-full border-[#eeeeee] overflow-hidden">
       <div className="max-w-[1350px] h-full max-h-[570px]  w-full flex flex-col items-stretch md:flex-row justify-evenly">
@@ -597,7 +605,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
                     ? "bg-gray-600 hover:bg-gray-800 text-white"
                     : "bg-slate-500 text-gray-800 cursor-not-allowed"
                     }`}
-                  disabled={!profile }
+                  disabled={!profile}
                   onClick={handleNextClick}
                 >
                   Next
