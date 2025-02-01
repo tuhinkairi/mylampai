@@ -89,7 +89,7 @@ const InterviewComponent = () => {
     async (cvText: string) => {
       try {
         const res = await handleCVUpload({ cvText, interviewId });
-
+        console.log("debug in uploadcv text")
         if (res.status === "success") {
           toast.success("Resume analysed successfully");
           setCvText(cvText);
