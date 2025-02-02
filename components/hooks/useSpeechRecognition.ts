@@ -117,6 +117,7 @@ export const useSpeechRecognition = ({
         if (audioData && audioData.byteLength > 0) {
             // Convert the audio buffer to Int16Array
             const audioArray = new Int16Array(audioData);
+            // const audioArray = audioData;
             
             // Verify the data before sending
             if (audioArray.length > 0) {

@@ -3,7 +3,7 @@ import { json } from 'stream/consumers';
 
 // const url = "wss://ai-interviewer-c476.onrender.com/ws"
 // const url = "wss://ai-interview-dzawedctafcceya3.centralindia-01.azurewebsites.net/ws"
-const url = "ws://localhost:5000/ws"
+const url = "ws://localhost:5000/ws/speech"
 
 const useWebSocket = () => {
     const [ws, setWs] = useState<WebSocket | null>(null);
