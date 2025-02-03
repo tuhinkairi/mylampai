@@ -19,7 +19,7 @@ export const useSpeechRecognition = ({
 
   
   // const websocketRef = useRef<WebSocket | null>(null);
-  const { ws } = useWebSocketContext();
+  const { ws,connectWebSocket,disconnectWebSocket } = useWebSocketContext();
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
@@ -110,7 +110,7 @@ export const useSpeechRecognition = ({
       console.log("AudioWorkletNode created");
 
       workletNode.port.onmessage = (event) => {
-        if (!ws) return;
+        // if (!ws) return;
         console.log("Received message from AudioWorklet:", event.data.audioData);
         
         const audioData = event.data.audioData;
@@ -124,7 +124,7 @@ export const useSpeechRecognition = ({
                 console.log("Sending audio data, samples:", audioArray);
                 
                 try {
-                    ws.send(JSON.stringify({
+                    ws?.send(JSON.stringify({
                         type: "speech_to_text",
                         audioData: Array.from(audioArray) // Convert to regular array for JSON serialization
                     }));
@@ -166,6 +166,7 @@ export const useSpeechRecognition = ({
 
   const startRecording = useCallback(async () => {
     if (!isRecording) {
+      connectWebSocket()
       await initializeAudioProcessing();
     };
 
@@ -203,7 +204,7 @@ export const useSpeechRecognition = ({
       console.error('Recording start error:', error);
       onError?.(error as Error);
     }
-  }, [ws, isRecording, initializeAudioProcessing, onTranscriptUpdate, onError]);
+  }, [ws,connectWebSocket, isRecording, initializeAudioProcessing, onTranscriptUpdate, onError]);
 
   const stopRecording = useCallback(() => {
     // if (!isRecording) return;
