@@ -1,10 +1,14 @@
-"use client"; 
-
-import { usePathname } from "next/navigation"; 
 import HomeNavbar from "@/components/home/HomeNavbar";
 import Footer from "@/components/global/Footer";
 import BottomNavBar from "@/components/home/BottomNavBar";
 import RecruiterNavbar from "@/components/home/RecruiterNavbar";
+
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "wiZe (myLampAI) | Home",
+  description: "We nurture, assess & match talent with premium opportunities.",
+};
 
 export default function RootLayout({
   children,
@@ -13,12 +17,10 @@ export default function RootLayout({
 }>) {
   return (
     <>
-   <HomeNavbar/>
-   <RecruiterNavbar/>   
+      <HomeNavbar />
+      <RecruiterNavbar />
 
-      <div className="min-h-screen w-full flex flex-1 flex-col">
-        {children}
-      </div>
+      <div className="min-h-screen w-full flex flex-1 flex-col">{children}</div>
       <Footer />
 
       <BottomNavBar />

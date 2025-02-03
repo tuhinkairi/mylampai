@@ -132,7 +132,7 @@ export default function LoginComponent() {
           baseColor={[248 / 255, 250 / 255, 1]}
         />
         <div className="flex flex-col gap-2 text-gray-500 justify-center items-center p-2">
-          <h2 className="font-medium w-full">
+          <h2 className="font-medium w-full text-nowrap">
             Take the wiZe AI Mock Interview
           </h2>
           <div>
@@ -169,10 +169,10 @@ export default function LoginComponent() {
               height={40}
             />
           </div>
-          <div className="flex font-medium justify-center items-center">
-            <h1>Signup or Login to &nbsp;</h1>
-            <h1 className="text-primary"> wiZ</h1>
-            <h1>e in seconds</h1>
+          <div className="flex font-medium justify-center text-nowrap items-center">
+            <span>Signup or Login to &nbsp;</span>
+            <span className="text-primary"> wiZ</span>
+            <span>e in seconds</span>
           </div>
           <div className="flex flex-col justify-center items-center px-8 mt-8">
             <Form {...form}>

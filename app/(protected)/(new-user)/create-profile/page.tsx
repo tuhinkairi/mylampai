@@ -101,6 +101,7 @@ interface UserInfo {
   zipCode: string;
 }
 
+
 export default function CreateProfile() {
   const { id, setId, setResumeUrl } = useProfileStore();
   const { userData,setUser} = useUserStore();

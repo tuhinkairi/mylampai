@@ -36,9 +36,9 @@ const PracticeCards = () => {
             Practice coding problems from top comapnies
           </p>
           <div className="text-xs">400+ Questions</div>
-          <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
+          {/* <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
             Start Now{" "}
-          </button>
+          </button> */}
         </div>
 
         <div
@@ -65,9 +65,9 @@ const PracticeCards = () => {
             Practice & ace the hiring assessments of top companies
           </p>
           <div className="text-xs">400+ Questions</div>
-          <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
+          {/* <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
             Start Now{" "}
-          </button>
+          </button> */}
         </div>
 
         <div
@@ -94,9 +94,9 @@ const PracticeCards = () => {
             Prepare for interviews with mock interviews & feedback
           </p>
           <div className="text-xs">400+ Questions</div>
-          <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
+          {/* <button className="bg-primary text-sm text-white rounded-full px-4 py-2">
             Start Now{" "}
-          </button>
+          </button> */}
         </div>
       </div>
     </>
@@ -110,10 +110,10 @@ const PracticeCoding = () => {
         PATH TO SUCCESS
         <div className="bg-[#8C52FF] w-6 h-6 blur-sm rounded-full absolute left-0 translate-x-[-14px] translate-y-[-100%] "></div>
       </h4>
-      <div className="text-3xl font-medium mt-8 mb-4">
+      <div className="text-2xl md:text-3xl font-medium mt-8 mb-4">
         Valuable Features at Your Fingertips, Completely Free!
       </div>
-      <p className="text-muted-foreground font-medium my-4">
+      <p className="text-sm md:text-base text-muted-foreground font-medium my-4">
         Empowering talent like you in your career journey has never been easier.
         With just one tap, you can access all the tools you need, and the best
         part? It&apos;s completely free! You don&apos;t have to pay even a

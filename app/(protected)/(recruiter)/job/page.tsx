@@ -2,6 +2,7 @@ import JobForm from "./JobForm";
 import { JobCard } from "./jobCard";
 import { getRecruiterJobs } from "@/actions/createJobActions";
 import { auth } from "@/lib/authlib";
+import { JobProfile } from "@prisma/client";
 
 export default async function CreateJobPage() {
   const user = await auth();
@@ -10,21 +11,15 @@ export default async function CreateJobPage() {
     return <h1>Not authorized</h1>;
   }
 
-  const res = await getRecruiterJobs(user.id);
+  const jobs = await getRecruiterJobs(user.id) as JobProfile[];
 
   return (
     <div>
-      {res.status === "success" ? (
-        <div className="flex">
-          {res.data?.map((job, index) => (
-            <JobCard key={index} job={job} />
-          ))}
-        </div>
-      ) : (
-        <>
-          <h1>Failed to fetch jobs</h1>
-        </>
-      )}
+      <div className="flex">
+        {jobs.map((job, index) => (
+          <JobCard key={index} job={job} />
+        ))}
+      </div>
       <JobForm />
     </div>
   );

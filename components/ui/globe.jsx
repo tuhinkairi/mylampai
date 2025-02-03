@@ -1,4 +1,3 @@
-// # Draggable & Auto Rotate
 "use client";
 import createGlobe from "cobe";
 import { useEffect, useRef } from "react";
@@ -17,14 +16,17 @@ export default function Cobe({ glowColor = [1.2, 1.2, 1.2], baseColor = [1, 1, 1
       precision: 0.001,
     },
   }));
-  
+
   useEffect(() => {
     let phi = 0;
     let width = 0;
     const onResize = () =>
       canvasRef.current && (width = canvasRef.current.offsetWidth);
+
     window.addEventListener("resize", onResize);
     onResize();
+
+
     const globe = createGlobe(canvasRef.current, {
       devicePixelRatio: 2,
       width: width * 2,
@@ -51,12 +53,13 @@ export default function Cobe({ glowColor = [1.2, 1.2, 1.2], baseColor = [1, 1, 1
         state.height = width * 2;
       },
     });
+
     setTimeout(() => (canvasRef.current.style.opacity = "1"));
     return () => {
       globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [glowColor, baseColor, r]);
+  }, []);
 
   return (
     <div

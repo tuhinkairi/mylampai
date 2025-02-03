@@ -12,8 +12,6 @@
 # vscode
 /.vscode
 .deployment
-
-
 # next.js
 /.next/
 /out/

@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import speech from "@google-cloud/speech";
-import { readBlobAsBase64 } from "@/utils/readBlobAsBase64";
 
 async function saveFileToDisk(file: File): Promise<string> {
   const buffer = Buffer.from(await file.arrayBuffer());
@@ -15,36 +14,28 @@ async function saveFileToDisk(file: File): Promise<string> {
 export async function handleAudioTranscribe(formData: FormData) {
   let inputFilePath: string | null = null;
   let monoFilePath: string | null = null;
-  
+
   try {
     const audioFile = formData.get("audio") as File;
-    const audioBlob = formData.get("audio");
-    console.log("audioBlob", audioBlob);
 
-    if (!audioBlob || !(audioBlob instanceof Blob)) {
+    if (!audioFile) {
       return {
         status: "failed",
         message: "Audio File Required",
       };
     }
 
-    // inputFilePath = await saveFileToDisk(audioFile);
-    // console.log("inputFilePath", inputFilePath);
-    // const audioBuffer = fs.readFileSync(inputFilePath);
+    inputFilePath = await saveFileToDisk(audioFile);
 
-    // const audio = { content: audioBuffer.toString("base64") };
-    let base64Uri = "";
-    const foundBase64 = (await readBlobAsBase64(audioBlob)) as string;
-        // Example: data:audio/wav;base64,asdjfioasjdfoaipsjdf
-        const removedPrefixBase64 = foundBase64.split("base64,")[1];
-        base64Uri = removedPrefixBase64;
+    const audioBuffer = fs.readFileSync(inputFilePath);
 
+    const audio = { content: audioBuffer.toString("base64") };
     const config = {
       encoding: "WEBM_OPUS" as const,
       languageCode: "en-IN",
     };
 
-    const request = { base64Uri, config };
+    const request = { audio, config };
 
     const speechClient = new speech.SpeechClient();
 
@@ -70,7 +61,3 @@ export async function handleAudioTranscribe(formData: FormData) {
     }
   }
 }
-
-
-
-

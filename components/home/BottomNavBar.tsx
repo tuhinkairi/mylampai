@@ -56,8 +56,8 @@ const BottomNavBar = () => {
           <span className="text-xs mt-1 text-[#697386]">Interview</span>
         </Link>
 
-        <div className="flex justify-center flex-col items-center w-full">
-          <span className="text-xs text-[#697386]">Talent Match</span>
+        <div className="flex justify-center flex-col items-center w-full translate-y-2">
+          <span className="text-xs text-[#697386] text-center">Talent Match</span>
         </div>
 
         <Link
