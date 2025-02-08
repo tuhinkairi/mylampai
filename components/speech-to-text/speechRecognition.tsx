@@ -1,158 +1,193 @@
-import { FC, useState, useEffect } from 'react';
-import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
-import { TranscriptResult } from '@/types/transcript';
-import { AlertCircle, Mic, MicOff, Settings } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+"use client";
+
+import { useEffect, useRef } from "react";
+import {
+  LiveConnectionState,
+  LiveTranscriptionEvent,
+  LiveTranscriptionEvents,
+  useDeepgram,
+} from "../../context/DeepgramContextProvider";
+import {
+  MicrophoneEvents,
+  MicrophoneState,
+  useMicrophone,
+} from "../../context/MicrophoneContextProvider";
 
 interface SpeechRecognitionProps {
-  onTranscriptUpdate?: (transcript: TranscriptResult) => void;
-}
-
-interface TranscriptData {
-  text: string;
-  confidence: number;
-  detected_terms: string[];
-}
-
-interface SpeechRecognitionHookResult {
   isRecording: boolean;
-  startRecording: () => void;
-  stopRecording: () => void;
-  finalTranscript: TranscriptData | null;
-  interimTranscript: TranscriptData | null;
-  permissionStatus: PermissionState;
+  onStart: () => void;
+  onStop: () => void;
+  onTranscriptionChange: (transcript: string) => void;
+  finalTranscript: string;
+  onTranscriptionComplete: (finalTranscript: string) => void;
 }
 
-export const SpeechRecognition: FC<SpeechRecognitionProps> = ({
-  onTranscriptUpdate
-}): JSX.Element => {
-  const [error, setError] = useState<string | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+const SpeechRecognition = ({
+  isRecording,
+  onStart,
+  onStop,
+  onTranscriptionChange,
+  finalTranscript,
+  onTranscriptionComplete
+}: SpeechRecognitionProps): JSX.Element => {
+  const { connection, connectToDeepgram, connectionState, disconnectFromDeepgram } = useDeepgram();
+  const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
+  
+  const keepAliveInterval = useRef<any>();
+  const voiceActivityCheckInterval = useRef<any>();
+  const lastVoiceActivity = useRef<number>(Date.now());
+  const isInitialized = useRef<boolean>(false);
 
-  const {
-    isRecording,
-    startRecording,
-    stopRecording,
-    finalTranscript,
-    interimTranscript,
-    permissionStatus
-  }: SpeechRecognitionHookResult = useSpeechRecognition({
-    onTranscriptUpdate,
-    onError: (error: Error) => {
-      console.error('Speech recognition error:', error);
-      setError(error.message);
+  // Function to clean up all connections and listeners
+  // const cleanupConnections = () => {
+  //   console.log("🧹 Cleaning up connections");
+  //   clearInterval(keepAliveInterval.current);
+  //   clearInterval(voiceActivityCheckInterval.current);
+  //   if (connection) {
+  //     connection.disconnect();
+  //     // disconnectFromDeepgram();
+  //   }
+  //   stopMicrophone();
+  //   isInitialized.current = false;
+  // };
+
+  // Initialize recording setup
+  const initializeRecording = async () => {
+    if (isInitialized.current) return;
+    
+    try {
+      console.log("🎤 Initializing new recording session");
+      await setupMicrophone();
+      lastVoiceActivity.current = Date.now();
+      isInitialized.current = true;
+    } catch (error) {
+      console.error("❌ Error initializing recording:", error);
+      onStop();
     }
-  });
+  };
+
+  useEffect(()=>{
+    if(!isRecording){
+      stopMicrophone()
+    }
+  },[isRecording])
 
   useEffect(() => {
-    const checkInitialPermissions = async () => {
-      try {
-        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
-        if (result.state === 'granted') {
-          setIsInitializing(false);
+    if (isRecording) {
+      lastVoiceActivity.current = Date.now();
+      initializeRecording();
+      
+      voiceActivityCheckInterval.current = setInterval(() => {
+        const timeSinceLastVoice = Date.now() - lastVoiceActivity.current;
+        console.log("⏲️ Time since last voice activity:", Math.round(timeSinceLastVoice / 1000), "seconds");
+        console.log("finalTranscript len:: ",finalTranscript.length)
+        if (finalTranscript.length > 0 && timeSinceLastVoice > 5000) {
+          console.log("🔇 No voice activity detected for 5 seconds and has existing transcription");
+          // Only trigger onTranscriptionComplete and onStop for auto-stop
+          onTranscriptionComplete(finalTranscript);
+          // onStop();
+          // Don't clean up connections here, just let the parent handle state
         }
-      } catch (error) {
-        console.error('Permission check failed:', error);
+      }, 1000);
+    }
+
+    return () => {
+      clearInterval(voiceActivityCheckInterval.current);
+    };
+  }, [isRecording, finalTranscript,onTranscriptionComplete]);
+
+  useEffect(() => {
+    if (microphoneState === MicrophoneState.Ready && isRecording) {
+      console.log("🎙️ Microphone Ready - Connecting to Deepgram");
+      lastVoiceActivity.current = Date.now();
+      connectToDeepgram({
+        model: "nova-3",
+        interim_results: true,
+        smart_format: true,
+        filler_words: true,
+        utterance_end_ms: 3000,
+      });
+    }
+    
+    console.log("🔊 Microphone State:", microphoneState);
+  }, [microphoneState, isRecording]);
+
+  useEffect(() => {
+    if (!microphone || !connection) return;
+
+    const onData = (e: BlobEvent) => {
+      if (e.data.size > 0) {
+        connection?.send(e.data);
       }
-      setIsInitializing(false);
     };
 
-    checkInitialPermissions();
-  }, []);
+    const onTranscript = (data: LiveTranscriptionEvent) => {
+      const { is_final: isFinal } = data;
+      let thisTranscript = data.channel.alternatives[0].transcript;
+      console.log("thisCaption: ",thisTranscript)
+      if (thisTranscript.trim() !== "") {
+        lastVoiceActivity.current = Date.now();
+        console.log("🗣️ Voice activity detected");
 
-  const handleRecordingClick = async () => {
-    setError(null);
-    if (isRecording) {
-      stopRecording();
-    } else {
-      try {
-        await startRecording();
-      } catch (error) {
-        setError('Failed to start recording. Please ensure microphone access is granted.');
+        if (isFinal) {
+          console.log("✅ Final Transcript:", thisTranscript);
+          onTranscriptionChange(thisTranscript);
+        }
       }
+    };
+
+    if (connectionState === LiveConnectionState.OPEN && isRecording) {
+      console.log("🔌 Connection Open - Starting Transcription");
+      connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+      startMicrophone();
     }
-  };
 
-  const handleSettingsClick = () => {
-    window.open('chrome://settings/content/microphone', '_blank');
-  };
+    return () => {
+      console.log("🔇 Cleaning up transcription listeners");
+      connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
+      microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
+    };
+  }, [connectionState, isRecording]);
 
-  return (
-    <div className="p-4 space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+  useEffect(() => {
+    if (!connection) return;
 
-      {permissionStatus === 'denied' && (
-        <Alert>
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Microphone Access Required</AlertTitle>
-          <AlertDescription className="flex items-center justify-between">
-            <span>Please enable microphone access to use speech recognition.</span>
-            <button
-              onClick={handleSettingsClick}
-              className="flex items-center px-3 py-1 text-sm bg-gray-100 rounded hover:bg-gray-200"
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Open Settings
-            </button>
-          </AlertDescription>
-        </Alert>
-      )}
+    if (
+      microphoneState !== MicrophoneState.Open &&
+      connectionState === LiveConnectionState.OPEN &&
+      isRecording
+    ) {
+      console.log("💫 Keeping connection alive");
+      connection.keepAlive();
 
-      <div className="flex items-center space-x-4">
-        <button
-          onClick={handleRecordingClick}
-          disabled={isInitializing || permissionStatus === 'denied'}
-          className={`flex items-center px-6 py-3 rounded-lg transition-colors ${
-            isRecording
-              ? 'bg-red-500 hover:bg-red-600'
-              : 'bg-blue-500 hover:bg-blue-600'
-          } text-white disabled:opacity-50 disabled:cursor-not-allowed`}
-        >
-          {isRecording ? (
-            <MicOff className="w-5 h-5 mr-2" />
-          ) : (
-            <Mic className="w-5 h-5 mr-2" />
-          )}
-          {isInitializing
-            ? 'Initializing...'
-            : isRecording
-            ? 'Stop Recording'
-            : 'Start Recording'}
-        </button>
-      </div>
+      keepAliveInterval.current = setInterval(() => {
+        connection.keepAlive();
+      }, 10000);
+    } else {
+      clearInterval(keepAliveInterval.current);
+    }
 
-      {interimTranscript && (
-        <div className="p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold text-gray-700">Interim Transcript:</h3>
-          <p className="text-gray-600 mt-2">{interimTranscript.text}</p>
-        </div>
-      )}
+    return () => {
+      clearInterval(keepAliveInterval.current);
+    };
+  }, [microphoneState, connectionState, isRecording]);
 
-      {finalTranscript && (
-        <div className="p-4 bg-white border rounded-lg">
-          <h3 className="font-semibold text-gray-800">Final Transcript:</h3>
-          <p className="mt-2">{finalTranscript.text}</p>
-          <div className="mt-3 text-sm text-gray-500 space-y-1">
-            <p>Confidence: {(finalTranscript.confidence * 100).toFixed(1)}%</p>
-            {finalTranscript.detected_terms.length > 0 && (
-              <p>
-                Technical Terms:{' '}
-                <span className="text-blue-600">
-                  {finalTranscript.detected_terms.join(', ')}
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // Cleanup on unmount
+  // useEffect(() => {
+  //   return () => {
+  //     // console.log("cleaning connections...")
+  //     cleanupConnections();
+  //   };
+  // }, []);
+
+  // const handleStop = () => {
+  //   console.log("⏹️ Stopping Recording - Manual Stop");
+  //   cleanupConnections();
+  //   onStop();
+  // };
+
+  return <div/>;
 };
 
 export default SpeechRecognition;

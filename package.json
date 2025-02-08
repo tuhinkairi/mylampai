@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@azure/storage-blob": "^12.26.0",
+    "@deepgram/sdk": "^3.10.1",
     "@google-cloud/speech": "^6.7.0",
     "@google-cloud/text-to-speech": "^5.5.0",
     "@hookform/resolvers": "^3.9.1",
@@ -111,7 +112,7 @@
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/mark.js": "^8.11.12",
-    "@types/node": "^20",
+    "@types/node": "^20.17.17",
     "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.15",
     "@types/react": "^18.3.16",
@@ -127,7 +128,6 @@
     "postcss": "^8.4.38",
     "prisma": "^6.1.0",
     "tailwindcss": "^3.4.3",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.7.3"
   }
 }

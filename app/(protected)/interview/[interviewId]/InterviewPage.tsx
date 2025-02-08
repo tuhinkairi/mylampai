@@ -18,7 +18,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Image from "next/image";
-import { handleAudioTranscribe } from "@/actions/transcribeAudioAction";
 import { generateSasUrlForInterview } from "@/actions/azureActions";
 import { useParams } from "next/navigation";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
@@ -34,7 +33,8 @@ import { useWebSocketContext } from "@/hooks/interviewersocket/webSocketContext"
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { toast } from "sonner";
-import {readBlobAsBase64} from '@/utils/readBlobAsBase64'
+
+import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
 
 type ChatMessage = {
   user: string;
@@ -67,21 +67,17 @@ const InterviewPage = () => {
   const [codingQuestion, setCodingQuestion] = useState("");
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const audioStream = useRef<MediaStream | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
   const emptyTranscribeCnt = useRef<number>(0);
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const videoBlobClient = useRef<BlockBlobClient | null>(null);
   const audioBlobClient = useRef<BlockBlobClient | null>(null);
-  const videoChunksRef = useRef<Blob[]>([]);
-  const audioChunksRef = useRef<Blob[]>([]);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const audioRecorderRef = useRef<MediaRecorder | null>(null);
-
-  const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+
+  const [isRecording, setIsRecording] = useState(true);
+  const [finalTranscript, setFinalTranscript] = useState('');
+
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -96,6 +92,7 @@ const InterviewPage = () => {
           sender: "user",
           response: message,
         });
+        console.log("sending to AI: ", message)
         ws?.send(JSON.stringify({ type: "answer", answer: message }));
       }
     },
@@ -165,6 +162,7 @@ const InterviewPage = () => {
         case "coding_question":
           setCodingQuestion(data.message);
           setShowCompiler(true);
+          handleStop();
 
           res = await handleMessageUpload({
             interviewId,
@@ -192,6 +190,7 @@ const InterviewPage = () => {
 
           setShowFeedback(true);
           stopCamera();
+          handleStop()
 
           ws?.send(
             JSON.stringify({
@@ -212,7 +211,7 @@ const InterviewPage = () => {
           console.log("Greeting from ws");
           break;
         case "transcription_result":
-          console.log("transcripted text--> ",data.result)  
+          console.log("transcripted text--> ", data.result)
         default:
           break;
       }
@@ -227,163 +226,72 @@ const InterviewPage = () => {
     );
   };
 
-  const stopAudioRecording = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-      mediaRecorder.current?.stop();
-      mediaRecorder.current = null;
-    }
-    emptyTranscribeCnt.current = 0;
-    handleSendMessage(resTranscript.current);
-    resTranscript.current = "";
-  }, [handleSendMessage]);
+  // const stopAudioRecording = useCallback(() => {
+  //   if (intervalRef.current) {
+  //     clearInterval(intervalRef.current);
+  //     intervalRef.current = null;
+  //     mediaRecorder.current?.stop();
+  //     mediaRecorder.current = null;
+  //   }
+  //   emptyTranscribeCnt.current = 0;
+  //   handleSendMessage(resTranscript.current);
+  //   resTranscript.current = "";
+  // }, [handleSendMessage]);
 
-  const startTranscribing = useCallback(async () => {
-    console.log("debug 111")
-    if (emptyTranscribeCnt.current >= 6) {
-      stopAudioRecording();
-      toast.error("Enable mic to continue Interview");
-      setIsMuted(true);
-    }
 
-    if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-      mediaRecorder.current.stop();
-    }
-
+  const handleStart = () => {
     try {
-      if (!audioStream.current) {
-        audioStream.current = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-      }
-
-      mediaRecorder.current = new MediaRecorder(audioStream.current, {
-        mimeType: "audio/webm; codecs=opus",
-        audioBitsPerSecond: 16000,
-      });
-
-      mediaRecorder.current.ondataavailable = (e: BlobEvent) => {
-        if (e.data.size > 0) {
-          audioChunks.current.push(e.data);
-        }
-      };
-
-      mediaRecorder.current.onstop = async () => {
-        const recordedBlob = new Blob(audioChunks.current, {
-          type: "audio/webm",
-        });
-
-        audioChunks.current = [];
-
-        if (recordedBlob.size === 0) {
-          return;
-        }
-        
-        const base64Audio=await readBlobAsBase64(recordedBlob)
-
-
-        // console.log("Audio recorded:", base64Audio);
-
-        const formData = new FormData();
-        formData.append("audio", recordedBlob);
-        
-        try {
-
-          ws?.send(JSON.stringify({
-            type: "speech_to_text",
-            audioData: base64Audio,
-            contentType: recordedBlob.type // Include the mime type
-          }));
-
-
-          // const res = await handleAudioTranscribe(formData); //trnascribing candidate audio
-          const res = await handleAudioTranscribe(formData); //trnascribing candidate audio
-          
-          if (res.status === "success") {
-            if (res.transcript) resTranscript.current += res.transcript;
-            else if (resTranscript.current) stopAudioRecording();
-            else emptyTranscribeCnt.current += 1;
-          } else {
-            console.log("Error transcribing audio");
-          }
-        } catch (error) {
-          console.error("Error transcribing audio:", error);
-        }
-      };
-
-      mediaRecorder.current.start();
+      console.log("▶️ Starting Recording");
+      setIsRecording(true);
+      setFinalTranscript('');  // Reset transcript when starting new recording
     } catch (error) {
-      console.error("Error accessing microphone:", error);
-    }
-  }, [stopAudioRecording]);
-
-  const startAudioRecording = useCallback(() => {
-    startTranscribing();
-
-    if (isMuted) setIsMuted(false);
-
-    if (!intervalRef.current) {
-      intervalRef.current = setInterval(() => {
-        startTranscribing();
-      }, 4400);
-    }
-  }, [startTranscribing, isMuted]);
-
-  const toggleVideo = () => setIsVideoOff(!isVideoOff);
-
-  const uploadChunk = async (
-    client: BlockBlobClient | null,
-    chunk: Blob,
-    blockIndex: number,
-  ) => {
-    try {
-      if (client) {
-        const blockId = btoa(String(blockIndex).padStart(6, "0")); // Padded, consistent ID
-        await client.stageBlock(blockId, chunk, chunk.size);
-        console.log(`Uploaded block: ${blockId}`);
-      }
-    } catch (error) {
-      console.error("Error uploading chunk:", error);
+      console.error("❌ Error starting recording:", error);
+      setIsRecording(false);
     }
   };
 
+  const handleStop = () => {
+    setIsRecording(false);
+  };
 
-  //TODO
+  const handleTranscriptionChange = (newTranscript: string) => {
+    setFinalTranscript(prev => {
+      const updatedTranscript = prev ? `${prev} ${newTranscript}` : newTranscript;
+      console.log("📜 Updated Final Transcript:", updatedTranscript);
+      return updatedTranscript;
+    });
+  };
 
-  //get audio transcript here
+  useEffect(() => {
+    if (finalTranscript.length > 0) {
+      console.log("finaltrans: ", finalTranscript)
+      resTranscript.current = finalTranscript
+    }
+  }, [finalTranscript])
 
-  
+  const handleTranscriptionComplete = useCallback((transcript: string) => {
+    if (transcript.trim()) {
+      handleSendMessage(transcript);
+      setFinalTranscript(''); // Reset the transcript after sending
+    }
+  }, [handleSendMessage]);
 
+  const toggleVideo = () => setIsVideoOff(!isVideoOff);
 
-
-  // const finalizeUpload = async () => {
+  // const uploadChunk = async (
+  //   client: BlockBlobClient | null,
+  //   chunk: Blob,
+  //   blockIndex: number,
+  // ) => {
   //   try {
-  //     stopVideoStream();
-
-  //     const videoBlockList = videoChunksRef.current.map((_, index) =>
-  //       btoa(String(index).padStart(6, "0")),
-  //     );
-  //     const audioBlockList = audioChunksRef.current.map((_, index) =>
-  //       btoa(String(index).padStart(6, "0")),
-  //     );
-
-  //     if (videoBlobClient.current) {
-  //       await videoBlobClient.current.commitBlockList(videoBlockList);
-  //       console.log("Video upload complete and finalized.");
-  //     }
-  //     if (audioBlobClient.current) {
-  //       await audioBlobClient.current.commitBlockList(audioBlockList);
-  //       console.log("Audio upload complete and finalized.");
+  //     if (client) {
+  //       const blockId = btoa(String(blockIndex).padStart(6, "0")); // Padded, consistent ID
+  //       await client.stageBlock(blockId, chunk, chunk.size);
+  //       console.log(`Uploaded block: ${blockId}`);
   //     }
   //   } catch (error) {
-  //     console.error("Error finalizing upload:", error);
+  //     console.error("Error uploading chunk:", error);
   //   }
-  // };
-
-  // const stopVideoStream = () => {
-  //   if (mediaRecorderRef.current) mediaRecorderRef.current.stop();
-  //   if (audioRecorderRef.current) audioRecorderRef.current.stop();
   // };
 
   const startVideoStream = useCallback(async () => {
@@ -393,39 +301,6 @@ const InterviewPage = () => {
         audio: true,
       });
       if (videoRef.current) videoRef.current.srcObject = stream;
-      // const mediaRecorder = new MediaRecorder(stream, {
-      //   mimeType: "video/webm",
-      // });
-      // const audioStream = new MediaStream(stream.getAudioTracks());
-      // const audioRecorder = new MediaRecorder(audioStream, {
-      //   mimeType: "audio/webm",
-      // });
-      // let videoBlockIndex = 0;
-      // let audioBlockIndex = 0;
-      // mediaRecorder.ondataavailable = async (event: BlobEvent) => {
-      //   if (event.data.size > 0) {
-      //     videoChunksRef.current.push(event.data);
-      //     await uploadChunk(
-      //       videoBlobClient.current,
-      //       event.data,
-      //       videoBlockIndex++
-      //     );
-      //   }
-      // };
-      // audioRecorder.ondataavailable = async (event: BlobEvent) => {
-      //   if (event.data.size > 0) {
-      //     audioChunksRef.current.push(event.data);
-      //     await uploadChunk(
-      //       audioBlobClient.current,
-      //       event.data,
-      //       audioBlockIndex++
-      //     );
-      //   }
-      // };
-      // mediaRecorder.start(3000);
-      // audioRecorder.start(3000);
-      // mediaRecorderRef.current = mediaRecorder;
-      // audioRecorderRef.current = audioRecorder;
     } catch (error) {
       console.error("Error starting recording:", error);
     }
@@ -530,22 +405,22 @@ const InterviewPage = () => {
     }
   }, [audioURL]);
 
-  useEffect(() => {
-    const audioElement = audioRef.current;
+  // useEffect(() => {
+  //   const audioElement = audioRef.current;
 
-    if (audioElement) {
-      audioElement.addEventListener("ended", startAudioRecording);
-    }
+  //   if (audioElement) {
+  //     audioElement.addEventListener("ended", startAudioRecording);
+  //   }
 
-    return () => {
-      if (audioElement) {
-        audioElement.removeEventListener("ended", startAudioRecording);
-      }
-    };
-  }, [audioURL, startAudioRecording]);
+  //   return () => {
+  //     if (audioElement) {
+  //       audioElement.removeEventListener("ended", startAudioRecording);
+  //     }
+  //   };
+  // }, [audioURL, startAudioRecording]);
 
   return (
-    <div className="min-h-screen flex items-center flex-col relative w-full h-full">
+    <div className="min-h-screen flex items-center flex-col relative mb-5 w-full h-full">
       {loading && <FullScreenLoader />}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -565,7 +440,7 @@ const InterviewPage = () => {
         </DialogContent>
       </Dialog>
 
-      <nav className="sticky top-0 w-full z-10 ">
+      <nav className="sticky top-0 w-full z-10 pr-20">
         <div className="flex items-center justify-between shadow-md px-4 h-[72px] w-full">
           <div className="flex gap-8">
             <Link href={"/"} className="">
@@ -606,12 +481,11 @@ const InterviewPage = () => {
       </nav>
 
       <div className="flex flex-col w-full items-center justify-center min-h-[calc(100vh-72px)] relative bg-gray-100">
-        <div className="relative w-screen h-[calc(100vh-72px)] overflow-hidden aspect-video rounded-xl shadow-lg">
+        <div className="relative w-[80%] h-[calc(100vh-72px)] overflow-hidden aspect-video rounded-xl shadow-lg">
           <video
             ref={videoRef}
-            className={`w-full h-full object-cover ${
-              isVideoOff ? "hidden" : ""
-            }`}
+            className={`w-full h-full object-cover ${isVideoOff ? "hidden" : ""
+              }`}
             autoPlay
             muted
           />
@@ -621,30 +495,64 @@ const InterviewPage = () => {
             </div>
           )}
         </div>
-        <div className="mt-4 flex space-x-4 absolute bottom-8 ">
-          <Button
-            variant={isMuted ? "destructive" : "secondary"}
-            size="icon"
-            onClick={startAudioRecording}
-            disabled={isMuted}
-          >
-            {isMuted ? (
-              <MicOff className="h-4 w-4" />
-            ) : (
-              <Mic className="h-4 w-4" />
+        <div className="flex justify-center max-w-full absolute bottom-8 ">
+          <SpeechRecognition
+            isRecording={isRecording}
+            onStart={handleStart}
+            onStop={handleStop}
+            onTranscriptionChange={handleTranscriptionChange}
+            finalTranscript={finalTranscript}
+            onTranscriptionComplete={handleTranscriptionComplete}
+          />
+          {/* Display final transcript */}
+          {finalTranscript &&
+            <div className="relative w-[60vw] mx-auto bottom-14">
+              <div className="bg-white/80 p-4 flex gap-3 rounded-lg shadow">
+                <h3 className="font-semibold mb-2">You:</h3>
+                <p className="text-gray-700">{finalTranscript || "No transcript yet"}</p>
+              </div>
+            </div>}
+          <div className=" flex items-center justify-center space-x-4 max-w-full absolute bottom-0">
+            {!isRecording ? (
+              <button
+                onClick={handleStart}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+            ) : (<>
+              <div>
+                <span className="absolute bottom-14">Listening...</span>
+                <button
+                  onClick={handleStop}
+                  className="flex items-center gap-2 px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                >
+                  <div className="relative w-5 h-5">
+                    {/* <img
+                      src="/audio-wave.gif"
+                      alt="Audio wave animation"
+                      className="absolute inset-0 w-full h-full text-orange-500"
+                    /> */}
+                    <MicOff className="absolute inset-0 w-full h-full" />
+                  </div>
+                </button>
+              </div>
+            </>
             )}
-          </Button>
-          <Button
-            variant={isVideoOff ? "destructive" : "secondary"}
-            size="icon"
-            onClick={toggleVideo}
-          >
-            {isVideoOff ? (
-              <VideoOff className="h-4 w-4" />
-            ) : (
-              <Video className="h-4 w-4" />
-            )}
-          </Button>
+            <Button
+              variant={isVideoOff ? "destructive" : "secondary"}
+              size="default"
+              onClick={toggleVideo}
+            // className=" px-6 py-3"
+            >
+              {isVideoOff ? (
+                <VideoOff className="h-4 w-4" />
+              ) : (
+                <Video className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+
         </div>
       </div>
 
@@ -655,7 +563,7 @@ const InterviewPage = () => {
       )}
 
       {isChatOpen && (
-        <div className="absolute top-1/2 -translate-y-1/2 right-6 bg-white border border-slate-500 shadow-lg rounded-xl w-[25vw] h-3/4 flex flex-col">
+        <div className="absolute top-1/2 -translate-y-1/2 right-6 bg-white border border-slate-500 shadow-lg rounded-xl w-[30vw] h-3/4 flex flex-col">
           <div className="flex justify-between items-center bg-primary text-white p-4 rounded-t-lg">
             <span className="font-semibold text-lg">Prompt Box</span>
             <button
@@ -715,25 +623,22 @@ const InterviewPage = () => {
             <div className="flex flex-col justify-evenly">
               <div className="flex justify-evenly p-10 text-6xl">
                 <button
-                  className={`hover:scale-110 hover:translate-y-[-10px] hover:text-primary transition ${
-                    clickedIndex === 1 ? "text-primary scale-125" : ""
-                  }`}
+                  className={`hover:scale-110 hover:translate-y-[-10px] hover:text-primary transition ${clickedIndex === 1 ? "text-primary scale-125" : ""
+                    }`}
                   onClick={() => handleButtonClick(1)}
                 >
                   <RiEmotionLine />
                 </button>
                 <button
-                  className={`hover:scale-110 hover:translate-y-[-10px] transition hover:text-primary ${
-                    clickedIndex === 2 ? "text-primary scale-125" : ""
-                  }`}
+                  className={`hover:scale-110 hover:translate-y-[-10px] transition hover:text-primary ${clickedIndex === 2 ? "text-primary scale-125" : ""
+                    }`}
                   onClick={() => handleButtonClick(2)}
                 >
                   <RiEmotionNormalLine />
                 </button>
                 <button
-                  className={`hover:scale-110 hover:translate-y-[-10px] transition hover:text-primary ${
-                    clickedIndex === 3 ? "text-primary scale-125" : ""
-                  }`}
+                  className={`hover:scale-110 hover:translate-y-[-10px] transition hover:text-primary ${clickedIndex === 3 ? "text-primary scale-125" : ""
+                    }`}
                   onClick={() => handleButtonClick(3)}
                 >
                   <RiEmotionUnhappyLine />
@@ -750,11 +655,10 @@ const InterviewPage = () => {
                 onChange={(e) => setFeedback(e.target.value)}
               />
               <button
-                className={`text-white px-4 py-3 rounded-lg font-semibold transition ${
-                  clickedIndex !== 0
-                    ? "bg-primary hover:bg-primary"
-                    : "bg-slate-500"
-                }`}
+                className={`text-white px-4 py-3 rounded-lg font-semibold transition ${clickedIndex !== 0
+                  ? "bg-primary hover:bg-primary"
+                  : "bg-slate-500"
+                  }`}
                 disabled={clickedIndex === 0}
                 onClick={() => handleFeedbackSubmit(clickedIndex, feedback)}
               >
