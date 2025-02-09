@@ -36,8 +36,8 @@ import { IoCloudUploadOutline, IoDocumentAttach } from "react-icons/io5";
 import { useRouter } from 'next/navigation';
 
 
-const formSchema = z.object({
-  skills: z.array(z.string()).min(1, "At least one skill is required"),
+  const formSchema = z.object({
+    skills: z.array(z.string()).min(1, "At least one skill is required"),
 });
 
 // const baseUrl = "https://optim-cv-judge.onrender.com";
