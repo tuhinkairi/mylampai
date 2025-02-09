@@ -522,18 +522,13 @@ const InterviewPage = () => {
               </button>
             ) : (<>
               <div>
-                <span className="absolute bottom-14">Listening...</span>
+                {/* <span className="absolute bottom-14">Listening...</span> */}
                 <button
                   onClick={handleStop}
                   className="flex items-center gap-2 px-5 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
                 >
                   <div className="relative w-5 h-5">
-                    {/* <img
-                      src="/audio-wave.gif"
-                      alt="Audio wave animation"
-                      className="absolute inset-0 w-full h-full text-orange-500"
-                    /> */}
-                    <MicOff className="absolute inset-0 w-full h-full" />
+                    <MicOff className="absolute inset-0 w-full h-full animate-pulse" />
                   </div>
                 </button>
               </div>
