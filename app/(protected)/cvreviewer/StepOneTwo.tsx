@@ -315,9 +315,9 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
         console.log("cvid checke: ", res)
         let tempId: string = ""
         if (res.status == 409) {
-          tempId = res.message.id
+          tempId = res.message?.id
         } else {
-          tempId = res.cv.id
+          tempId = res?.cv?.id
         }
 
         setResumeId(tempId)
@@ -341,7 +341,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       }
     },
-    [manualJobDescription, setCvId, token]
+    [manualJobDescription, setCvId, token,profile,setResumeId]
   );
 
   const extractStructuredData = useCallback(async (text: string) => {

@@ -210,8 +210,6 @@ const InterviewPage = () => {
         case "greeting_from_ws":
           console.log("Greeting from ws");
           break;
-        case "transcription_result":
-          console.log("transcripted text--> ", data.result)
         default:
           break;
       }

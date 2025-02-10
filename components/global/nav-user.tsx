@@ -122,8 +122,8 @@ export function NavUser() {
               {notification.length > 0 ? (
                 <ul className="space-y-2">
                   {notification.map((notif) => (
-                    <li className="p-2 border rounded-md">
-                      {notif}
+                    <li className="p-2 border rounded-md" key={notif.id}>
+                      {notif.message}
                     </li>
                   ))}
                 </ul>

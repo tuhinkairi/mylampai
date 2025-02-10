@@ -57,7 +57,7 @@ export default function AdminDashboard() {
       emailContent
     );
     setFinalHtmlTemplate(htmlTemplate);
-  }, [emailContent]);
+  }, [emailContent,emailTemplate]);
 
   const handleSendEmail = async () => {
     const recipientEmails = emailIds.split(",").map((email) => email.trim());

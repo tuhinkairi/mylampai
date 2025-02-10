@@ -81,77 +81,78 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
     }
   }, [analysisData]);
 
-  const submitAnalysis = async () => {
-    if (!analysisData || !Array.isArray(analysisData)) {
-      console.error("Invalid analysis data:", analysisData);
-      return;
-    }
-    // const introductiondata = analysisData[0]?.analysis;
-    // const secondintro = analysisData[1]?.analysis;
-    // const thirdintro = analysisData[2]?.analysis;
-    // const fourthintro = analysisData[3]?.analysis;
-    // const fiveintro = analysisData[4]?.analysis;
-    // const first = analysisData[0]?.answer;
-    // const second = analysisData[1]?.analysis;
-    // const third = analysisData[2]?.analysis;
-    // const fourth = analysisData[3]?.analysis;
-    // const five = analysisData[4]?.analysis;
-    // const body = {
-    //   interviewId,
-    //   Introduction: {
-    //     first,
-    //     ...introductiondata.line_analysis,
-    //     ...introductiondata.overall_assessment,
-    //   },
-    //   Project: {
-    //     second,
-    //     ...secondintro.line_analysis,
-    //     ...secondintro.overall_assessment,
-    //   },
-    //   Coding: {
-    //     third,
-    //     ...thirdintro.line_analysis,
-    //     ...thirdintro.overall_assessment,
-    //   },
-    //   Technical: {
-    //     fourth,
-    //     ...fourthintro.line_analysis,
-    //     ...fourthintro.overall_assessment,
-    //   },
-    //   Outro: {
-    //     five,
-    //     ...fiveintro.line_analysis,
-    //     ...fiveintro.overall_assessment,
-    //   },
-    // };
-    const body = {
-      interviewId,
-      ...["Introduction", "Project", "Coding", "Technical", "Outro"].reduce(
-        (acc: any, section, index) => {
-          const data = analysisData[index]?.analysis || {};
-          acc[section] = {
-            answer: analysisData[index]?.answer || "",
-            ...data.line_analysis,
-            ...data.overall_assessment,
-          };
-          return acc;
-        },
-        {}
-      ),
-    };
-
-    console.log("Final Body:", body);
-
-    try {
-      const response = await axios.post("/api/interviewer/post_review", body);
-      console.log("Analysis submitted successfully:", response.data);
-    } catch (error) {
-      console.error("Error submitting analysis:", error);
-    }
-  };
+  
 
   // Trigger submission on load or when `analysisData` or `interviewId` changes
   useEffect(() => {
+    const submitAnalysis = async () => {
+      if (!analysisData || !Array.isArray(analysisData)) {
+        console.error("Invalid analysis data:", analysisData);
+        return;
+      }
+      // const introductiondata = analysisData[0]?.analysis;
+      // const secondintro = analysisData[1]?.analysis;
+      // const thirdintro = analysisData[2]?.analysis;
+      // const fourthintro = analysisData[3]?.analysis;
+      // const fiveintro = analysisData[4]?.analysis;
+      // const first = analysisData[0]?.answer;
+      // const second = analysisData[1]?.analysis;
+      // const third = analysisData[2]?.analysis;
+      // const fourth = analysisData[3]?.analysis;
+      // const five = analysisData[4]?.analysis;
+      // const body = {
+      //   interviewId,
+      //   Introduction: {
+      //     first,
+      //     ...introductiondata.line_analysis,
+      //     ...introductiondata.overall_assessment,
+      //   },
+      //   Project: {
+      //     second,
+      //     ...secondintro.line_analysis,
+      //     ...secondintro.overall_assessment,
+      //   },
+      //   Coding: {
+      //     third,
+      //     ...thirdintro.line_analysis,
+      //     ...thirdintro.overall_assessment,
+      //   },
+      //   Technical: {
+      //     fourth,
+      //     ...fourthintro.line_analysis,
+      //     ...fourthintro.overall_assessment,
+      //   },
+      //   Outro: {
+      //     five,
+      //     ...fiveintro.line_analysis,
+      //     ...fiveintro.overall_assessment,
+      //   },
+      // };
+      const body = {
+        interviewId,
+        ...["Introduction", "Project", "Coding", "Technical", "Outro"].reduce(
+          (acc: any, section, index) => {
+            const data = analysisData[index]?.analysis || {};
+            acc[section] = {
+              answer: analysisData[index]?.answer || "",
+              ...data.line_analysis,
+              ...data.overall_assessment,
+            };
+            return acc;
+          },
+          {}
+        ),
+      };
+  
+      console.log("Final Body:", body);
+  
+      try {
+        const response = await axios.post("/api/interviewer/post_review", body);
+        console.log("Analysis submitted successfully:", response.data);
+      } catch (error) {
+        console.error("Error submitting analysis:", error);
+      }
+    };
     if (analysisData && Array.isArray(analysisData) && interviewId) {
       submitAnalysis(); // Automatically submit when the data is available
     }
