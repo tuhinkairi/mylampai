@@ -15,21 +15,29 @@ import { useUserStore } from "@/utils/userStore";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { removeCookie } from "@/utils/cookieUtils";
-import { getNotification } from "@/actions/notification";
+import { getNotification } from "@/actions/Notification";
 import { useState } from "react";
-import { DialogContent } from "@radix-ui/react-dialog";
-interface message{
-  message:string
+import { Dialog, DialogContent } from "@radix-ui/react-dialog";
+interface message {
+  message: string
 }
 export function NavUser() {
   const { userData, clearUser, setUser } = useUserStore();
-  const[notification,setnotification]=useState<string[]>([]);
+  interface Notification {
+    id: string;
+    userId: string;
+    recruiterId: string;
+    message: string;
+    received: boolean;
+  }
+  
+  const [notification, setnotification] = useState<Notification[]>([]);
   const router = useRouter();
-if(!userData){
-  return;
-}
+  if (!userData) {
+    return;
+  }
   const handleNotifications = async () => {
-    const notification=await getNotification(userData?.id)
+    const notification = await getNotification(userData?.id)
     setnotification(notification);
     toast.success("No notifications available");
   };
@@ -57,9 +65,9 @@ if(!userData){
           <AvatarFallback className="rounded-lg cursor-default">
             {userData?.name
               ? userData?.name
-                  .split(/\s+/)
-                  .map((word) => word[0].toUpperCase())
-                  .join("")
+                .split(/\s+/)
+                .map((word) => word[0].toUpperCase())
+                .join("")
               : "UR"}
           </AvatarFallback>
         </Avatar>
@@ -77,9 +85,9 @@ if(!userData){
               <AvatarFallback className="rounded-lg">
                 {userData?.name
                   ? userData?.name
-                      .split(/\s+/)
-                      .map((word) => word[0].toUpperCase())
-                      .join("")
+                    .split(/\s+/)
+                    .map((word) => word[0].toUpperCase())
+                    .join("")
                   : "US"}
               </AvatarFallback>
             </Avatar>
@@ -108,20 +116,22 @@ if(!userData){
             <Bell />
             Notifications
           </DropdownMenuItem>
-          <DialogContent className="bg-white p-4 rounded-lg shadow-lg max-w-sm w-full">
-        <h2 className="text-lg font-semibold mb-2">Notifications</h2>
-        {notification.length > 0 ? (
-          <ul className="space-y-2">
-            {notification.map((notif) => (
-              <li  className="p-2 border rounded-md">
-                {notif}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500">No notifications available.</p>
-        )}
-      </DialogContent>
+          <Dialog>
+            <DialogContent className="bg-white p-4 rounded-lg shadow-lg max-w-sm w-full">
+              <h2 className="text-lg font-semibold mb-2">Notifications</h2>
+              {notification.length > 0 ? (
+                <ul className="space-y-2">
+                  {notification.map((notif) => (
+                    <li className="p-2 border rounded-md" key={notif.id}>
+                      {notif.message}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-gray-500">No notifications available.</p>
+              )}
+            </DialogContent>
+          </Dialog>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

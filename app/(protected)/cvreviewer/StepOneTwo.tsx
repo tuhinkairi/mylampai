@@ -76,7 +76,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [otherProfile, setOtherProfile] = useState("");
-  const [next,Setnext] = useState<boolean>(false)
+  const [next, Setnext] = useState<boolean>(false)
 
   const { token } = useUserStore();
 
@@ -161,13 +161,13 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
               if (structuredDataResult && structuredDataResult.message) {
                 setStructuredData(structuredDataResult.message);
-                toast.success("extracted structured data");
+                // toast.success("extracted structured data");
               } else {
                 toast.error("Failed to extract structured data");
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              // await uploadCVAndJobDescription(base64String, extractedText);
+              await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -194,6 +194,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
     const file = event.target.files?.[0];
 
     setUploading(true);
+    setIsResumeUploaded(false);
 
     if (file && file.type === "application/pdf") {
       if (file.size > 1 * 1024 * 1024) {
@@ -265,13 +266,13 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
               if (structuredDataResult && structuredDataResult.message) {
                 setStructuredData(structuredDataResult.message);
-                toast.success("extracted structured data");
+                // toast.success("extracted structured data");
               } else {
                 toast.error("Failed to extract structured data");
               }
 
               // Trigger the upload of CV and Job Description with base64 string and extracted text
-              // await uploadCVAndJobDescription(base64String, extractedText);
+              await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -308,16 +309,31 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
             JobDescription: extractedText || manualJobDescription, // Depending on whether it's a file or manual entry
           }),
         });
-        const cvid = await response.json()
-        console.log(cvid)
-        const tempId: string = cvid.cv.id
-        setResumeId(tempId)
-        await getSummary(extractedText, tempId)
-        console.log(extractedText)
-        console.log(resumeId)
-        setCvId(cvid.id)
 
-        
+
+        const res = await response.json()
+        console.log("cvid checke: ", res)
+        let tempId: string = ""
+        if (res.status == 409) {
+          tempId = res.message?.id
+        } else {
+          tempId = res?.cv?.id
+        }
+
+        setResumeId(tempId)
+        console.log("profile check: ", profile)
+        // if (profile) {
+        // await getSummary(extractedText, tempId);
+        // } else {
+        //   console.log("Profile is required");
+        // }
+        // console.log(extractedText)
+        // console.log(resumeId)
+        console.log("cvid:: ", tempId)
+        setCvId(tempId)
+        setUploading(false)
+        setIsResumeUploaded(true);
+        Setnext(true)
       } catch (error) {
         console.error("Error:", error);
         toast.error("summary analysis failed")
@@ -325,7 +341,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       }
     },
-    [manualJobDescription,setCvId,token]
+    [manualJobDescription, setCvId, token,profile,setResumeId]
   );
 
   const extractStructuredData = useCallback(async (text: string) => {
@@ -340,7 +356,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       const result = await response.json();
       if (response.ok) {
-        setIsResumeUploaded(true);
+
         toast.success("Resume uploaded successfully");
         // console.log(summary )
 
@@ -354,33 +370,35 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
       return null;
     }
   }, []);
-  const getSummary = useCallback(async (text: string, ResumeId: string) => {
-    try {
-      const response = await fetch("/api/interviewer/resumeAnalysis", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData:structuredData }),
-      });
 
-      if (!response.ok) {
-        toast.error("Error in getSummary")
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log("Response received:", result);
-      
-      // Return result if needed
-      Setnext(true)
-      toast.success("Summary uploaded successfully")
-      return result;
-    } catch (error) {
-      console.error("Error in getSummary:", error);
-    }
-  }, []);
+  // const getSummary = useCallback(async (text: string, ResumeId: string) => {
+  //   try {
+  //     const response = await fetch("/api/interviewer/resumeAnalysis", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData: structuredData, profile: profile }),
+  //     });
+
+  //     if (!response.ok) {
+  //       toast.error("Error in getSummary")
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+
+  //     const result = await response.json();
+  //     console.log("Response received:", result);
+
+  //     // Return result if needed
+  //     Setnext(true)
+  //     toast.success("Summary uploaded successfully")
+  //     return result;
+  //   } catch (error) {
+  //     console.error("Error in getSummary:", error);
+  //   }
+  // }, []);
+
   return (
     <div className="md:h-screen bg-primary-foreground min-h-screen p-4 flex items-center md:justify-center justify-top w-full border-[#eeeeee] overflow-hidden">
       <div className="max-w-[1350px] h-full max-h-[570px]  w-full flex flex-col items-stretch md:flex-row justify-evenly">
@@ -587,7 +605,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
                     ? "bg-gray-600 hover:bg-gray-800 text-white"
                     : "bg-slate-500 text-gray-800 cursor-not-allowed"
                     }`}
-                  disabled={!profile }
+                  disabled={!profile}
                   onClick={handleNextClick}
                 >
                   Next

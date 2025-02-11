@@ -1,4 +1,3 @@
-"use client";
 
 export const sendNewsLetter = async (
     emails: string[],

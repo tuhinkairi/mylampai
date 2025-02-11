@@ -45,7 +45,7 @@ export default function Footer() {
 
   return (
     <>
-      <div className="flex flex-col justify-around lg:flex-row gap-8 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.7)] bg-[url('/home/herosection-background.svg')] py-[10px] px-8 mt-16">
+      <div className="flex flex-col justify-around lg:flex-row gap-8 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.7)] bg-[url('/home/herosection-background.svg')] py-[10px] px-2 md:px-8 mt-16">
         <div className="w-full max-w-[600px] rounded-lg bg-primary-foreground p-4">
           <div className="bg-white w-full rounded-lg py-2 px-8 shadow-br">
             <div className="flex items-center justify-between text-2xl font-bold text-[#00000090] border-b-[1px] pb-2">
@@ -57,7 +57,7 @@ export default function Footer() {
                 alt="logo"
               />
             </div>
-            <div className="flex w-full md:gap-0 items-start justify-between p-2 ">
+            <div className="flex w-full flex-col md:flex-row gap-6 md:gap-0 items-start justify-between p-2 ">
               <div className="w-full flex flex-col items-start justify-between gap-4">
                 <h3 className="text-[#8C52FF] font-semibold uppercase">
                   Stay Connected
@@ -80,7 +80,7 @@ export default function Footer() {
                   </a>
                 </div>
               </div>
-              <div className="w-full hidden sm:flex flex-col items-start justify-between gap-2 text-[#00000090]">
+              <div className="w-full flex flex-col items-start justify-between gap-2 text-[#00000090]">
                 <h3 className="text-[#8C52FF] font-semibold uppercase ">
                   Stay Updated
                 </h3>
@@ -115,8 +115,13 @@ export default function Footer() {
                   <div className="text-xs text-left w-full text-[#697386]">
                     Know everything about wiZe in just one call
                   </div>
-                  <a href="https://calendly.com/mylamp/wize" target="_blank" className="group absolute flex items-center bottom-0 gap-1 right-4 text-primary text-xs px-2 py-1">
-                    Schedule Call <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-all" />
+                  <a
+                    href="https://calendly.com/mylamp/wize"
+                    target="_blank"
+                    className="group absolute flex items-center bottom-0 gap-1 right-4 text-primary text-xs px-2 py-1"
+                  >
+                    Schedule Call{" "}
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-all" />
                   </a>
                 </div>
               </div>
@@ -124,7 +129,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="w-full flex flex-col text-[#697386] justify-between items-start font-medium">
-          <div className="w-full flex justify-evenly pt-8 mx-auto">
+          <div className="w-full flex justify-evenly pt-4 md:pt-8 mx-auto min-h-32">
             <div className="flex flex-col justify-start">
               <div className="uppercase mb-4">Talent</div>
               {/* <ul>
@@ -168,7 +173,7 @@ export default function Footer() {
               </ul> */}
             </div>
           </div>
-          <div className="pt-[10px] border-t-[1px] flex justify-between items-center w-full text-xs">
+          <div className="pt-[10px] border-t-[1px] flex md:flex-row flex-col-reverse gap-2 justify-between items-center w-full text-xs">
             <div className=" flex items-center ">
               <Copyright className="w-4" /> &nbsp; 2024 All rights reserved,
               wiZe AI

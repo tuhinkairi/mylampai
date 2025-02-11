@@ -46,12 +46,13 @@ const ReviewCard = ({ img }: { img: string }) => {
 export function InfiniteLogoSlide() {
   return (
     <>
-      <div className="relative flex h-[200px] w-full max-w-[calc(100vw)] flex-col items-center z-10 justify-center overflow-hidden rounded-lg">
-        <Marquee className="[--duration:20s]">
+      <div className="relative flex h-[350px] md:h-[200px] w-full max-w-[calc(100vw)] flex-col items-center z-10 justify-center overflow-hidden rounded-lg">
+        <Marquee className="[--duration:20s] z-10">
           {firstRow.map((review, index) => (
             <ReviewCard key={index} {...review} />
           ))}
         </Marquee>
+        <Image src={"/home/herosection/globe.svg"} alt="globe wize" width={250} height={250} className="z-0 w-full top-4 absolute md:hidden" />
         <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 dark:from-background"></div>
         <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 dark:from-background"></div>
       </div>

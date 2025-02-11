@@ -26,7 +26,8 @@
         "./*"
       ],
       "pdfjs-dist": ["./node_modules/pdfjs-dist"]
-    }
+    },
+    "typeRoots": ["./node_modules/@types", "./types"]
   },
   "include": [
     "next-env.d.ts",
