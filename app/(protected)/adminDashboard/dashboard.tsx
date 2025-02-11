@@ -1,29 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import QuillWrapper from "@/components/adminDashboard/QuillWrapper";
 import emailtemplate from "@/utils/newsletter";
 import otptemplate from "@/utils/otptemplate";
 import { sendNewsLetter, scheduleNewsLetter } from "@/utils/newlettermailing";
-
-const modules = {
-  toolbar: [
-    [{ header: "1" }, { header: "2" }, { font: [] }],
-    [{ size: [] }],
-    ["bold", "italic", "underline", "strike", "blockquote"],
-    [
-      { list: "ordered" },
-      { list: "bullet" },
-      { indent: "-1" },
-      { indent: "+1" },
-    ],
-    ["link", "image", "video"],
-    ["clean"],
-  ],
-  clipboard: {
-    matchVisual: false,
-  },
-};
 
 const availableTemplates = [
   { name: "Standard Template", template: emailtemplate },
@@ -42,7 +22,7 @@ export default function AdminDashboard() {
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduleFrequency, setScheduleFrequency] = useState("One-Time");
 
-  const createMarkup = (html: any) => {
+  const createMarkup = (html: string) => {
     setEmailContent(html);
     const htmlTemplate = emailTemplate.replace(
       "{{EMAIL_CONTENT}}",
@@ -57,12 +37,11 @@ export default function AdminDashboard() {
       emailContent
     );
     setFinalHtmlTemplate(htmlTemplate);
-  }, [emailContent,emailTemplate]);
+  }, [emailContent, emailTemplate]);
 
   const handleSendEmail = async () => {
     const recipientEmails = emailIds.split(",").map((email) => email.trim());
     const res = await sendNewsLetter(recipientEmails, subject, finalHTMLTemplate);
-    console.log(res);
     if(res.message === "Emails sent successfully"){
       alert("Email sent successfully!");
     }else{
@@ -76,18 +55,15 @@ export default function AdminDashboard() {
       recipientEmails,
       subject,
       finalHTMLTemplate,
-      scheduleDate as string,
-      scheduleTime as string,
-      scheduleFrequency as string
+      scheduleDate,
+      scheduleTime,
+      scheduleFrequency
     );
     console.log(res);
-    console.log(scheduleDate, scheduleTime, scheduleFrequency);
-    // if()
-    // alert("Email scheduled successfully!");
   };
 
-  const handleTemplateChange = (e: any) => {
-    setEmailTemplate(availableTemplates[e.target.value].template);
+  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setEmailTemplate(availableTemplates[parseInt(e.target.value)].template);
   };
 
   return (
@@ -109,13 +85,7 @@ export default function AdminDashboard() {
 
       <div className="space-y-2">
         <label className="block text-lg font-medium text-gray-700">Email Body</label>
-        <ReactQuill
-          value={value}
-          onChange={setValue}
-          modules={modules}
-          placeholder="Enter Email body here"
-          className="bg-white border border-gray-300 rounded-lg"
-        />
+        <QuillWrapper value={value} onChange={setValue} />
       </div>
 
       <div>
