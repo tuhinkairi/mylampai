@@ -8,7 +8,7 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const user = await auth();
-  console.log("user info: ",user)
+  
   const isTalentProfileExist=await prisma.talentProfile.findFirst({
     where: {
       userId: user?.id,

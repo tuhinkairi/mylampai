@@ -16,7 +16,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { removeCookie } from "@/utils/cookieUtils";
 import { getNotification } from "@/actions/Notification";
-import { getNotification } from "@/actions/Notification";
 import { useState } from "react";
 import { Dialog, DialogContent } from "@radix-ui/react-dialog";
 interface message {
