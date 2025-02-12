@@ -4,6 +4,8 @@ import { Toaster } from "sonner";
 import AuthProvider from "@/components/auth/AuthProvider";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
+import { MicrophoneContextProvider } from "@/context/MicrophoneContextProvider";
+import { DeepgramContextProvider } from "@/context/DeepgramContextProvider";
 
 const openSans = Open_Sans({ subsets: ["latin"], display: "swap" });
 
@@ -62,7 +64,9 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth focus:scroll-auto">
       <body className={`${openSans.className}`}>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider><MicrophoneContextProvider>
+          <DeepgramContextProvider>{children}</DeepgramContextProvider>
+        </MicrophoneContextProvider></AuthProvider>
         <GoogleAnalytics gaId="G-3TPKSH7MPS" />
         <Script id="clarity-script" strategy="afterInteractive">
           {`

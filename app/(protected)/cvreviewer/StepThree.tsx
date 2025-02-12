@@ -1,5 +1,4 @@
 "use client";
-// fetch nessesary details first from the apis then load to the db
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useInterviewStore } from "@/utils/store";
 import * as pdfjsLib from "pdfjs-dist/webpack";
@@ -131,6 +130,45 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
   useEffect(() => {
     console.log("reviewed Data:: ", reviewedData)
   }, [reviewedData])
+
+  const highlightSentences = useCallback(
+    (
+      list_of_sentences: any,
+      class_name: string,
+      case_sensitive_flag: boolean
+    ) => {
+      const options_general = {
+        ignorePunctuation: ":;.,-–—‒_(){}[]!'\"+=".split(""),
+        separateWordSearch: false,
+        accuracy: "partially" as any,
+        className: class_name,
+        acrossElements: true,
+        caseSensitive: case_sensitive_flag,
+      };
+
+      // Ensure list_of_sentences is an array
+      if (!Array.isArray(list_of_sentences)) {
+        console.error(
+          "Expected list_of_sentences to be an array, but got:",
+          list_of_sentences
+        );
+        return;
+      }
+
+      list_of_sentences.forEach((sentence: string) => {
+        if (typeof sentence === "string") {
+          if (textLayerRef.current) {
+            const normalizedSentence = sentence.trim().replace(/\s+/g, " ");
+            const instance = new Mark(textLayerRef.current);
+            instance.mark(normalizedSentence, options_general);
+          }
+        } else {
+          console.warn("Skipping non-string sentence:", sentence);
+        }
+      });
+    },
+    []
+  );
 
   const runAnalysis = useCallback(
     async (analysisType: string) => {
@@ -1258,48 +1296,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       setIsTextLayerReady(true);
       // console.log("lorem", reviewedData)
     },
-    [structuredData, extractedText, profile, reviewedData]
+    [structuredData, extractedText, profile, reviewedData,analyzeResume,cvId,experience,highlightSentences]
   );
 
 
-  const highlightSentences = useCallback(
-    (
-      list_of_sentences: any,
-      class_name: string,
-      case_sensitive_flag: boolean
-    ) => {
-      const options_general = {
-        ignorePunctuation: ":;.,-–—‒_(){}[]!'\"+=".split(""),
-        separateWordSearch: false,
-        accuracy: "partially" as any,
-        className: class_name,
-        acrossElements: true,
-        caseSensitive: case_sensitive_flag,
-      };
-
-      // Ensure list_of_sentences is an array
-      if (!Array.isArray(list_of_sentences)) {
-        console.error(
-          "Expected list_of_sentences to be an array, but got:",
-          list_of_sentences
-        );
-        return;
-      }
-
-      list_of_sentences.forEach((sentence: string) => {
-        if (typeof sentence === "string") {
-          if (textLayerRef.current) {
-            const normalizedSentence = sentence.trim().replace(/\s+/g, " ");
-            const instance = new Mark(textLayerRef.current);
-            instance.mark(normalizedSentence, options_general);
-          }
-        } else {
-          console.warn("Skipping non-string sentence:", sentence);
-        }
-      });
-    },
-    []
-  );
+  
 
   const base64ToUint8Array = useCallback((base64: string): Uint8Array => {
     // Remove data URL prefix if present
@@ -1370,8 +1371,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       if (score < 50) return "#FF0000";
       if (score < 70) return "#FFA500";
       return "#00FF00";
-    },
-    [reviewedData.resume_score]
+    },[]
   );
 
   const getColorClass = useCallback(
@@ -1380,8 +1380,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       if (score < 50) return "text-red-500";
       if (score < 70) return "text-yellow-500";
       return "text-green-500";
-    },
-    [reviewedData.resume_score]
+    },[]
   );
 
   useEffect(() => {
@@ -1405,7 +1404,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
     if (isTextLayerReady) {
       highlightSentences(sentencesToHighlight, "highlighted", false);
     }
-  }, [isTextLayerReady, sentencesToHighlight, resumeFile, resumeId, setLoading]);
+  }, [isTextLayerReady, sentencesToHighlight, resumeFile, resumeId, setLoading,highlightSentences,isRendered,renderPDF]);
 
 
   const isFirstRender = useRef(true);
@@ -1435,7 +1434,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [runAnalysis]);
 
   return (
     <div className="flex h-full justify-between bg-primary-foreground items-stretch gap-2 px-2 pl-0">

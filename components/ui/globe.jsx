@@ -59,7 +59,7 @@ export default function Cobe({ glowColor = [1.2, 1.2, 1.2], baseColor = [1, 1, 1
       globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, []);
+  }, [baseColor,glowColor,r]);
 
   return (
     <div
