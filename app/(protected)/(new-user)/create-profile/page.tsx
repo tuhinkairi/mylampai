@@ -586,13 +586,17 @@ export default function CreateProfile() {
           <div>
             OR
           </div>
-          <Button
+          <div className="flex gap-2 align-middle justify-center">
+            <span>Don&apos;t have Resume? </span>
+            <Button
               type="button"
               className="bg-white text-primary border border-primary hover:bg-primary hover:text-white"
               onClick={() => handleIncStep(step + 1)}
             >
               Manually enter details
             </Button>
+          </div>
+          
           </div>
         </section>
 

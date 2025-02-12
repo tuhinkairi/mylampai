@@ -11,41 +11,39 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(auto()) @map("_id") @db.ObjectId
-  email          String          @unique
-  name           String?
-  emailVerified  DateTime?
-  image          String?
-  first_name     String?
-  last_name      String?
-  dateOfBirth    DateTime?
-  phone          String?
-  street         String?
-  city           String?
-  state          String?
-  country        String?
-  zipCode        String?
-  hashedPassword String?
-  gender         String?
-  location       String?
-  role           String          @default("user")
-  work_category  String?
+  id                String          @id @default(auto()) @map("_id") @db.ObjectId
+  email             String          @unique
+  name              String?
+  emailVerified     DateTime?
+  image             String?
+  first_name        String?
+  last_name         String?
+  dateOfBirth       DateTime?
+  phone             String?
+  street            String?
+  city              String?
+  state             String?
+  country           String?
+  zipCode           String?
+  hashedPassword    String?
+  gender            String?
+  location          String?
+  role              String          @default("user")
+  work_category     String?
   work_specialities String[]
-  Notification     Notification[]
-
-
-  languages      Language[]
-  education      Education[]
-  talentPool     TalentPool[]
-  jobProfile     JobProfile[]
-  talentProfile  TalentProfile[]
-  accounts       Account[]
-  sessions       Session[]
-  otps           OTP[]
-  cvs            CV[]
-  credits        Int             @default(0)
-  isRegistered   Boolean         @default(false)
-  interviews     Interview[]
+  Notification      Notification[]
+  languages         Language[]
+  education         Education[]
+  talentPool        TalentPool[]
+  jobProfile        JobProfile[]
+  talentProfile     TalentProfile[]
+  accounts          Account[]
+  sessions          Session[]
+  otps              OTP[]
+  cvs               CV[]
+  credits           Int             @default(0)
+  isRegistered      Boolean         @default(false)
+  interviews        Interview[]
   // posts            Modules[]
   // communityIds     String[]        @db.ObjectId
   // communities      Community[]     @relation(fields: [communityIds], references: [id])
@@ -54,10 +52,9 @@ model User {
   // messages         Message[]
   // sentmessages     Directmessage[] @relation("SenderUser")
   // receivedMessages Directmessage[] @relation("ReceiverUser")
-  JobCandidate   JobCandidate[]
+  JobCandidate      JobCandidate[]
   // newsletters    Newsletter[]    @relation("NewsletterRecipients")
-  Resume         Resume[]
-
+  Resume            Resume[]
 }
 
 model Account {
@@ -324,7 +321,6 @@ model CV {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   ResumeAnalysis ResumeAnalysis[]
-  analysis       CVAnalysis[]
 }
 
 model ResumeAnalysis {
@@ -340,7 +336,7 @@ model ResumeAnalysis {
   spellingerrors        Json?
   summary               String?
   personal_info         Json?
-  bullet_point_length   Json?  
+  bullet_point_length   Json?
   bullet_point_improver Json?
   total_bullet_points   Json?
   responsibility        Json?
@@ -351,44 +347,20 @@ model ResumeAnalysis {
   updatedAt             DateTime @updatedAt
 }
 
-model CVAnalysis {
-  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
-  cvId                    String   @db.ObjectId
-  cv                      CV       @relation(fields: [cvId], references: [id], onDelete: Cascade)
-  summary                 String?
-  resumeScore             Float?
-  hardSkillsScore         Float?
-  softSkillsScore         Float?
-  experienceScore         Float?
-  educationScore          Float?
-  quantificationIssues    String[]
-  bulletPointLength       Json?
-  bulletPointImprovements Json?
-  verbTenseIssues         Json?
-  weakVerbUsage           Json?
-  repetitionIssues        Json?
-  sectionFeedback         Json?
-  skillAnalysis           Json?
-  spellingIssues          String[]
-  responsibilityIssues    Json?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-}
 model Notification {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String @db.ObjectId
-  recruiterId String @db.ObjectId
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  recruiterId String     @db.ObjectId
   message     String
-  received    Boolean @default(false) 
-  user        User @relation(fields: [userId],references: [id])
-  recuiter  Recruiter? @relation(fields: [recruiterId],references: [id],onDelete: Cascade) 
+  received    Boolean    @default(false)
+  user        User       @relation(fields: [userId], references: [id])
+  recuiter    Recruiter? @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
 }
 
 model Recruiter {
-  id            String @id @default(auto()) @map("_id") @db.ObjectId
-  notification  Notification[]
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  notification Notification[]
 }
-
 
 model Interview {
   id                String              @id @default(auto()) @map("_id") @db.ObjectId
