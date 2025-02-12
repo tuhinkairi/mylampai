@@ -36,8 +36,11 @@ export function NavUser() {
   if (!userData) {
     return;
   }
+  if (!userData) {
+    return;
+  }
   const handleNotifications = async () => {
-    const notification = await getNotification(userData?.id)
+    const notification = await getNotification(userData?.id);
     setnotification(notification);
     toast.success("No notifications available");
   };
