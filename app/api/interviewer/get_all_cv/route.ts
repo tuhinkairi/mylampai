@@ -29,7 +29,7 @@ export const GET = async (req: NextRequest) => {
     const cvs = await prisma.cV.findMany({
       where: { userId },
       include: {
-        ResumeAnalysis: true, // Include CVAnalysis relation
+        ResumeAnalysis: true, // Include ResumeAnalysis relation
       },
       orderBy: {
         createdAt: 'desc',

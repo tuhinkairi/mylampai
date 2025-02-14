@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { addProfiles, addSkills, createEducation, createEmployments, createTalentProfile, updateDescription, updateProfile, updateTitle } from "@/actions/setupProfileActions";
-import { Clock9 } from "lucide-react";
+import { addProfiles, addSkills, createEducation, createEmployments, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
+import { Check, Clock9 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JobCategoriesSelector } from "@/components/create-profile/job-specialites";
 import { ArrayInput } from "@/components/misc/ArrayInput";
@@ -36,8 +36,8 @@ import { IoCloudUploadOutline, IoDocumentAttach } from "react-icons/io5";
 import { useRouter } from 'next/navigation';
 
 
-  const formSchema = z.object({
-    skills: z.array(z.string()).min(1, "At least one skill is required"),
+const formSchema = z.object({
+  skills: z.array(z.string()).min(1, "At least one skill is required"),
 });
 
 // const baseUrl = "https://optim-cv-judge.onrender.com";
@@ -64,7 +64,7 @@ interface EducationData {
   school: string;
   degree: string;
   field?: string;
-  grade?:string;
+  grade?: string;
   startDate?: Date;
   endDate?: Date;
   description?: string;
@@ -104,7 +104,7 @@ interface UserInfo {
 
 export default function CreateProfile() {
   const { id, setId, setResumeUrl } = useProfileStore();
-  const { userData,setUser} = useUserStore();
+  const { userData, setUser } = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
@@ -155,7 +155,7 @@ export default function CreateProfile() {
 
     setUploading(true);
 
-   await processResume(file)
+    await processResume(file)
   };
 
   const mapStructuredResultToUserInfo = (structuredResult: StructuredResult): UserInfo => {
@@ -163,7 +163,7 @@ export default function CreateProfile() {
       name: structuredResult.name || "",
       first_name: structuredResult.first_name || "",
       last_name: structuredResult.last_name || "",
-      phone: structuredResult.phone|| "",
+      phone: structuredResult.phone || "",
       street: structuredResult.street || "",
       city: structuredResult.city || "",
       state: structuredResult.state || "",
@@ -172,52 +172,55 @@ export default function CreateProfile() {
     }
   }
 
-  const processResume=async (file:Blob)=>{
+  const processResume = async (file: Blob) => {
     if (file && file.type !== "application/pdf") {
       toast.error("Please upload a PDF file");
       return;
     }
-
+  
     if (!userData) {
       toast.error("Unknown error occurred");
       return;
     }
-
+  
     if (file && file.type === "application/pdf") {
       if (file.size > 1 * 1024 * 1024) {
         toast.error("File size should be less than 1MB");
         setUploading(false);
         return;
       }
-
-      //calling creatTalentProfile
+      setUploading(true);
+  
+      // Calling createTalentProfile
       const data = new FormData();
       data.append("resume", file);
-
+      let newTalentProfileId=null
       try {
-        const res = await createTalentProfile(data, userData.id)
-
+        const res = await createTalentProfile(data, userData.id);
+  
         if (res.status !== 200) {
           toast.error(res.error);
         } else {
           if (res.data) {
-            setResumeUrl(res.data.resumeUrl);
+            console.log("Result from createTalentProfile:: ", res.data.id);
+            newTalentProfileId=res.data.id
+            setResumeUrl(res.data?.resumeUrl ?? '');
             setId(res.data.id);
           }
         }
-
       } catch (error) {
-        toast.error("Failed to upload resume")
+        toast.error("Failed to upload resume");
       }
-
+  
       const blobName = generateFileName("resume.pdf", "cv");
       const sasUrl = await generateSasToken(blobName);
-
+  
       if (!sasUrl) {
         toast.error("Error uploading resume");
+        setUploading(false);
         return;
       }
-
+  
       try {
         const uploadResponse = await fetch(sasUrl, {
           method: "PUT",
@@ -226,7 +229,7 @@ export default function CreateProfile() {
           },
           body: file,
         });
-
+  
         if (!uploadResponse.ok) {
           toast.error("Resume Upload Failed");
         } else {
@@ -234,82 +237,58 @@ export default function CreateProfile() {
         }
       } catch (error) {
         console.error(error);
+        toast.error("Error during resume upload");
+      } finally {
+        setUploading(false);
       }
-
-      // setResumeFile(file);
-
+  
+      // Start analysing
+      setAnalysing(true);
+  
       const fileReader = new FileReader();
       let extractedText = "";
-      setAnalysing(true)
+  
       fileReader.onload = async function () {
         const typedArray = new Uint8Array(this.result as ArrayBuffer);
-
+  
         // Load the PDF document
         const pdf = await pdfjsLib.getDocument(typedArray).promise;
-
+  
         // Loop through each page
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
           const page = await pdf.getPage(pageNumber);
           const textContent = await page.getTextContent();
-
+  
           // Extract text
           const pageText = textContent.items
             .map((item: any) => item.str)
             .join(" ");
           extractedText += pageText + "\n";
         }
-
+  
         // Convert the file to base64
         const base64Reader = new FileReader();
         base64Reader.onloadend = async () => {
           const base64String = base64Reader.result?.toString().split(",")[1];
-
+  
           if (base64String && extractedText) {
             try {
-              // setExtractedText(extractedText);
-              // console.log("extracted Text :-> ", extractedText)
               const structuredDataResult = await extractStructuredData(
                 extractedText
               );
-
+  
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
-              if (structuredDataResult && structuredDataResult.message &&id) {
-                await processAndSaveData(structuredDataResult,userData?.id,id)
-                // setuserInfo(mapStructuredResultToUserInfo(structuredDataResult.message))
-                // console.log("setting up the userInfo ")
-                // console.log("structuredDataResult :-> ", structuredDataResult.message.profiles)
-                // setProfiles(structuredDataResult.message.profiles)
-                // console.log("skills --> ", structuredDataResult.message.skills)
-                // setSkills(structuredDataResult.message.skills)
-
-                // setJobTitle(structuredDataResult.message.jobRole)
-
-                // interface RawEmploymentData {
-                //   company: string;
-                //   position: string;
-                //   location?: string;
-                //   startDate: string; // API returns dates as strings
-                //   endDate: string;
-                //   description: string;
-                // }
-
-                // setExperiences(structuredDataResult.message["experience"].map((exp: RawEmploymentData): EmploymentData => ({
-                //   ...exp,
-                //   startDate: new Date(exp.startDate),
-                //   endDate: new Date(exp.endDate)
-                // })))
-
-                // setEducations(structuredDataResult.message.education)
-
-                // setUserBio(structuredDataResult.message.bio)
-
-                // setStructuredData(structuredDataResult.message);
+              if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
+                console.log("userId::",userData.id," talentProfileId:: ",newTalentProfileId)
+                await processAndSaveData(
+                  structuredDataResult,
+                  userData?.id,
+                  newTalentProfileId
+                );
+                setIsResumeUploaded(true);
               } else {
                 toast.error("Failed to extract structured data");
               }
-
-              // Trigger the upload of CV and Job Description with base64 string and extracted text
-              // await uploadCVAndJobDescription(base64String, extractedText);
             } catch (err) {
               toast.error("Failed to process the PDF");
               console.error("Error:", err);
@@ -317,17 +296,17 @@ export default function CreateProfile() {
           } else {
             toast.error("Error converting file to base64 or extracting text");
           }
+          setAnalysing(false);
         };
-
+  
         base64Reader.readAsDataURL(file); // Start reading the file as a data URL
       };
-      setAnalysing(false)
       fileReader.readAsArrayBuffer(file);
     } else {
       toast.error("Please upload a PDF file");
       setUploading(false);
     }
-  }
+  };
 
   const handleFileChange = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -339,8 +318,10 @@ export default function CreateProfile() {
       toast.error("No file selected");
       return;
     }
-
-    setUploading(true);
+    // Reset states for new upload
+    setUploading(false);
+    setAnalysing(false);
+    setIsResumeUploaded(false);
     await processResume(file);
   };
 
@@ -395,89 +376,112 @@ export default function CreateProfile() {
     if (step > 1) setStep(val);
   };
 
-  //hooks for calling actions
-  const processAndSaveData = async (structuredDataResult: any, userId: string,talentProfileId:string) => {
-    if (!structuredDataResult || !structuredDataResult.message) {
-        console.error("Invalid data received.");
+  //manual createTalentProfile without resume
+
+  const handleManualCreateProfile=async()=>{
+    try {
+      if (!userData) {
+        toast.error("Unknown error occurred");
         return;
+      }
+      const res=await createManualProfile(userData?.id)
+      if (res.status !== 200) {
+        toast.error(res.error);
+      } else {
+        if (res.data) {
+          console.log("Result from createTalentProfile:: ", res.data.id);
+          setId(res.data.id);
+          handleIncStep(step+1);
+        }
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  //hooks for calling actions
+  const processAndSaveData = async (structuredDataResult: any, userId: string, talentProfileId: string) => {
+    if (!structuredDataResult || !structuredDataResult.message) {
+      console.error("Invalid data received.");
+      return;
     }
 
     // Destructure the message
     const {
-        profiles,
-        skills,
-        jobRole,
-        experience,
-        education,
-        bio
+      profiles,
+      skills,
+      jobRole,
+      experience,
+      education,
+      bio
     } = structuredDataResult.message;
 
     // Map and transform data as needed
     const userInfo = mapStructuredResultToUserInfo(structuredDataResult.message);
 
-    
+
 
     const employmentData = experience.map((exp: EmploymentData): EmploymentData => ({
-        ...exp,
-        startDate: exp.startDate ? new Date(exp.startDate) : undefined,
-        endDate: exp.endDate ? new Date(exp.endDate) : undefined
+      ...exp,
+      startDate: exp.startDate ? new Date(exp.startDate) : undefined,
+      endDate: exp.endDate ? new Date(exp.endDate) : undefined
     }));
 
-    const educationData=education.map((edu:EducationData):EducationData=>({
+    const educationData = education.map((edu: EducationData): EducationData => ({
       ...edu,
       startDate: edu.startDate ? new Date(edu.startDate) : undefined,
       endDate: edu.endDate ? new Date(edu.endDate) : undefined
     }))
 
     // Define update functions
-    console.log("updating details for : ",talentProfileId)
+    console.log("updating details for : ", talentProfileId, "userId: ", userId)
     const updateUserInfo = () => updateProfile(userInfo, userId);
     const updateUserProfiles = () => addProfiles(profiles, talentProfileId);
     const updateUserSkills = () => addSkills(skills, talentProfileId);
     const updateUserJobTitle = () => updateTitle(jobRole, talentProfileId);
     const updateUserExperiences = () => createEmployments(employmentData, talentProfileId);
-    const updateUserEducations = () => createEducation(educationData, userId);
-    const updateUserBio = () => updateDescription(bio, talentProfileId);
+    const updateUserEducations = () => createEducation(educationData, talentProfileId);
+    const updateUserBio = () => updateBio(bio, talentProfileId);
 
     // Perform updates in parallel
     try {
-        const results = await Promise.allSettled([
-            updateUserInfo(),
-            updateUserProfiles(),
-            updateUserSkills(),
-            updateUserJobTitle(),
-            updateUserExperiences(),
-            updateUserEducations(),
-            updateUserBio()
-        ]);
+      const results = await Promise.allSettled([
+        updateUserInfo(),
+        updateUserProfiles(),
+        updateUserSkills(),
+        updateUserJobTitle(),
+        updateUserExperiences(),
+        updateUserEducations(),
+        updateUserBio()
+      ]);
 
-        // Handle results
-        // results.forEach((result, index) => {
-        //     if (result.status === "fulfilled") {
-        //         console.log(`Update ${index + 1} succeeded.`);
-        //     } else {
-        //         console.error(`Update ${index + 1} failed:`, result.reason);
-        //     }
-        // });
+      // Handle results
+      // results.forEach((result, index) => {
+      //     if (result.status === "fulfilled") {
+      //         console.log(`Update ${index + 1} succeeded.`);
+      //     } else {
+      //         console.error(`Update ${index + 1} failed:`, result.reason);
+      //     }
+      // });
 
-        const allFulfilled =results.every((result)=>result.status==="fulfilled")
+      const allFulfilled = results.every((result) => result.status === "fulfilled")
 
-        if (allFulfilled) {
-          console.log("All updates succeeded. Redirecting to /talentmatch...");
-          router.push("/talentmatch");
-        } else {
-            console.error("Some updates failed. Please check the logs.");
-            results.forEach((result, index) => {
-                if (result.status === "rejected") {
-                    console.error(`Update ${index + 1} failed:`, result.reason);
-                }
-            });
-        }
+      if (allFulfilled) {
+        console.log("All updates succeeded. Redirecting to /talentmatch...");
+        router.push("/talentmatch");
+      } else {
+        console.error("Some updates failed. Please check the logs.");
+        results.forEach((result, index) => {
+          if (result.status === "rejected") {
+            console.error(`Update ${index + 1} failed:`, result.reason);
+          }
+        });
+      }
 
     } catch (error) {
-        console.error("Error while updating data:", error);
+      console.error("Error while updating data:", error);
     }
-};
+  };
 
 
   return (
@@ -515,88 +519,83 @@ export default function CreateProfile() {
           <div className="flex gap-4 justify-center items-center">
             <div>
 
-          <div className="flex text-center mb-4 mt-3 w-full text-2xl font-bold text-gray-800">
-            Upload your latest CV/Resume
-          </div>
-
-          <div className="bg-white py-4 px-8 rounded-3xl w-full md:max-w-[350px] lg:max-w-[400px] shadow-lg text-center">
-            <div className="flex items-center justify-center text-primary mb-2 relative top-0 text-3xl">
-              <IoDocumentAttach />
-            </div>
-
-            <div
-              className="border-dashed border-2 border-slate-500 rounded-xl p-2 flex flex-col items-center justify-center"
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <div className="text-gray-500 mt-2 text-sm">Drag & Drop or</div>
-              <label
-                htmlFor="resumeUpload"
-                className="text-gray-500 cursor-pointer text-sm"
-              >
-                Click to{" "}
-                <span className="font-semibold text-primary ">
-                  Upload Resume
-                </span>
-              </label>
-              <input
-                id="resumeUpload"
-                type="file"
-                ref={fileInputRef}
-                accept=".doc,.docx,.pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-
-              <div className="text-4xl mt-3 text-slate-500">
-                <IoCloudUploadOutline />
+              <div className="flex text-center mb-4 mt-3 w-full text-2xl font-bold text-gray-800">
+                Upload your latest CV/Resume
               </div>
 
-              <p className="text-slate-500 text-sm mt-2">
-                Supported file format: .PDF File size limit 1MB.
-              </p>
+              <div className="bg-white py-4 px-8 rounded-3xl w-full md:max-w-[350px] lg:max-w-[400px] shadow-lg text-center">
+                <div className="flex items-center justify-center text-primary mb-2 relative top-0 text-3xl">
+                  <IoDocumentAttach />
+                </div>
+
+                <div
+                  className="border-dashed border-2 border-slate-500 rounded-xl p-2 flex flex-col items-center justify-center"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <div className="text-gray-500 mt-2 text-sm">Drag & Drop or</div>
+                  <label
+                    htmlFor="resumeUpload"
+                    className="text-gray-500 cursor-pointer text-sm"
+                  >
+                    Click to{" "}
+                    <span className="font-semibold text-primary ">
+                      Upload Resume
+                    </span>
+                  </label>
+                  <input
+                    id="resumeUpload"
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".doc,.docx,.pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+
+                  <div className="text-4xl mt-3 text-slate-500">
+                    <IoCloudUploadOutline />
+                  </div>
+
+                  <p className="text-slate-500 text-sm mt-2">
+                    Supported file format: .PDF File size limit 1MB.
+                  </p>
+                </div>
+
+                <div className="flex justify-center mt-4">
+                  <button
+                    className="bg-primary text-base px-8 relative text-white font-semibold py-[6px] rounded-xl hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
+                    onClick={handleResumeUpload}
+                  >
+                    {isResumeUploaded
+                      ? (<div className="flex gap-2"><Check />Upload again</div>)
+                      : uploading
+                        ? "Uploading..."
+                        : analysing ? (<div className='flex space-x-2 justify-center items-center dark:invert'>
+                          <span className=''>AI Analysing</span>
+                          <div className="flex gap-1 item-center">
+                            <div className='h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.3s]'></div>
+                            <div className='h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.15s]'></div>
+                            <div className='h-2 w-2 bg-black rounded-full animate-bounce'></div>
+                          </div>
+                        </div>) : "Upload Resume"}
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div>
+              OR
+            </div>
+            <div className="items-center justify-center">
+              <span>Don&apos;t have Resume? </span>
+              <Button
+                type="button"
+                className="bg-white text-primary border border-primary hover:bg-primary mt-3 hover:text-white"
+                onClick={async() =>(await handleManualCreateProfile())}
+              >
+                Manually enter details
+              </Button>
             </div>
 
-            <div className="flex justify-center mt-4">
-              <button
-                className="bg-primary text-base px-10 relative text-white font-semibold py-[6px] rounded-xl hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
-                onClick={handleResumeUpload}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 inline-block mr-2"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 00-1.414 0L9 11.586 4.707 7.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0l7-7a1 1 0 000-1.414z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {isResumeUploaded
-                  ? "Upload again"
-                  : uploading
-                    ? "Uploading..."
-                    : analysing ? "AI Analysing.." : "Upload Resume"}
-              </button>
-            </div>
-          </div>
-          </div>
-          <div>
-            OR
-          </div>
-          <div className="flex gap-2 align-middle justify-center">
-            <span>Don&apos;t have Resume? </span>
-            <Button
-              type="button"
-              className="bg-white text-primary border border-primary hover:bg-primary hover:text-white"
-              onClick={() => handleIncStep(step + 1)}
-            >
-              Manually enter details
-            </Button>
-          </div>
-          
           </div>
         </section>
 
@@ -796,13 +795,13 @@ export default function CreateProfile() {
         <div className="px-8 flex justify-between w-full">
           <Button
             onClick={() => handleDecStep(step - 1)}
-            className={`${step===1?"hidden":"bg-white border border-primary text-primary px-8"}`}
+            className={`${step === 1 ? "hidden" : "bg-white border border-primary text-primary px-8"}`}
           >
             Back
           </Button>{" "}
           <Button
             onClick={() => handleIncStep(step + 1)}
-            className={`${(step===1||step===10)?"hidden":"bg-white border border-primary text-primary hover:bg-primary hover:text-white px-8"}`}
+            className={`${(step === 1 || step === 10) ? "hidden" : "bg-white border border-primary text-primary hover:bg-primary hover:text-white px-8"}`}
           >
             Next
           </Button>

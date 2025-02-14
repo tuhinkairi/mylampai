@@ -11,8 +11,8 @@ datasource db {
 }
 
 model User {
-  id                String          @id @default(auto()) @map("_id") @db.ObjectId
-  email             String          @unique
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  email             String         @unique
   name              String?
   emailVerified     DateTime?
   image             String?
@@ -28,22 +28,19 @@ model User {
   hashedPassword    String?
   gender            String?
   location          String?
-  role              String          @default("user")
+  role              String         @default("user")
   work_category     String?
   work_specialities String[]
   Notification      Notification[]
-  languages         Language[]
-  education         Education[]
   talentPool        TalentPool[]
   jobProfile        JobProfile[]
-  talentProfile     TalentProfile[]
+  talentProfile     TalentProfile?
   accounts          Account[]
   sessions          Session[]
   otps              OTP[]
   cvs               CV[]
-  credits           Int             @default(0)
-  isRegistered      Boolean         @default(false)
-  interviews        Interview[]
+  credits           Int            @default(0)
+  isRegistered      Boolean        @default(false)
   // posts            Modules[]
   // communityIds     String[]        @db.ObjectId
   // communities      Community[]     @relation(fields: [communityIds], references: [id])
@@ -55,6 +52,7 @@ model User {
   JobCandidate      JobCandidate[]
   // newsletters    Newsletter[]    @relation("NewsletterRecipients")
   Resume            Resume[]
+  Interview         Interview[]
 }
 
 model Account {
@@ -71,7 +69,6 @@ model Account {
   id_token          String? @db.String
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([provider, providerAccountId])
 }
 
@@ -84,29 +81,29 @@ model Session {
 }
 
 model Language {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  language    String
-  proficiency String
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  language        String
+  proficiency     String
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Education {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  school      String
-  degree      String?
-  field       String?
-  grade       String?
-  startDate   DateTime?
-  endDate     DateTime?
-  description String?
-  skills      String[]
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  school          String
+  degree          String?
+  field           String?
+  grade           String?
+  startDate       DateTime?
+  endDate         DateTime?
+  description     String?
+  skills          String[]
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model OTP {
@@ -158,27 +155,44 @@ model TalentMatch {
 }
 
 model TalentProfile {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  resumeUrl     String
-  title         String?
-  description   String?
-  rate          String?
-  skills        String[]
-  profiles      String[]
-  hours         String?
-  availability  String?
-  target        String?
-  interviewDate DateTime?
-  interviews    Interview[]
-  talentMatch   TalentMatch[]
-  projects      Project[]
-  employment    Employment[]
-  candidates    JobCandidate[]
-  moreSections  MoreSections[]
-  userId        String         @db.ObjectId
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  resumeUrl          String?
+  title              String?
+  bio                String?
+  rate               String?
+  skills             String[]
+  profiles           String[]
+  hours              String?
+  mockInterviews     Interview[]
+  talentPoolProfiles TalentPoolProfile[]
+  talentMatch        TalentMatch[]
+  languages          Language[]
+  education          Education[]
+  projects           Project[]
+  employment         Employment[]
+  candidates         JobCandidate[]
+  moreSections       MoreSections[]
+  userId             String              @unique @db.ObjectId
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model TalentPoolProfile {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  resumeUrl       String
+  role            String
+  targetFor       String
+  skills          String[]
+  availability    String
+  locationPref    String?
+  interviewDate   DateTime
+  interviewStatus String
+  interview       Interview?
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model Project {
@@ -363,23 +377,25 @@ model Recruiter {
 }
 
 model Interview {
-  id                String              @id @default(auto()) @map("_id") @db.ObjectId
-  cvText            String?
-  jdText            String?
-  audioUrl          String?
-  videoUrl          String?
-  User              User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String              @db.ObjectId
-  messages          InterviewMessage[]
-  isStarted         Boolean             @default(false)
-  InterviewFeedback InterviewFeedback[]
-  Analysis          Analysis[]
-  isCompleted       Boolean             @default(false)
-  isFeedbackGiven   Boolean             @default(false)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  TalentProfile     TalentProfile?      @relation(fields: [talentProfileId], references: [id])
-  talentProfileId   String?             @db.ObjectId
+  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
+  cvText              String?
+  jdText              String?
+  audioUrl            String?
+  videoUrl            String?
+  User                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String              @db.ObjectId
+  messages            InterviewMessage[]
+  isStarted           Boolean             @default(false)
+  InterviewFeedback   InterviewFeedback[]
+  Analysis            Analysis[]
+  isCompleted         Boolean             @default(false)
+  isFeedbackGiven     Boolean             @default(false)
+  TalentProfile       TalentProfile?      @relation(fields: [talentProfileId], references: [id],onDelete:Cascade)
+  talentProfileId     String?             @db.ObjectId
+  talentPoolProfile   TalentPoolProfile?  @relation(fields: [talentPoolProfileId], references: [id])
+  talentPoolProfileId String?             @unique @db.ObjectId
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model InterviewMessage {

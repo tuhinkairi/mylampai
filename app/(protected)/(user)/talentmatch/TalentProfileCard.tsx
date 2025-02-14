@@ -148,7 +148,7 @@ export function TalentProfileCard({ profile }: { profile: TalentProfile }) {
       <div className="px-8 mt-12">
         <h2 className="text-2xl font-semibold">{userData?.name}</h2>
         <p className="text-muted-foreground">{profile?.title}</p>
-        <p className="text-muted-foreground">{profile?.description}</p>
+        <p className="text-muted-foreground">{profile?.bio}</p>
       </div>
       <div className="px-8">
         {(profile.skills.length > 0 || profile.profiles.length > 0) && (

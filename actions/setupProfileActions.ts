@@ -59,6 +59,30 @@ export const createTalentProfile = async (
   }
 };
 
+export const createManualProfile= async(userId:string)=>{
+  try {
+    const profile = await prisma.talentProfile.create({
+      data: {
+        userId,
+      },
+    });
+
+    return {
+      status: 200,
+      data: {
+        id: profile.id,
+      },
+      message: "Talent profile created successfully",
+    };
+  } catch (error) {
+    console.error("Error creating talent profile:", error);
+    return {
+      error: "Error uploading resume",
+      status: 500,
+    };
+  }
+} 
+
 export const addProfiles = async (
   profiles: string[],
   talentProfileId: string
@@ -148,6 +172,7 @@ export const createEmployments = async (
   talentProfileId: string
 ) => {
   try {
+    console.log("creating employment")
     await prisma.employment.createMany({
       data: employments.map((employment) => ({
         ...employment,
@@ -180,13 +205,13 @@ type EducationData = {
 
 export const createEducation = async (
   education: EducationData[],
-  userId: string
+  talentProfileId: string
 ) => {
   try {
     await prisma.education.createMany({
       data: education.map((education) => ({
         ...education,
-        userId,
+        talentProfileId,
       })),
     });
 
@@ -210,13 +235,13 @@ type LanguageData = {
 
 export const createLanguages = async (
   languages: LanguageData[],
-  userId: string
+  talentProfileId: string
 ) => {
   try {
     await prisma.language.createMany({
       data: languages.map((language) => ({
         ...language,
-        userId,
+        talentProfileId,
       })),
     });
 
@@ -233,8 +258,8 @@ export const createLanguages = async (
   }
 };
 
-export const updateDescription = async (
-  description: string,
+export const updateBio = async (
+  bio: string,
   talentProfileId: string
 ) => {
   try {
@@ -243,7 +268,7 @@ export const updateDescription = async (
         id: talentProfileId,
       },
       data: {
-        description,
+        bio,
       },
     });
 

@@ -1,3 +1,4 @@
+"use server"
 import prisma from "@/lib/index";
 import { auth } from "@/lib/authlib";
 import { redirect } from "next/navigation";
@@ -14,7 +15,7 @@ export default async function UserLayout({
       userId: user?.id,
     },
   });
-
+  console.log("user found ",user)
   if (!user || user?.role !== "user") {
     redirect("/not-found");
   }

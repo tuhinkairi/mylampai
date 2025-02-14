@@ -28,7 +28,7 @@ interface TalentProfile {
   id: string | null;
   resumeUrl: string | null;
   title: string | null;
-  description: string | null;
+  bio: string | null;
   rate: string | null;
   skills: string[];
   profiles: string[];
@@ -39,7 +39,7 @@ interface TalentProfile {
   setId: (id: string) => void;
   setResumeUrl: (resumeUrl: string) => void;
   setTitle: (title: string) => void;
-  setDescription: (description: string) => void;
+  setBio: (bio: string) => void;
   setRate: (rate: string) => void;
   setSkills: (skills: string[]) => void;
   setProfiles: (profiles: string[]) => void;
@@ -56,7 +56,7 @@ export const useProfileStore = create<TalentProfile>()(
       id: null,
       resumeUrl: null,
       title: null,
-      description: null,
+      bio: null,
       rate: null,
       skills: [],
       profiles: [],
@@ -67,7 +67,7 @@ export const useProfileStore = create<TalentProfile>()(
       setId: (id: string) => set({ id }),
       setResumeUrl: (resumeUrl: string) => set({ resumeUrl }),
       setTitle: (title: string) => set({ title }),
-      setDescription: (description: string) => set({ description }),
+      setBio: (bio: string) => set({ bio }),
       setRate: (rate: string) => set({ rate }),
       setSkills: (skills: string[]) => set({ skills }),
       setProfiles: (profiles: string[]) => set({ profiles }),
@@ -80,7 +80,7 @@ export const useProfileStore = create<TalentProfile>()(
           id: null,
           resumeUrl: null,
           title: null,
-          description: null,
+          bio: null,
           rate: null,
           skills: [],
           profiles: [],

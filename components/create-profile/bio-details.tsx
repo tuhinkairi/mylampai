@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "../ui/textarea";
 import { useProfileStore } from "@/utils/profileStore";
-import { updateDescription } from "@/actions/setupProfileActions";
+import { updateBio } from "@/actions/setupProfileActions";
 
 const formSchema = z.object({
   bio: z.string().min(1, "Bio is required"),
@@ -36,7 +36,7 @@ export function BioDetails({ setStep }: { setStep: (step: number) => void }) {
       if (!id) {
         throw new Error("Profile ID is missing");
       }
-      const res = await updateDescription(values.bio, id);
+      const res = await updateBio(values.bio, id);
 
       if (res.status === 200) {
         setDescription(values.bio);
