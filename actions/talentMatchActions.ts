@@ -10,7 +10,7 @@ type TalentPoolProfileType = {
   availability: string;
   targetFor:string;
   interviewDate: Date;
-  interviewStatus?:string;
+  interviewStatus: string;
   talentProfileId:string;
 };
 
@@ -19,7 +19,10 @@ export const createTalentPoolProfile = async (
 ) => {
   try {
     await prisma.talentPoolProfile.create({
-      data: talentPoolProfileData
+      data: {
+        ...talentPoolProfileData,
+        interviewStatus: talentPoolProfileData.interviewStatus || ""
+      }
     });
 
     return {

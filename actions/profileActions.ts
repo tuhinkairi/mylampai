@@ -1,12 +1,12 @@
 "use server";
 import prisma from "@/lib";
 
-export const getUserEducations = async (userId: string) => {
+export const getUserEducations = async (talentProfileId: string) => {
   try {
-    if (!userId) return [];
+    if (!talentProfileId) return [];
     const educations = await prisma.education.findMany({
       where: {
-        userId,
+        talentProfileId,
       },
     });
 
