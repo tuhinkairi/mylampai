@@ -18,42 +18,55 @@ type JobDataType = {
 
 export const createJob = async (jobData: JobDataType, userId: string) => {
   try {
-    await prisma.jobProfile.create({
+    const jobdata = await prisma.jobProfile.create({
       data: {
         ...jobData,
         userId,
       },
     });
-
-    return "success";
+    // console.log("job id", jobData)
+    return {status:"success", data:jobdata};
   } catch (error) {
     console.error(error);
     return "failed";
   }
 };
+export const fetchJob = async () => {
+  try {
+    const jobdata = await prisma.jobProfile.findMany();
+    return { status: "success", data: jobdata };
+  } catch (error) {
+    console.error("Error fetching job data:", error);
+    return { status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+  }
+};
 
-type RoundsType = {
+export type RoundsType = {
   roundName: string;
   roundNumber: number;
   details: string;
   roundType: string;
   roundDate: Date;
   jobProfileId: string;
+  id?:string
 }[];
 
 export const addRounds = async (rounds: RoundsType) => {
   try {
-    await prisma.jobRound.createMany({
-      data: rounds,
-    });
-
-    return "success";
-  } catch (error) {
-    console.error(error);
-    return "failed";
+    const createdRounds = await Promise.all(
+      rounds.map(async (round) => {
+        return await prisma.jobRound.create({
+          data: round,
+        });
+      })
+    );
+    console.log(createdRounds)
+    return { status: "success", data: createdRounds };
+  } catch (error:any) {
+    console.error("❌ Error adding rounds:", error);
+    return { status: "failed", error: error.message };
   }
 };
-
 type CandidateType = {
   jobCandidateId: string;
   jobRoundId: string;

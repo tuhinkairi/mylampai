@@ -30,23 +30,23 @@ type Job = {
 };
 
 export default function Career() {
-  // const searchParams = useSearchParams();
-  // const page = searchParams.get("page") || "1";
-  // const [jobsData, setJobsData] = useState<Job[]>([]);
+  const searchParams = useSearchParams();
+  const page = searchParams.get("page") || "1";
+  const [jobsData, setJobsData] = useState<Job[]>([]);
 
-  // useEffect(() => {
-  //   const fetchJobs = async () => {
-  //     try {
-  //       const jobs = await getJobs(Number(page));
-  //       setJobsData(jobs);
-  //     } catch (error) {
-  //       console.error(error);
-  //       toast.error("An error occurred while fetching jobs");
-  //     }
-  //   };
+  useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const jobs = await getJobs(Number(page));
+        setJobsData(jobs);
+      } catch (error) {
+        console.error(error);
+        toast.error("An error occurred while fetching jobs");
+      }
+    };
 
-  //   fetchJobs();
-  // }, [page]);
+    fetchJobs();
+  }, [page]);
 
   return (
     <>
@@ -61,13 +61,13 @@ export default function Career() {
             process will be shown here.
           </div>
         </div>
-        {/* <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {jobsData.map((job) => (
             <Job key={job.id} job={job} />
           ))}
-        </div> */}
+        </div>
       </div>
-      {/* <Pagination>
+      <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious href="/career" />
@@ -84,7 +84,7 @@ export default function Career() {
             <PaginationNext href={`/career?page=${Number(page) + 1}`} />
           </PaginationItem>
         </PaginationContent>
-      </Pagination> */}
+      </Pagination>
     </>
   );
 }

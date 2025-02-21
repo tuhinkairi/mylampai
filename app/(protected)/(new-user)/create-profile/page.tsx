@@ -101,8 +101,10 @@ interface UserInfo {
   zipCode: string;
 }
 
-
-export default function CreateProfile() {
+export default function CreateProfile({
+  params
+}:{params:
+  {userId:string|undefined}}) {
   const { id, setId, setResumeUrl } = useProfileStore();
   const { userData, setUser } = useUserStore();
   const [step, setStep] = useState(1);
@@ -111,7 +113,7 @@ export default function CreateProfile() {
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
-
+  console.log(params.userId) 
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -278,6 +280,7 @@ export default function CreateProfile() {
               );
   
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
+
               if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
                 console.log("userId::",userData.id," talentProfileId:: ",newTalentProfileId)
                 await processAndSaveData(
@@ -595,7 +598,6 @@ export default function CreateProfile() {
                 Manually enter details
               </Button>
             </div>
-
           </div>
         </section>
 

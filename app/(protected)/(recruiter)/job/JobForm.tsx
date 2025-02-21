@@ -35,6 +35,7 @@ import { useUserStore } from "@/utils/userStore";
 import { createJob } from "@/actions/createJobActions";
 import { toast } from "sonner";
 import { ArrayInput } from "@/components/misc/ArrayInput";
+import { useRouter } from "next/navigation";
 
 const formSchema = z.object({
   jobTitle: z.string().min(1, "Job title is required"),
@@ -69,6 +70,7 @@ const formSchema = z.object({
 
 export default function JobForm() {
   const { userData } = useUserStore();
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -90,11 +92,12 @@ export default function JobForm() {
     try {
       if (!userData) return;
 
-      const res = await createJob(values, userData.id);
-      
-      if (res === "success") {
+      const res:{status:string, data:object} = await createJob(values, userData.id);
+      console.log("the job id", res.data)
+      if (res.status === "success") {
         form.reset();
         toast.success("Job created successfully");
+        router.push("/job/".concat(res.data.id))
       } else {
         toast.error("Failed to create job");
       }
@@ -110,7 +113,7 @@ export default function JobForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="m-auto max-w-3xl space-y-4"
+        className="m-auto max-w-3xl space-y-2"
       >
         <div className="flex gap-4 w-full">
           <FormField
