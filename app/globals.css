@@ -128,3 +128,11 @@ body::--webkit-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
+.quill-wrapper .ql-container {
+  min-height: 200px;
+}
+
+.quill-wrapper .ql-editor {
+  min-height: 200px;
+}

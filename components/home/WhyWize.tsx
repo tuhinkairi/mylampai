@@ -108,16 +108,16 @@ export default function WhyWize() {
               ALL ROUND GUIDANCE
               <div className="bg-primary w-6 h-6 blur-sm rounded-full absolute left-0 md:top-0 translate-x-[-14px] translate-y-[-100%] md:translate-y-[-50%]"></div>
             </h4>
-            <div className="text-2xl sm:text-3xl font-medium mt-8 mb-4">
+            <div className="text-2xl md:text-3xl font-medium mt-8 mb-4">
               To make it happen for you
             </div>
-            <p className="text-sm sm:text-base text-muted-foreground font-medium my-4">
+            <p className="text-sm md:text-base text-muted-foreground font-medium my-4">
               Everything you need, we&apos;ve got it! From accessing thousands of
               opportunities with just one application and assessment to
               preparing for your next big break using our AI tools — and it all
               happens quickly and seamlessly.
             </p>
-            <div className="bg-[#3a3a3a] min-h-[400px] w-full my-8 rounded-2xl"></div>
+            <div className="bg-[#3a3a3a] aspect-[16/9] w-full my-8 rounded-2xl"></div>
           </div>
 
           <div id="pathtosuccess" className="pb-[100px] min-h-screen px-4">
@@ -141,7 +141,7 @@ export default function WhyWize() {
               opportunities, and even get paid directly on the platform for
               matched opportunities — all from the comfort of your home.
             </p>
-            <div className="bg-[#3a3a3a] min-h-[400px] w-full my-8 rounded-2xl"></div>
+            <div className="bg-[#3a3a3a] aspect-[16/9] w-full my-8 rounded-2xl"></div>
           </div>
 
           <div id="expertsinsights" className="pb-[100px] min-h-screen">

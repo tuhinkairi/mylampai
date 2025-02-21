@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { useRouter } from "next/navigation";
 import { getCreditBalance, handleCreditUpdate } from "@/actions/creditsAction";
-import  SpeechRecognition  from "@/components/speech-to-text/speechRecognition";
+import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
 import { TranscriptResult } from "@/types/transcript";
 import { WebSocketProvider } from "@/hooks/interviewersocket/webSocketContext";
 // import TranscriptionPage from "@/components/speech-to-text/transcriptionPage";
@@ -78,17 +78,10 @@ export default function InterviewsPage() {
         <h1 className="text-3xl font-bold">Past Interviews</h1>
         <CreateInterview />
         {/* speech recognition integration testing */}
-        <div className="container mx-auto">
+        {/* <div className="container mx-auto">
           <h1 className="text-2xl font-bold mb-4">Technical Interview</h1>
-          <WebSocketProvider>
-          <SpeechRecognition 
-            // websocketUrl="ws://localhost:5000/ws/speech"
-            onTranscriptUpdate={(transcript: TranscriptResult) => {
-              console.log('Transcript update:', transcript);
-            }}
-            />
-          </WebSocketProvider>
-        </div>
+          <SpeechRecognition/>
+        </div> */}
       </div>
       {!isRegistered && (
         <Button

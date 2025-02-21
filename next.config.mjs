@@ -1,3 +1,10 @@
+import withBundleAnalyzer from '@next/bundle-analyzer';
+
+const bundleAnalyzer = withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: true,
+});
+
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -9,18 +16,19 @@ const nextConfig = {
       },
     ],
   },
+  // assetPrefix: "https://wize.co.in",
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
     config.resolve.alias.canvas = false
     config.resolve.alias.encoding = false
-    net : false
+    config.resolve.alias.net = false  // Fixed the syntax for net: false
+
     if(!isServer){
       config.resolve.alias['pdfjs-dist']='pdfjs-dist/webpack';
     }
     return config
   },
   reactStrictMode: true,
-  distDir: 'build',
-  output: 'standalone',
+  swcMinify: true,
 };
 
-export default nextConfig;
+export default bundleAnalyzer(nextConfig);

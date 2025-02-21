@@ -103,31 +103,6 @@ const config = {
           from: { transform: "translateX(0)" },
           to: { transform: "translateX(calc(-100% - var(--gap)))" },
         },
-        // Clock animations
-        rotate1: {
-          "0%": { transform: "rotate(0deg) translateY(-170px) rotate(0deg)" },
-          "100%": {
-            transform: "rotate(360deg) translateY(-170px) rotate(-360deg)",
-          },
-        },
-        rotate2: {
-          "0%": { transform: "rotate(90deg) translateY(-170px) rotate(-90deg)" },
-          "100%": {
-            transform: "rotate(450deg) translateY(-170px) rotate(-450deg)",
-          },
-        },
-        rotate3: {
-          "0%": { transform: "rotate(180deg) translateY(-170px) rotate(-180deg)" },
-          "100%": {
-            transform: "rotate(540deg) translateY(-170px) rotate(-540deg)",
-          },
-        },
-        rotate4: {
-          "0%": { transform: "rotate(270deg) translateY(-170px) rotate(-270deg)" },
-          "100%": {
-            transform: "rotate(630deg) translateY(-170px) rotate(-630deg)",
-          },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -135,11 +110,6 @@ const config = {
         "caret-blink": "caret-blink 1.25s ease-out infinite",
         marquee: "marquee var(--duration) linear infinite",
         "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
-        // Clock animations
-        rotate1: "rotate1 10s linear infinite",
-        rotate2: "rotate2 10s linear infinite",
-        rotate3: "rotate3 10s linear infinite",
-        rotate4: "rotate4 10s linear infinite",
       },
     },
   },
@@ -158,16 +128,18 @@ const config = {
       const utilities = Object.keys(wordSpacing).map((key) => ({
         [`.${e(`word-spacing-${key}`)}`]: { wordSpacing: wordSpacing[key] },
       }));
-      addUtilities(utilities, ["responsive"]);
-      addUtilities({
-        ".line-clamp-2": {
-          display: "-webkit-box",
-          "-webkit-box-orient": "vertical",
-          "-webkit-line-clamp": "2",
-          overflow: "hidden",
-          "text-overflow": "ellipsis",
-        },
-      });
+      addUtilities(utilities, ["responsive"]),
+        function ({ addUtilities }: { addUtilities: Function }) {
+          addUtilities({
+            ".line-clamp-2": {
+              display: "-webkit-box",
+              "-webkit-box-orient": "vertical",
+              "-webkit-line-clamp": "2",
+              overflow: "hidden",
+              "text-overflow": "ellipsis",
+            },
+          });
+        };
     },
   ],
 } satisfies Config;

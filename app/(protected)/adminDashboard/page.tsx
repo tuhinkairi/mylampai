@@ -3,12 +3,13 @@ import { useState } from "react";
 import AdminDashboard from "./dashboard";
 import SentMailsList from "./SentMailsList";
 import EmailStats from "./EmailStats";
+export const dynamic = 'force-dynamic';
 
 export default function Adminpage() {
   const [Stats, setStats] = useState(false);
   const [selectedNewsletter, setSelectedNewsletter] = useState("");
 
-  const handleStatsChange = (id : string) => {
+  const handleStatsChange = (id: string) => {
     setSelectedNewsletter(id);
     setStats(true);
   }

@@ -126,9 +126,9 @@ export const getRecruiterJobs = async (userId: string) => {
       },
     });
 
-    return { status: "success", data: jobs };
+    return jobs;
   } catch (error) {
     console.log(error);
-    return { status: "failed", message: "Internal Server Error" };
+    return [];
   }
 };

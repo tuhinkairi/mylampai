@@ -153,12 +153,14 @@ export const handleJDTextUpload = async ({
 
 export const updateInterviewStarted = async (interviewId: string) => {
   try {
+    console.log("helo1")
     if (!interviewId) {
       return {
         status: "failed",
         message: "Interview Id is required",
       };
     }
+    console.log("helo11")
 
     await prisma.interview.update({
       where: {
@@ -168,6 +170,9 @@ export const updateInterviewStarted = async (interviewId: string) => {
         isStarted: true,
       },
     });
+
+    console.log("helo111")
+
 
     return {
       status: "success",

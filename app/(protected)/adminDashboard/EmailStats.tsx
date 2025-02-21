@@ -1,5 +1,5 @@
+'use client'
 import { getNewsletter } from "@/actions/emailfetch";
-import prisma from "@/lib"
 import { Newsletter } from "@prisma/client";
 import { useEffect, useState } from "react";
 
@@ -31,7 +31,7 @@ export default function EmailStats({ newsletterId, onBack }: EmailStatsProps) {
             // setNewsletter(data[0]);
             console.log("data", data);
         }
-    }, []);
+    }, [newsletterId]);
 
     if (!newsletter) {
         return (

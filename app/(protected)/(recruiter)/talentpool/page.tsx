@@ -28,12 +28,19 @@ type TalentPoolResponse = {
   totalItems: number;
 };
 
-export default async function TalentPoolPage() {
-  const user = await auth();
+export default function TalentPoolPage() {
+  // const user = await auth();
 
-  if (!user || user.role !== "recruiter") {
-    return <div>Unauthorized</div>;
-  }
+  const [user,setUser]=useState<any>({})
+
+  useEffect(()=>{
+    async function getUser() {
+      const res=await auth()
+      setUser(res);
+    }
+    getUser()
+  },[])
+
   const [talentPools, setTalentPools] = useState<TalentPool[]>([]); 
   const [page, setPage] = useState<number>(1); 
   const [hasMore, setHasMore] = useState<boolean>(true); 
@@ -65,6 +72,10 @@ export default async function TalentPoolPage() {
     setPage((prev) => prev + 1); 
   };
 
+
+  if (!user || user.role !== "recruiter") {
+    return <div>Unauthorized</div>;
+  }
 
   return (
     <div>
