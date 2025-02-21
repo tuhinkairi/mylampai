@@ -113,7 +113,7 @@ export default function CreateProfile({
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
-  console.log(params.userId)
+  console.log(params.userId) 
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
