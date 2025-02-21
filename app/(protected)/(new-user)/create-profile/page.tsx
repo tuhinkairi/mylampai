@@ -64,7 +64,7 @@ interface EducationData {
   school: string;
   degree: string;
   field?: string;
-  grade?:string;
+  grade?: string;
   startDate?: Date;
   endDate?: Date;
   description?: string;
@@ -101,16 +101,19 @@ interface UserInfo {
   zipCode: string;
 }
 
-export default function CreateProfile() {
+export default function CreateProfile({
+  params
+}:{params:
+  {userId:string|undefined}}) {
   const { id, setId, setResumeUrl } = useProfileStore();
-  const { userData,setUser} = useUserStore();
+  const { userData, setUser } = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
-
+  console.log(params.userId)
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -154,7 +157,7 @@ export default function CreateProfile() {
 
     setUploading(true);
 
-   await processResume(file)
+    await processResume(file)
   };
 
   const mapStructuredResultToUserInfo = (structuredResult: StructuredResult): UserInfo => {
@@ -162,7 +165,7 @@ export default function CreateProfile() {
       name: structuredResult.name || "",
       first_name: structuredResult.first_name || "",
       last_name: structuredResult.last_name || "",
-      phone: structuredResult.phone|| "",
+      phone: structuredResult.phone || "",
       street: structuredResult.street || "",
       city: structuredResult.city || "",
       state: structuredResult.state || "",
@@ -171,7 +174,7 @@ export default function CreateProfile() {
     }
   }
 
-  const processResume=async (file:Blob)=>{
+  const processResume = async (file: Blob) => {
     if (file && file.type !== "application/pdf") {
       toast.error("Please upload a PDF file");
       return;
@@ -272,8 +275,8 @@ export default function CreateProfile() {
               );
 
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
-              if (structuredDataResult && structuredDataResult.message &&id) {
-                await processAndSaveData(structuredDataResult,userData?.id,id)
+              if (structuredDataResult && structuredDataResult.message && id) {
+                await processAndSaveData(structuredDataResult, userData?.id, id)
                 // setuserInfo(mapStructuredResultToUserInfo(structuredDataResult.message))
                 // console.log("setting up the userInfo ")
                 // console.log("structuredDataResult :-> ", structuredDataResult.message.profiles)
@@ -395,41 +398,41 @@ export default function CreateProfile() {
   };
 
   //hooks for calling actions
-  const processAndSaveData = async (structuredDataResult: any, userId: string,talentProfileId:string) => {
+  const processAndSaveData = async (structuredDataResult: any, userId: string, talentProfileId: string) => {
     if (!structuredDataResult || !structuredDataResult.message) {
-        console.error("Invalid data received.");
-        return;
+      console.error("Invalid data received.");
+      return;
     }
 
     // Destructure the message
     const {
-        profiles,
-        skills,
-        jobRole,
-        experience,
-        education,
-        bio
+      profiles,
+      skills,
+      jobRole,
+      experience,
+      education,
+      bio
     } = structuredDataResult.message;
 
     // Map and transform data as needed
     const userInfo = mapStructuredResultToUserInfo(structuredDataResult.message);
 
-    
+
 
     const employmentData = experience.map((exp: EmploymentData): EmploymentData => ({
-        ...exp,
-        startDate: exp.startDate ? new Date(exp.startDate) : undefined,
-        endDate: exp.endDate ? new Date(exp.endDate) : undefined
+      ...exp,
+      startDate: exp.startDate ? new Date(exp.startDate) : undefined,
+      endDate: exp.endDate ? new Date(exp.endDate) : undefined
     }));
 
-    const educationData=education.map((edu:EducationData):EducationData=>({
+    const educationData = education.map((edu: EducationData): EducationData => ({
       ...edu,
       startDate: edu.startDate ? new Date(edu.startDate) : undefined,
       endDate: edu.endDate ? new Date(edu.endDate) : undefined
     }))
 
     // Define update functions
-    console.log("updating details for : ",talentProfileId)
+    console.log("updating details for : ", talentProfileId)
     const updateUserInfo = () => updateProfile(userInfo, userId);
     const updateUserProfiles = () => addProfiles(profiles, talentProfileId);
     const updateUserSkills = () => addSkills(skills, talentProfileId);
@@ -440,43 +443,43 @@ export default function CreateProfile() {
 
     // Perform updates in parallel
     try {
-        const results = await Promise.allSettled([
-            updateUserInfo(),
-            updateUserProfiles(),
-            updateUserSkills(),
-            updateUserJobTitle(),
-            updateUserExperiences(),
-            updateUserEducations(),
-            updateUserBio()
-        ]);
+      const results = await Promise.allSettled([
+        updateUserInfo(),
+        updateUserProfiles(),
+        updateUserSkills(),
+        updateUserJobTitle(),
+        updateUserExperiences(),
+        updateUserEducations(),
+        updateUserBio()
+      ]);
 
-        // Handle results
-        // results.forEach((result, index) => {
-        //     if (result.status === "fulfilled") {
-        //         console.log(`Update ${index + 1} succeeded.`);
-        //     } else {
-        //         console.error(`Update ${index + 1} failed:`, result.reason);
-        //     }
-        // });
+      // Handle results
+      // results.forEach((result, index) => {
+      //     if (result.status === "fulfilled") {
+      //         console.log(`Update ${index + 1} succeeded.`);
+      //     } else {
+      //         console.error(`Update ${index + 1} failed:`, result.reason);
+      //     }
+      // });
 
-        const allFulfilled =results.every((result)=>result.status==="fulfilled")
+      const allFulfilled = results.every((result) => result.status === "fulfilled")
 
-        if (allFulfilled) {
-          console.log("All updates succeeded. Redirecting to /talentmatch...");
-          router.push("/talentmatch");
-        } else {
-            console.error("Some updates failed. Please check the logs.");
-            results.forEach((result, index) => {
-                if (result.status === "rejected") {
-                    console.error(`Update ${index + 1} failed:`, result.reason);
-                }
-            });
-        }
+      if (allFulfilled) {
+        console.log("All updates succeeded. Redirecting to /talentmatch...");
+        router.push("/talentmatch");
+      } else {
+        console.error("Some updates failed. Please check the logs.");
+        results.forEach((result, index) => {
+          if (result.status === "rejected") {
+            console.error(`Update ${index + 1} failed:`, result.reason);
+          }
+        });
+      }
 
     } catch (error) {
-        console.error("Error while updating data:", error);
+      console.error("Error while updating data:", error);
     }
-};
+  };
 
 
   return (
@@ -514,78 +517,78 @@ export default function CreateProfile() {
           <div className="flex gap-4 justify-center items-center">
             <div>
 
-          <div className="flex text-center mb-4 mt-3 w-full text-2xl font-bold text-gray-800">
-            Upload your latest CV/Resume
-          </div>
-
-          <div className="bg-white py-4 px-8 rounded-3xl w-full md:max-w-[350px] lg:max-w-[400px] shadow-lg text-center">
-            <div className="flex items-center justify-center text-primary mb-2 relative top-0 text-3xl">
-              <IoDocumentAttach />
-            </div>
-
-            <div
-              className="border-dashed border-2 border-slate-500 rounded-xl p-2 flex flex-col items-center justify-center"
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            >
-              <div className="text-gray-500 mt-2 text-sm">Drag & Drop or</div>
-              <label
-                htmlFor="resumeUpload"
-                className="text-gray-500 cursor-pointer text-sm"
-              >
-                Click to{" "}
-                <span className="font-semibold text-primary ">
-                  Upload Resume
-                </span>
-              </label>
-              <input
-                id="resumeUpload"
-                type="file"
-                ref={fileInputRef}
-                accept=".doc,.docx,.pdf"
-                className="hidden"
-                onChange={handleFileChange}
-              />
-
-              <div className="text-4xl mt-3 text-slate-500">
-                <IoCloudUploadOutline />
+              <div className="flex text-center mb-4 mt-3 w-full text-2xl font-bold text-gray-800">
+                Upload your latest CV/Resume
               </div>
 
-              <p className="text-slate-500 text-sm mt-2">
-                Supported file format: .PDF File size limit 1MB.
-              </p>
-            </div>
+              <div className="bg-white py-4 px-8 rounded-3xl w-full md:max-w-[350px] lg:max-w-[400px] shadow-lg text-center">
+                <div className="flex items-center justify-center text-primary mb-2 relative top-0 text-3xl">
+                  <IoDocumentAttach />
+                </div>
 
-            <div className="flex justify-center mt-4">
-              <button
-                className="bg-primary text-base px-10 relative text-white font-semibold py-[6px] rounded-xl hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
-                onClick={handleResumeUpload}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 inline-block mr-2"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+                <div
+                  className="border-dashed border-2 border-slate-500 rounded-xl p-2 flex flex-col items-center justify-center"
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
                 >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 00-1.414 0L9 11.586 4.707 7.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0l7-7a1 1 0 000-1.414z"
-                    clipRule="evenodd"
+                  <div className="text-gray-500 mt-2 text-sm">Drag & Drop or</div>
+                  <label
+                    htmlFor="resumeUpload"
+                    className="text-gray-500 cursor-pointer text-sm"
+                  >
+                    Click to{" "}
+                    <span className="font-semibold text-primary ">
+                      Upload Resume
+                    </span>
+                  </label>
+                  <input
+                    id="resumeUpload"
+                    type="file"
+                    ref={fileInputRef}
+                    accept=".doc,.docx,.pdf"
+                    className="hidden"
+                    onChange={handleFileChange}
                   />
-                </svg>
-                {isResumeUploaded
-                  ? "Upload again"
-                  : uploading
-                    ? "Uploading..."
-                    : analysing ? "AI Analysing.." : "Upload Resume"}
-              </button>
+
+                  <div className="text-4xl mt-3 text-slate-500">
+                    <IoCloudUploadOutline />
+                  </div>
+
+                  <p className="text-slate-500 text-sm mt-2">
+                    Supported file format: .PDF File size limit 1MB.
+                  </p>
+                </div>
+
+                <div className="flex justify-center mt-4">
+                  <button
+                    className="bg-primary text-base px-10 relative text-white font-semibold py-[6px] rounded-xl hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
+                    onClick={handleResumeUpload}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5 inline-block mr-2"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 00-1.414 0L9 11.586 4.707 7.293a1 1 0 00-1.414 1.414l5 5a1 1 0 001.414 0l7-7a1 1 0 000-1.414z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    {isResumeUploaded
+                      ? "Upload again"
+                      : uploading
+                        ? "Uploading..."
+                        : analysing ? "AI Analysing.." : "Upload Resume"}
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-          </div>
-          <div>
-            OR
-          </div>
-          <Button
+            <div>
+              OR
+            </div>
+            <Button
               type="button"
               className="bg-white text-primary border border-primary hover:bg-primary hover:text-white"
               onClick={() => handleIncStep(step + 1)}
@@ -791,13 +794,13 @@ export default function CreateProfile() {
         <div className="px-8 flex justify-between w-full">
           <Button
             onClick={() => handleDecStep(step - 1)}
-            className={`${step===1?"hidden":"bg-white border border-primary text-primary px-8"}`}
+            className={`${step === 1 ? "hidden" : "bg-white border border-primary text-primary px-8"}`}
           >
             Back
           </Button>{" "}
           <Button
             onClick={() => handleIncStep(step + 1)}
-            className={`${(step===1||step===10)?"hidden":"bg-white border border-primary text-primary hover:bg-primary hover:text-white px-8"}`}
+            className={`${(step === 1 || step === 10) ? "hidden" : "bg-white border border-primary text-primary hover:bg-primary hover:text-white px-8"}`}
           >
             Next
           </Button>

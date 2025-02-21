@@ -18,6 +18,7 @@ import { removeCookie } from "@/utils/cookieUtils";
 import { getNotification } from "@/actions/notification";
 import { useState } from "react";
 import { DialogContent } from "@radix-ui/react-dialog";
+import { Dialog } from "../ui/dialog";
 interface message{
   message:string
 }
@@ -64,6 +65,8 @@ if(!userData){
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
+      <Dialog>
+
       <DropdownMenuContent
         className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
         side={"right"}
@@ -113,7 +116,7 @@ if(!userData){
         {notification.length > 0 ? (
           <ul className="space-y-2">
             {notification.map((notif) => (
-              <li  className="p-2 border rounded-md">
+              <li key={notif}  className="p-2 border rounded-md">
                 {notif}
               </li>
             ))}
@@ -129,6 +132,8 @@ if(!userData){
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
+      </Dialog>
+
     </DropdownMenu>
   );
 }

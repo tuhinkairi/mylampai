@@ -8,21 +8,21 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const user = await auth();
-  console.log("user info: ",user)
-  const isTalentProfileExist=await prisma.talentProfile.findFirst({
+  const isTalentProfileExist = await prisma.talentProfile.findFirst({
     where: {
       userId: user?.id,
     },
   });
 
   if (!user || user?.role !== "user") {
-    redirect("/not-found");
+    // redirect("/not-found");
   }
-  console.log("isTalentProfileExist: ",isTalentProfileExist)
+  
+  console.log("isTalentProfileExist: ", isTalentProfileExist)
   if (!isTalentProfileExist) {
-    redirect("/create-profile");
-  }else{
-    console.log("Talent Profile Exist with userId: ",user?.id);
+    // redirect("/create-profile");
+  } else {
+    console.log("Talent Profile Exist with userId: ", user?.id);
   }
 
   return <>{children}</>;
