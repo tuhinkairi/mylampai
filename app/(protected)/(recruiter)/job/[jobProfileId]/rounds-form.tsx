@@ -30,8 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { addRounds } from "@/actions/createJobActions";
+import { addRounds, RoundsType } from "@/actions/createJobActions";
 import { toast } from "sonner";
+import { useUserStore } from "@/utils/userStore";
+import { useState } from "react";
+import { error } from "console";
+import { useRouter } from "next/navigation";
 
 const roundSchema = z.object({
   roundName: z.string().min(1, "Round name is required"),
@@ -48,6 +52,11 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
+  const { token } = useUserStore();
+  const router = useRouter()
+  const [round, setRound] = useState<RoundsType>([])
+  // const [roundId, setRoundId] = useState("")
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -67,20 +76,104 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
     name: "rounds",
     control: form.control,
   });
+  // update the rubics
 
-  function onSubmit(data: FormValues) {
-    const rounds = data.rounds.map((round) => ({
-      ...round,
-      jobProfileId,
-    }));
-
-    addRounds(rounds).then((result) => {
-      if (result === "success") {
-        form.reset();
-        toast.success("Rounds added successfully");
+  // fetching rubircs from backend at port:5000 return list of rubics
+  async function fetchRubics(job_description: string) {
+    try {
+      const response = await fetch(`/api/recruiter/rubrics/getrubrics`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ "job_description": job_description }),
+      });
+      if (response.ok) {
+        const result = await response.json();
+        console.log("rubrics", result.result);
+        return result.result;
       }
-    });
+    } catch (error) {
+      console.error("Error fetching Rubircs:", error);
+    }
+
   }
+  // update the rubircs in db 
+  async function addRubicsToDB(job_description: string, jobRoundId: string) {
+    try {
+      const rubrics = await fetchRubics(job_description) //return list of rubrics
+      if (rubrics) {
+        const response = await fetch(`/api/recruiter/rubrics/addrubrics`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ jobRoundId: jobRoundId, rubrics: rubrics }), //sending the round id and list of rubrics
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log("rubrics", result);
+          return result;
+        }
+      }
+    }
+    catch (error) {
+      console.error("Error updating Rubircs:", error);
+    }
+  }
+
+  // upload rubics to their regarding rounds
+  async function addRubicsToRounds(round_data: RoundsType) {
+    try {
+      if (round_data.length == 0) {
+        throw Error(`round is null ${round_data}`)
+      }
+      const createdRounds = await Promise.all(
+        round_data.map(async (r) => {
+          if (r.id) {
+
+            return await addRubicsToDB(r.details, r.id!)
+          }
+        })
+      );
+      console.log(createdRounds)
+      return { status: "success", data: createdRounds };
+    } catch (error: any) {
+      console.error("❌ Error adding rounds:", error);
+      return { status: "failed", error: error.message };
+    }
+
+  }
+
+
+  // rubics end 
+  function onSubmit(data: FormValues) {
+    try {
+      const rounds = data.rounds.map((round) => ({
+        ...round,
+        jobProfileId,
+      }));
+
+      addRounds(rounds).then((result) => {
+        if (result.data) {
+          setRound(result.data)
+          addRubicsToRounds(result.data)
+          console.log("this is round data", round)
+          form.reset();
+          toast.success("Rounds added successfully");
+          router.push(`/job/${jobProfileId}/evaluation`)
+        }
+      });
+    } catch (error) {
+      toast.error("Error in adding Rounds");
+
+    }
+  }
+
+
 
   return (
     <Form {...form}>

@@ -1,5 +1,6 @@
 "use client";
 
+// Import necessary dependencies
 import * as React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -22,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { useProfileStore } from "@/utils/profileStore";
 import { toast } from "sonner";
 
+// Define job categories and their respective specialties
 const jobCategories = [
   {
     name: "Web, Mobile & Software Dev",
@@ -53,6 +55,7 @@ const jobCategories = [
   },
 ];
 
+// Define form validation schema using Zod
 const formSchema = z.object({
   category: z.string(),
   specialties: z
@@ -61,16 +64,21 @@ const formSchema = z.object({
     .max(3, "You can select up to 3 specialties"),
 });  
 
+// Define the JobCategoriesSelector component
 export function JobCategoriesSelector({
   setStep,
 }: {
   setStep: (step: number) => void;
 }) {
+  // Retrieve profile store data
   const { id, setProfiles } = useProfileStore();
+  
+  // State for selected category
   const [selectedCategory, setSelectedCategory] = React.useState(
     jobCategories[0].name
   );
 
+  // Initialize form with default values and validation schema
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -79,9 +87,14 @@ export function JobCategoriesSelector({
     },
   });
 
+  // Function to handle form submission
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
-      if (!id) return;
+      if (!id){
+        // If no profile ID, create a new profile
+        toast.error("id not present")
+         return
+        };
       const profiles = values.specialties;
       const res = await addProfiles(profiles, id);
 
@@ -97,7 +110,7 @@ export function JobCategoriesSelector({
     }
   }
 
-  // Get the specialties for the selected category
+  // Retrieve specialties for the selected category
   const specialties =
     jobCategories.find((cat) => cat.name === selectedCategory)?.specialties ||
     [];
@@ -106,6 +119,7 @@ export function JobCategoriesSelector({
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="flex">
+          {/* Category selection */}
           <div className="w-1/3 pr-4">
             <FormField
               control={form.control}
@@ -125,7 +139,7 @@ export function JobCategoriesSelector({
                       defaultValue={field.value}
                       className="flex flex-col space-y-1"
                     >
-                      <ScrollArea className="">
+                      <ScrollArea>
                         {jobCategories.map((category) => (
                           <div
                             key={category.name}
@@ -151,6 +165,8 @@ export function JobCategoriesSelector({
               )}
             />
           </div>
+
+          {/* Specialty selection */}
           <div className="w-2/3 pl-4">
             <FormField
               control={form.control}
@@ -206,6 +222,7 @@ export function JobCategoriesSelector({
             />
           </div>
         </div>
+        {/* Submit button */}
         <Button type="submit">Submit</Button>
       </form>
     </Form>

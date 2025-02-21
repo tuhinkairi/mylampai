@@ -1,3 +1,4 @@
+import { requestToBodyStream } from "next/dist/server/body-streams";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -30,3 +31,15 @@ export const useInterviewStore = create(
     }
   )
 );
+
+export const usejobCreateStore =create(
+  persist(
+    (set) => ({
+      recruiterId:'',
+      setRecruiterId:(data) => set({ recruiterId: data }),
+    }),{
+      name: "job-create-storage", 
+      getStorage: () => localStorage,
+    }
+  )
+)

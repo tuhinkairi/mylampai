@@ -75,6 +75,8 @@ export function NavUser() {
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
+      <Dialog>
+
       <DropdownMenuContent
         className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
         side={"right"}
@@ -142,6 +144,8 @@ export function NavUser() {
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
+      </Dialog>
+
     </DropdownMenu>
   );
 }
