@@ -1,4 +1,4 @@
-"use server";
+"use client";
 import { auth } from "@/lib/authlib";
 import {
   Lock,
@@ -10,19 +10,48 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TalentMatchCSS from "./Talent.module.css";
-import CreateTalenProfileDialog from "./CreateTalentProfile";
-import { getTalentProfiles } from "@/actions/talentMatchActions";
+import CreateTalentPoolProfileDialog from "./CreateTalentPoolProfile";
+import { getTalentPoolProfiles } from "@/actions/talentMatchActions";
 import { Badge } from "@/components/ui/badge";
 import PdfToImage from "@/components/misc/pdftoimg";
+import { useProfileStore } from "@/utils/profileStore";
+import { useEffect, useState } from "react";
 
-export default async function TalentMatchPage() {
-  const user = await auth();
+type ProfileData = {
+  resumeUrl: string;
+  role: string;
+  skills: string[];
+  targetFor: string;
+  locationPref?: "onsite" | "remote" | "hybrid" | null;
+  availability: "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT" | null;
+  interviewStatus: string;
+  interviewDate: Date;
+};
 
-  if (!user) {
-    return null;
+export default function TalentMatchPage() {
+  // const user = await auth();
+  const { id } = useProfileStore();
+  const [talentPoolProfiles, setTalentPoolProfiles] = useState<ProfileData[]>();
+
+  useEffect(() => {
+    const getTalentProfiles = async (id: string) => {
+      const res = await getTalentPoolProfiles(id);
+      const profiles = res?.map(profile => ({
+        ...profile,
+        locationPref: profile.locationPref as 'onsite' | 'remote' | 'hybrid' | null,
+        availability: profile.availability as 'FULL_TIME' | 'PART_TIME' | 'INTERN' | 'CONTRACT' | null,
+      }));
+      setTalentPoolProfiles(profiles);
+    };
+
+    if (id) {
+      getTalentProfiles(id);
+    }
+  }, [id]);
+
+  if (!id) {
+    return <div>Loading...</div>; // or any other placeholder UI
   }
-
-  const talentProfiles = await getTalentProfiles(user.id);
 
   return (
     <div className="flex sm:flex-row flex-col px-2 py-2 sm:py-0 sm:pr-2">
@@ -44,15 +73,15 @@ export default async function TalentMatchPage() {
       </ScrollArea>
       <div className="flex flex-col border my-4 w-full sm:w-7/12 rounded-lg h-[calc(100vh-2rem)]">
         <div className="border-b py-3 px-5 flex relative text-sm gap-4 ">
-          {talentProfiles && talentProfiles.length < 3 && (
-            <CreateTalenProfileDialog />
+          {talentPoolProfiles && talentPoolProfiles.length < 3 && (
+            <CreateTalentPoolProfileDialog />
           )}
           <div className="font-medium cursor-pointer">Career Profile</div>
           <div className="text-muted-foreground">Work Preference</div>
         </div>
         <ScrollArea className="h-[calc(100vh-80px)]">
           <div className="flex flex-col gap-2 p-2">
-            {talentProfiles?.map((profile, index) => (
+            {talentPoolProfiles?.map((profile, index) => (
               <div
                 key={index}
                 className="border p-4 flex flex-col gap-4 rounded-lg shadow-sm cursor-pointer"
@@ -60,7 +89,7 @@ export default async function TalentMatchPage() {
                 <div className="flex items-center gap-4">
                   <BriefcaseBusiness className="w-12 h-12 bg-primary text-white rounded-lg p-3 " />
                   <h2 className="text-xl font-semibold uppercase">
-                    {profile.title}
+                    {profile.role}
                   </h2>
                 </div>
                 <div>
@@ -76,19 +105,19 @@ export default async function TalentMatchPage() {
                 <div className="flex gap-2 justify-between items-start">
                   <div className="w-full">
                     <h3 className="font-medium mb-2">Looking for</h3>
-                    {profile.target && (
+                    {profile.targetFor && (
                       <Badge
                         key={index}
                         variant="secondary"
                         className="capitalize"
                       >
-                        {profile.target.toLowerCase()}
+                        {profile.targetFor.toLowerCase()}
                       </Badge>
                     )}
                   </div>
                   <div className="w-full">
                     <h3 className="font-medium mb-2">Availability</h3>
-                    {profile.target && (
+                    {profile.targetFor && (
                       <Badge
                         key={index}
                         variant="secondary"

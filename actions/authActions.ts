@@ -148,7 +148,7 @@ export const verifyOTPandLogin = async ({
           image: user.image as string,
         },
         process.env.JWT_SECRET as string,
-        { expiresIn: process.env.JWT_EXPIRATION || "90d" }
+        { expiresIn: "90d" }
       );
     } catch (err) {
       console.error("JWT generation error:", err);
@@ -222,7 +222,7 @@ export const nextAuthLogin = async ({
           image: user.image,
         },
         process.env.JWT_SECRET as string,
-        { expiresIn: process.env.JWT_EXPIRATION || "90d" }
+        { expiresIn: "90d" }
       );
     } catch (err) {
       console.error("JWT generation error:", err);

@@ -11,41 +11,36 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(auto()) @map("_id") @db.ObjectId
-  email          String          @unique
-  name           String?
-  emailVerified  DateTime?
-  image          String?
-  first_name     String?
-  last_name      String?
-  dateOfBirth    DateTime?
-  phone          String?
-  street         String?
-  city           String?
-  state          String?
-  country        String?
-  zipCode        String?
-  hashedPassword String?
-  gender         String?
-  location       String?
-  role           String          @default("user")
-  work_category  String?
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  email             String         @unique
+  name              String?
+  emailVerified     DateTime?
+  image             String?
+  first_name        String?
+  last_name         String?
+  dateOfBirth       DateTime?
+  phone             String?
+  street            String?
+  city              String?
+  state             String?
+  country           String?
+  zipCode           String?
+  hashedPassword    String?
+  gender            String?
+  location          String?
+  role              String         @default("user")
+  work_category     String?
   work_specialities String[]
-  Notification     Notification[]
-
-
-  languages      Language[]
-  education      Education[]
-  talentPool     TalentPool[]
-  jobProfile     JobProfile[]
-  talentProfile  TalentProfile[]
-  accounts       Account[]
-  sessions       Session[]
-  otps           OTP[]
-  cvs            CV[]
-  credits        Int             @default(0)
-  isRegistered   Boolean         @default(false)
-  interviews     Interview[]
+  Notification      Notification[]
+  talentPool        TalentPool[]
+  jobProfile        JobProfile[]
+  talentProfile     TalentProfile?
+  accounts          Account[]
+  sessions          Session[]
+  otps              OTP[]
+  cvs               CV[]
+  credits           Int            @default(0)
+  isRegistered      Boolean        @default(false)
   // posts            Modules[]
   // communityIds     String[]        @db.ObjectId
   // communities      Community[]     @relation(fields: [communityIds], references: [id])
@@ -54,10 +49,10 @@ model User {
   // messages         Message[]
   // sentmessages     Directmessage[] @relation("SenderUser")
   // receivedMessages Directmessage[] @relation("ReceiverUser")
-  JobCandidate   JobCandidate[]
+  JobCandidate      JobCandidate[]
   // newsletters    Newsletter[]    @relation("NewsletterRecipients")
-  Resume         Resume[]
-
+  Resume            Resume[]
+  Interview         Interview[]
 }
 // // job create by recruiter
 // model Job {
@@ -144,7 +139,6 @@ model Account {
   id_token          String? @db.String
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   @@unique([provider, providerAccountId])
 }
 
@@ -157,29 +151,29 @@ model Session {
 }
 
 model Language {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  language    String
-  proficiency String
-  userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  language        String
+  proficiency     String
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Education {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  school      String
-  degree      String?
-  field       String?
-  grade       String?
-  startDate   DateTime?
-  endDate     DateTime?
-  description String?
-  skills      String[]
-  userId      String    @db.ObjectId
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  school          String
+  degree          String?
+  field           String?
+  grade           String?
+  startDate       DateTime?
+  endDate         DateTime?
+  description     String?
+  skills          String[]
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model OTP {
@@ -231,27 +225,44 @@ model TalentMatch {
 }
 
 model TalentProfile {
-  id            String         @id @default(auto()) @map("_id") @db.ObjectId
-  resumeUrl     String
-  title         String?
-  description   String?
-  rate          String?
-  skills        String[]
-  profiles      String[]
-  hours         String?
-  availability  String?
-  target        String?
-  interviewDate DateTime?
-  interviews    Interview[]
-  talentMatch   TalentMatch[]
-  projects      Project[]
-  employment    Employment[]
-  candidates    JobCandidate[]
-  moreSections  MoreSections[]
-  userId        String         @db.ObjectId
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  resumeUrl          String?
+  title              String?
+  bio                String?
+  rate               String?
+  skills             String[]
+  profiles           String[]
+  hours              String?
+  mockInterviews     Interview[]
+  talentPoolProfiles TalentPoolProfile[]
+  talentMatch        TalentMatch[]
+  languages          Language[]
+  education          Education[]
+  projects           Project[]
+  employment         Employment[]
+  candidates         JobCandidate[]
+  moreSections       MoreSections[]
+  userId             String              @unique @db.ObjectId
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+}
+
+model TalentPoolProfile {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  resumeUrl       String
+  role            String
+  targetFor       String
+  skills          String[]
+  availability    String
+  locationPref    String?
+  interviewDate   DateTime
+  interviewStatus String
+  interview       Interview?
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 model Project {
@@ -394,7 +405,6 @@ model CV {
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
   ResumeAnalysis ResumeAnalysis[]
-  analysis       CVAnalysis[]
 }
 
 model ResumeAnalysis {
@@ -410,7 +420,7 @@ model ResumeAnalysis {
   spellingerrors        Json?
   summary               String?
   personal_info         Json?
-  bullet_point_length   Json?  
+  bullet_point_length   Json?
   bullet_point_improver Json?
   total_bullet_points   Json?
   responsibility        Json?
@@ -421,63 +431,41 @@ model ResumeAnalysis {
   updatedAt             DateTime @updatedAt
 }
 
-model CVAnalysis {
-  id                      String   @id @default(auto()) @map("_id") @db.ObjectId
-  cvId                    String   @db.ObjectId
-  cv                      CV       @relation(fields: [cvId], references: [id], onDelete: Cascade)
-  summary                 String?
-  resumeScore             Float?
-  hardSkillsScore         Float?
-  softSkillsScore         Float?
-  experienceScore         Float?
-  educationScore          Float?
-  quantificationIssues    String[]
-  bulletPointLength       Json?
-  bulletPointImprovements Json?
-  verbTenseIssues         Json?
-  weakVerbUsage           Json?
-  repetitionIssues        Json?
-  sectionFeedback         Json?
-  skillAnalysis           Json?
-  spellingIssues          String[]
-  responsibilityIssues    Json?
-  createdAt               DateTime @default(now())
-  updatedAt               DateTime @updatedAt
-}
 model Notification {
-  id          String @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String @db.ObjectId
-  recruiterId String @db.ObjectId
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  recruiterId String     @db.ObjectId
   message     String
-  received    Boolean @default(false) 
-  user        User @relation(fields: [userId],references: [id])
-  recuiter  Recruiter? @relation(fields: [recruiterId],references: [id],onDelete: Cascade) 
+  received    Boolean    @default(false)
+  user        User       @relation(fields: [userId], references: [id])
+  recuiter    Recruiter? @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
 }
 
 model Recruiter {
-  id            String @id @default(auto()) @map("_id") @db.ObjectId
-  notification  Notification[]
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  notification Notification[]
 }
 
-
 model Interview {
-  id                String              @id @default(auto()) @map("_id") @db.ObjectId
-  cvText            String?
-  jdText            String?
-  audioUrl          String?
-  videoUrl          String?
-  User              User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String              @db.ObjectId
-  messages          InterviewMessage[]
-  isStarted         Boolean             @default(false)
-  InterviewFeedback InterviewFeedback[]
-  Analysis          Analysis[]
-  isCompleted       Boolean             @default(false)
-  isFeedbackGiven   Boolean             @default(false)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  TalentProfile     TalentProfile?      @relation(fields: [talentProfileId], references: [id])
-  talentProfileId   String?             @db.ObjectId
+  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
+  cvText              String?
+  jdText              String?
+  audioUrl            String?
+  videoUrl            String?
+  User                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String              @db.ObjectId
+  messages            InterviewMessage[]
+  isStarted           Boolean             @default(false)
+  InterviewFeedback   InterviewFeedback[]
+  Analysis            Analysis[]
+  isCompleted         Boolean             @default(false)
+  isFeedbackGiven     Boolean             @default(false)
+  TalentProfile       TalentProfile?      @relation(fields: [talentProfileId], references: [id],onDelete:Cascade)
+  talentProfileId     String?             @db.ObjectId
+  talentPoolProfile   TalentPoolProfile?  @relation(fields: [talentPoolProfileId], references: [id])
+  talentPoolProfileId String?             @unique @db.ObjectId
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model InterviewMessage {

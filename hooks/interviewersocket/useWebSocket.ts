@@ -1,37 +1,35 @@
-import { useCallback, useEffect, useState } from 'react';
-import { json } from 'stream/consumers';
+import { useEffect, useState } from "react";
 
-// const url = "wss://ai-interviewer-c476.onrender.com/ws"
-// const url = "wss://ai-interview-dzawedctafcceya3.centralindia-01.azurewebsites.net/ws"
-const url = "ws://localhost:8000/ws"
+const url =
+  "ws://wize-resume-analyser-bva7bpdpdreae7bb.centralindia-01.azurewebsites.net/ws";
 
 const useWebSocket = () => {
-    const [ws, setWs] = useState<WebSocket | null>(null);
+  const [ws, setWs] = useState<WebSocket | null>(null);
 
-    useEffect(() => {
-        const socket = new WebSocket(url);
+  useEffect(() => {
+    const socket = new WebSocket(url);
 
-        socket.onopen = () => {
-            ws?.send(JSON.stringify({ type: "HELLO" }));
-            console.log('WebSocket connected');
-        };
+    socket.onopen = () => {
+      ws?.send(JSON.stringify({ type: "HELLO" }));
+      console.log("WebSocket connected");
+    };
 
-        socket.onerror = (error) => {
-            console.log("Error conecting socket: ", error)
-        };
+    socket.onerror = (error) => {
+      console.log("Error conecting socket: ", error);
+    };
 
-        socket.onclose = () => {
-            console.log('WebSocket closed');
-        };
+    socket.onclose = () => {
+      console.log("WebSocket closed");
+    };
 
-        setWs(socket);
+    setWs(socket);
 
-        return () => {
-            socket.close();
-        };
-    }, []);
+    return () => {
+      socket.close();
+    };
+  }, []);
 
-    return { ws };
+  return { ws };
 };
 
 export default useWebSocket;

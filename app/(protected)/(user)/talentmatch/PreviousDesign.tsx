@@ -2,14 +2,14 @@
 
 "use client";
 import { useEffect, useState } from "react";
-import { getTalentProfiles } from "@/actions/talentMatchActions";
+import { getTalentPoolProfiles } from "@/actions/talentMatchActions";
 import { useUserStore } from "@/utils/userStore";
 import { Lock, FileText, TvMinimal } from "lucide-react";
 import { TalentProfileCard } from "./TalentProfileCard";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TalentProfile } from "@prisma/client";
 import TalentMatchCSS from "./Talent.module.css";
-import CreateTalenProfileDialog from "./CreateTalentProfile";
+import CreateTalentPoolProfileDialog from "./CreateTalentPoolProfile";
 // import * as pdfjsLib from "pdfjs-dist";
 // pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -213,7 +213,7 @@ export default function TalentMatchPage() {
         //   getTalentProfiles(userId),
         // ]);
 
-        const profiles = await getTalentProfiles(userId);
+        const profiles = await getTalentPoolProfiles(userId);
 
         if (profiles) {
           setTalentProfiles(profiles);
@@ -281,7 +281,7 @@ export default function TalentMatchPage() {
               ))}
               {talentProfiles.length <= 10 && (
                 <div className="m-auto mb-4">
-                  <CreateTalenProfileDialog />
+                  <CreateTalentPoolProfileDialog />
                 </div>
               )}
             </div>
