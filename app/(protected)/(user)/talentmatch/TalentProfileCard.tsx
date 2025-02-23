@@ -48,6 +48,7 @@ import {
   CreateProject,
   UpdateProject,
 } from "@/components/talentmatch/updateProjects";
+import { getTalentProfile } from "@/actions/setupProfileActions";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -83,14 +84,14 @@ const TagList = ({ title, items }: { title?: string; items: string[] }) => (
   </div>
 );
 
-export function TalentProfileCard({ profile }: { profile: TalentProfile }) {
+export function TalentProfileCard({ talentProfileId }: { talentProfileId: string }) {
   const { userData } = useUserStore();
-  const id = profile.id;
-
+  console.log("fetcing details for lalentProfileID:: ", talentProfileId)
   const [open, setOpen] = useState(false);
   const [education, setEducation] = useState<Education[] | null>(null);
   const [experience, setExperience] = useState<Employment[] | null>(null);
   const [project, setProject] = useState<Project[] | null>(null);
+  const [talentProfile, setTalentProfile] = useState<TalentProfile | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -104,34 +105,50 @@ export function TalentProfileCard({ profile }: { profile: TalentProfile }) {
     console.log(data);
   };
 
+  useEffect(() => {
+    const getTP = async () => {
+      const res = await getTalentProfile(talentProfileId)
+      if (!res) return;
+      if (res?.data) {
+        console.log("user profile:: ",res)
+        setTalentProfile(res.data);
+      }
+    }
+    try {
+      getTP();
+    } catch (error) {
+      console.error("Error fetching talent profile:", error);
+    }
+  }, [talentProfileId])
+
   const getExperiences = useCallback(async () => {
     try {
-      const experiences = await getProfileEmployments(id);
+      const experiences = await getProfileEmployments(talentProfileId);
       setExperience(experiences);
       console.log(experiences);
     } catch (error) {
       console.error("Error getting experiences:", error);
     }
-  }, [id]);
+  }, [talentProfileId]);
 
   const getProjects = useCallback(async () => {
     try {
-      const projects = await getProfileProjects(id);
+      const projects = await getProfileProjects(talentProfileId);
       setProject(projects);
     } catch (error) {
       console.error("Error getting projects:", error);
     }
-  }, [id]);
+  }, [talentProfileId]);
 
   const getEducations = useCallback(async () => {
-    if (!userData || !userData.id) return;
+    // if (!userData || !userData.id) return;
     try {
-      const educations = await getUserEducations(userData.id);
+      const educations = await getUserEducations(talentProfileId);
       setEducation(educations);
     } catch (error) {
       console.error("Error getting educations:", error);
     }
-  }, [userData]);
+  }, [talentProfileId]);
 
   if (!userData) return null;
 
@@ -147,12 +164,12 @@ export function TalentProfileCard({ profile }: { profile: TalentProfile }) {
       </div>
       <div className="px-8 mt-12">
         <h2 className="text-2xl font-semibold">{userData?.name}</h2>
-        <p className="text-muted-foreground">{profile?.title}</p>
-        <p className="text-muted-foreground">{profile?.bio}</p>
+        <p className="text-muted-foreground">{talentProfile?.title}</p>
+        <p className="text-muted-foreground">{talentProfile?.bio}</p>
       </div>
       <div className="px-8">
-        {(profile.skills.length > 0 || profile.profiles.length > 0) && (
-          <TagList items={[...profile.skills, ...profile.profiles]} />
+        {talentProfile?.skills && talentProfile?.profiles && (talentProfile?.skills?.length > 0 || talentProfile?.profiles?.length > 0) && (
+          <TagList items={[...talentProfile?.skills, ...talentProfile?.profiles]} />
         )}
       </div>
       <Tabs defaultValue="account" className="w-full px-8 mt-8">
@@ -312,7 +329,7 @@ export function TalentProfileCard({ profile }: { profile: TalentProfile }) {
             ))
           ) : (
             <div className="flex items-center justify-center ">
-              <CreateProject talentProfileId={profile.id} />
+              <CreateProject talentProfileId={talentProfileId} />
             </div>
           )}
         </TabsContent>

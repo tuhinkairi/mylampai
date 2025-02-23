@@ -59,6 +59,25 @@ export const createTalentProfile = async (
   }
 };
 
+export const getTalentProfile=async (talentProfileId:string)=>{
+  try {
+    const res=await prisma.talentProfile.findFirst({
+      where:{id:talentProfileId}
+    })
+    return {
+      status:200,
+      data:res,
+      message:"Talent Profile data received successfully"
+    }
+  } catch (error) {
+    console.error("Error fetching talent profile:", error);
+    return {
+      error: "Error uploading resume",
+      status: 500,
+    };
+  }
+}
+
 export const createManualProfile= async(userId:string)=>{
   try {
     const profile = await prisma.talentProfile.create({
