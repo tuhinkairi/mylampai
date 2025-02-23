@@ -92,9 +92,9 @@ export default function JobForm() {
     try {
       if (!userData) return;
 
-      const res:{status:string, data:object} = await createJob(values, userData.id);
-      console.log("the job id", res.data)
-      if (res.status === "success") {
+      const res = await createJob(values, userData.id);
+      if (typeof res === "object" && res.status === "success") {
+        console.log("the job id", res.data)
         form.reset();
         toast.success("Job created successfully");
         router.push("/job/".concat(res.data.id))

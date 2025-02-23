@@ -125,13 +125,36 @@ export const matchTalentProfile = async (
       where: {
         OR: [{ skills: { hasSome: talentPoolData.skills } }],
       },
+      include:{
+        user:true
+      },
       take: 50,
       orderBy: {
         createdAt: "desc",
       },
     });
 
-    return matches;
+    return {status:200,data:matches};
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+export const matchTalentProfile2 = async (
+  talentPoolData: TalentPoolDataType
+) => {
+  try {
+    const matches = await prisma.talentProfile.findMany({
+      where: {
+        OR: [{ skills: { hasSome: talentPoolData.skills } }],
+      },
+      take: 50,
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {status:200,data:matches};
   } catch (error) {
     console.error(error);
     return [];

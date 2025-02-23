@@ -9,8 +9,10 @@ export default async function RootLayout({
 }>) {
   const user = await auth();
 
-  if (user) {
+  if (user&&user.role!="recruiter") {
     redirect("/talentmatch");
+  }else{
+    redirect("/talentpool")
   }
 
   return (

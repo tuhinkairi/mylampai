@@ -20,7 +20,7 @@ const RecruiterNavbar = () => {
   const { userData } = useUserStore();
   const [initials, setInitials] = useState("Profile");
   const pathname = usePathname();
-  const visibleOn = ["/recruiter"];
+  const visibleOn = ["/recruit"];
 
   const isVisible = visibleOn.some((route) => pathname.startsWith(route));
   
@@ -127,7 +127,7 @@ const RecruiterNavbar = () => {
 
         {userData ? (
           <Link
-            href={"/profile"}
+            href={"/talentpool"}
             className="flex items-center bg-primary h-[35px] text-white pl-4 pr-2 gap-2 rounded-lg "
           >
             {initials}

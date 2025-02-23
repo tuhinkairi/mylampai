@@ -58,61 +58,64 @@ export default function InfiniteScrollComponent() {
 
   return (
     <>
-      <InfiniteScroll
-        dataLength={talentPools.length}
-        next={fetchNextPage}
-        hasMore={hasMore}
-        loader={<h4>Loading...</h4>}
-        endMessage={<p>No more data to display.</p>}
-      >
-        {talentPools.map((pool) => (
-          <Link href={`/talentpool/${pool.id}`} key={pool.id}>
-            <Card className="overflow-hidden">
-              <CardHeader>
-                <CardTitle className="text-lg">Developer Profile</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold">Skills</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {pool.skills.map((skill) => (
-                        <Badge key={skill} variant="secondary">
-                          {skill}
-                        </Badge>
-                      ))}
+      {talentPools.length == 0 && <div>No Data to show</div>}
+      {talentPools.length > 0 &&
+        <InfiniteScroll
+          dataLength={talentPools.length}
+          next={fetchNextPage}
+          hasMore={hasMore}
+          loader={<h4>Loading...</h4>}
+          endMessage={<p>No more data to display.</p>}
+        >
+          {talentPools.map((pool) => (
+            <Link href={`/talentpool/${pool.id}`} key={pool.id}>
+              <Card className="overflow-hidden">
+                <CardHeader>
+                  <CardTitle className="text-lg">Developer Profile</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="font-semibold">Skills</h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {pool.skills.map((skill) => (
+                          <Badge key={skill} variant="secondary">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold">Profiles</h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {pool.profiles.map((prof) => (
+                          <Badge key={prof} variant="outline">
+                            {prof}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex items-center">
+                      <DollarSignIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span>Salary: ₹{pool.salary}</span>
+                    </div>
+                    <div className="flex items-center">
+                      <MapPinIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                      <span>Location Preference: {pool.locationPref}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      <span>
+                        Created: {new Date(pool.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold">Profiles</h3>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {pool.profiles.map((prof) => (
-                        <Badge key={prof} variant="outline">
-                          {prof}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <DollarSignIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                    <span>Salary: ₹{pool.salary}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPinIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-                    <span>Location Preference: {pool.locationPref}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <CalendarIcon className="w-4 h-4 mr-2" />
-                    <span>
-                      Created: {new Date(pool.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-      </InfiniteScroll>
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+        </InfiniteScroll>
+      }
     </>
   );
 }
