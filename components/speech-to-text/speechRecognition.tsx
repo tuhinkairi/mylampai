@@ -32,7 +32,7 @@ const SpeechRecognition = ({
 }: SpeechRecognitionProps): JSX.Element => {
   const { connection, connectToDeepgram, connectionState, disconnectFromDeepgram } = useDeepgram();
   const { setupMicrophone, microphone, startMicrophone, stopMicrophone, microphoneState } = useMicrophone();
-
+  
   const keepAliveInterval = useRef<any>();
   const voiceActivityCheckInterval = useRef<any>();
   const lastVoiceActivity = useRef<number>(Date.now());
@@ -51,43 +51,39 @@ const SpeechRecognition = ({
   //   isInitialized.current = false;
   // };
 
+  // Initialize recording setup
+  const initializeRecording = async () => {
+    if (isInitialized.current) return;
+    
+    try {
+      console.log("🎤 Initializing new recording session");
+      await setupMicrophone();
+      lastVoiceActivity.current = Date.now();
+      isInitialized.current = true;
+    } catch (error) {
+      console.error("❌ Error initializing recording:", error);
+      onStop();
+    }
+  };
 
-
-  useEffect(() => {
-    if (!isRecording) {
+  useEffect(()=>{
+    if(!isRecording){
       stopMicrophone()
     }
-  }, [isRecording, stopMicrophone])
+  },[isRecording])
 
   useEffect(() => {
-    // Initialize recording setup
-    const initializeRecording = async () => {
-      if (isInitialized.current) return;
-
-      try {
-        console.log("🎤 Initializing new recording session");
-        await setupMicrophone();
-        lastVoiceActivity.current = Date.now();
-        isInitialized.current = true;
-      } catch (error) {
-        console.error("❌ Error initializing recording:", error);
-        onStop();
-      }
-    };
     if (isRecording) {
       lastVoiceActivity.current = Date.now();
       initializeRecording();
-
+      
       voiceActivityCheckInterval.current = setInterval(() => {
         const timeSinceLastVoice = Date.now() - lastVoiceActivity.current;
         console.log("⏲️ Time since last voice activity:", Math.round(timeSinceLastVoice / 1000), "seconds");
-        console.log("finalTranscript len:: ", finalTranscript.length)
+        console.log("finalTranscript len:: ",finalTranscript.length)
         if (finalTranscript.length > 0 && timeSinceLastVoice > 5000) {
           console.log("🔇 No voice activity detected for 5 seconds and has existing transcription");
-          // Only trigger onTranscriptionComplete and onStop for auto-stop
           onTranscriptionComplete(finalTranscript);
-          // onStop();
-          // Don't clean up connections here, just let the parent handle state
         }
       }, 1000);
     }
@@ -95,7 +91,7 @@ const SpeechRecognition = ({
     return () => {
       clearInterval(voiceActivityCheckInterval.current);
     };
-  }, [isRecording, finalTranscript, onTranscriptionComplete,onStop,setupMicrophone]);
+  }, [isRecording, finalTranscript,onTranscriptionComplete]);
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready && isRecording) {
@@ -109,9 +105,9 @@ const SpeechRecognition = ({
         utterance_end_ms: 3000,
       });
     }
-
+    
     console.log("🔊 Microphone State:", microphoneState);
-  }, [microphoneState, isRecording, connectToDeepgram]);
+  }, [microphoneState, isRecording]);
 
   useEffect(() => {
     if (!microphone || !connection) return;
@@ -125,7 +121,7 @@ const SpeechRecognition = ({
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal } = data;
       let thisTranscript = data.channel.alternatives[0].transcript;
-      console.log("thisCaption: ", thisTranscript)
+      console.log("thisCaption: ",thisTranscript)
       if (thisTranscript.trim() !== "") {
         lastVoiceActivity.current = Date.now();
         console.log("🗣️ Voice activity detected");
@@ -149,7 +145,7 @@ const SpeechRecognition = ({
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };
-  }, [connectionState, isRecording, connection, microphone, onTranscriptionChange, startMicrophone]);
+  }, [connectionState, isRecording]);
 
   useEffect(() => {
     if (!connection) return;
@@ -172,7 +168,7 @@ const SpeechRecognition = ({
     return () => {
       clearInterval(keepAliveInterval.current);
     };
-  }, [microphoneState, connectionState, isRecording, connection]);
+  }, [microphoneState, connectionState, isRecording]);
 
   // Cleanup on unmount
   // useEffect(() => {
@@ -188,7 +184,7 @@ const SpeechRecognition = ({
   //   onStop();
   // };
 
-  return <div />;
+  return <div/>;
 };
 
 export default SpeechRecognition;

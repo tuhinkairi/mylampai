@@ -7,12 +7,11 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { CirclePlus, Upload } from "lucide-react";
+import { Check, CirclePlus, LoaderIcon, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -25,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CalendarIcon, Clock } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -43,19 +41,20 @@ import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { addUsersResume, getUserResumesList } from "@/actions/resumeActions";
 import { useUserStore } from "@/utils/userStore";
-import { createTalentProfile } from "@/actions/talentMatchActions";
+import { createTalentPoolProfile } from "@/actions/talentMatchActions";
 import { ArrayInput } from "@/components/misc/ArrayInput";
+import { useProfileStore } from "@/utils/profileStore";
 
 const profileSchema = z.object({
   resumeUrl: z.string(),
-  title: z
+  role: z
     .string({
       required_error: "Title is required",
     })
     .min(1, {
       message: "Title cannot be empty",
     }),
-  target: z.enum(["JOB", "INTERNSHIP"], {
+  targetFor: z.enum(["JOB", "INTERNSHIP"], {
     required_error: "Opportunity is required",
     invalid_type_error: "Must be JOB, or INTERNSHIP",
   }),
@@ -117,7 +116,7 @@ const roundToNearest30 = () => {
   return now;
 };
 
-export default function CreateTalenProfileDialog() {
+export default function CreateTalentPoolProfileDialog() {
   const [open, setOpen] = useState(false);
   const { userData } = useUserStore();
   const [resumeList, setResumeList] = useState<ResumeList>([]);
@@ -127,12 +126,16 @@ export default function CreateTalenProfileDialog() {
   const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string | null>(
     null
   );
+  const [isUploading,setIsUploading]=useState<boolean>(false);
+  const [isUploaded,setIsUploaded]=useState<boolean>(false);
+  
+  const {id}=useProfileStore()
 
   const createProfile = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       resumeUrl: "",
-      title: "",
+      role:"",
       availability: "FULL_TIME",
       skills: [],
       interviewDate: roundToNearest30(),
@@ -151,7 +154,7 @@ export default function CreateTalenProfileDialog() {
   };
 
   async function onSubmitProfile(values: z.infer<typeof profileSchema>) {
-    if (!userData || !userData.id) return;
+    if (!userData || !userData.id || !id) return;
 
     if (!uploadedResumeUrl && !values.resumeUrl) {
       createProfile.setError("resumeUrl", {
@@ -163,10 +166,11 @@ export default function CreateTalenProfileDialog() {
     }
 
     try {
-      const res = await createTalentProfile({
+      const res = await createTalentPoolProfile({
         ...values,
         resumeUrl: uploadedResumeUrl || values.resumeUrl,
-        userId: userData.id,
+        talentProfileId:id,
+        interviewStatus:"scheduled"
       });
 
       if (res.status === "success") {
@@ -184,6 +188,7 @@ export default function CreateTalenProfileDialog() {
   const handleResumeUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
+    setIsUploading(true)
     const file = event.target.files?.[0];
     if (!file) {
       toast.error("No file selected");
@@ -205,7 +210,7 @@ export default function CreateTalenProfileDialog() {
     const formData = new FormData();
 
     formData.append("file", file);
-
+    
     try {
       const res = await addUsersResume(formData, userData.id);
 
@@ -219,11 +224,14 @@ export default function CreateTalenProfileDialog() {
       console.error(error);
       toast.error("Failed to upload resume");
       return null;
+    }finally{
+      setIsUploading(false)
+      setIsUploaded(true)
     }
   };
 
   const handleTitleChange = (value: string) => {
-    createProfile.setValue("title", value);
+    createProfile.setValue("role", value);
   };
 
   const handleClickOutside = (event: MouseEvent) => {
@@ -311,7 +319,7 @@ export default function CreateTalenProfileDialog() {
             >
               <FormField
                 control={createProfile.control}
-                name="title"
+                name="role"
                 render={({ field }) => (
                   <FormItem className="flex flex-col mt-2 gap-2">
                     <FormLabel>Select Your Profile</FormLabel>
@@ -474,7 +482,7 @@ export default function CreateTalenProfileDialog() {
                               }}
                               className="flex-1"
                             >
-                              <Upload className="w-4 h-4 mr-2" />
+                              {isUploading?(<LoaderIcon className="w-4 h-4 mr-2"/>):(isUploaded?(<Check className="w-4 h-4 mr-2"/>):<Upload className="w-4 h-4 mr-2" />)}
                               Upload Resume
                             </Button>
                           </div>
@@ -488,7 +496,7 @@ export default function CreateTalenProfileDialog() {
               <div className="flex gap-4">
                 <FormField
                   control={createProfile.control}
-                  name="target"
+                  name="targetFor"
                   render={({ field }) => (
                     <FormItem className="w-full">
                       <FormLabel>Looking for</FormLabel>

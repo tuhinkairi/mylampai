@@ -3,21 +3,23 @@ import prisma from "@/lib";
 import { generateSasToken } from "./azureActions";
 import { auth } from "@/lib/authlib";
 
-type TalentProfileType = {
+type TalentPoolProfileType = {
   resumeUrl: string;
-  title: string;
+  role: string;
+  skills:string[];
   availability: string;
+  targetFor:string;
   interviewDate: Date;
-  userId: string;
-  target: string;
+  interviewStatus?:string;
+  talentProfileId:string;
 };
 
-export const createTalentProfile = async (
-  talentProfileData: TalentProfileType
+export const createTalentPoolProfile = async (
+  talentPoolProfileData: TalentPoolProfileType
 ) => {
   try {
-    await prisma.talentProfile.create({
-      data: talentProfileData,
+    await prisma.talentPoolProfile.create({
+      data: talentPoolProfileData
     });
 
     return {
@@ -111,11 +113,11 @@ export const updateTalentProfile = async (
   }
 };
 
-export const getTalentProfiles = async (userId: string) => {
+export const getTalentPoolProfiles = async (talentProfileId: string) => {
   try {
-    const talentProfile = await prisma.talentProfile.findMany({
+    const talentProfile = await prisma.talentPoolProfile.findMany({
       where: {
-        userId,
+        talentProfileId,
       },
     });
 
