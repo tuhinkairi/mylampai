@@ -17,7 +17,7 @@ import Link from "next/link";
 import { removeCookie } from "@/utils/cookieUtils";
 import { getNotification } from "@/actions/Notification";
 import { useState } from "react";
-import { Dialog, DialogContent } from "@radix-ui/react-dialog";
+import { Dialog, DialogContent, DialogTitle } from "@radix-ui/react-dialog";
 interface message {
   message: string
 }
@@ -123,7 +123,8 @@ export function NavUser() {
           </DropdownMenuItem>
           <Dialog>
             <DialogContent className="bg-white p-4 rounded-lg shadow-lg max-w-sm w-full">
-              <h2 className="text-lg font-semibold mb-2">Notifications</h2>
+              {/* <h2 className="text-lg font-semibold mb-2">Notifications</h2> */}
+              <DialogTitle>Notifications</DialogTitle>
               {notification.length > 0 ? (
                 <ul className="space-y-2">
                   {notification.map((notif) => (

@@ -25,9 +25,15 @@
       "@/*": [
         "./*"
       ],
-      "pdfjs-dist": ["./node_modules/pdfjs-dist"]
+      "pdfjs-dist": [
+        "./node_modules/pdfjs-dist"
+      ]
     },
-    "typeRoots": ["./node_modules/@types", "./types"]
+    "typeRoots": [
+      "./node_modules/@types",
+      "./types"
+    ],
+    "target": "ES2017"
   },
   "include": [
     "next-env.d.ts",
@@ -38,8 +44,10 @@
     "app/(protected)/cvreviewer/Highlighter.jsx",
     "types/pdfjs-dist.d.ts",
     "components/ui/globe.jsx",
-    "build/types/**/*.ts"
-, "public/audioProcessor.js", "components/speech-to-text/speechRecognition.tsx"  ],
+    "build/types/**/*.ts",
+    "public/audioProcessor.js",
+    "components/speech-to-text/speechRecognition.tsx"
+  ],
   "exclude": [
     "node_modules"
   ]

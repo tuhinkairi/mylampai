@@ -7,16 +7,22 @@ import {
   BriefcaseBusiness,
   Eye,
   CalendarCheck2,
+  DollarSignIcon,
+  MapPinIcon,
+  CalendarIcon,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TalentMatchCSS from "./Talent.module.css";
 import CreateTalentPoolProfileDialog from "./CreateTalentPoolProfile";
-import { getTalentPoolProfiles } from "@/actions/talentMatchActions";
+import { acceptTalentMatch, getTalentMatches, getTalentPoolProfiles } from "@/actions/talentMatchActions";
 import { Badge } from "@/components/ui/badge";
 import PdfToImage from "@/components/misc/pdftoimg";
 import { useProfileStore } from "@/utils/profileStore";
 import { useEffect, useState } from "react";
 import { TalentProfileCard } from "./TalentProfileCard";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 type ProfileData = {
   resumeUrl: string;
@@ -33,6 +39,7 @@ export default function TalentMatchPage() {
   // const user = await auth();
   const { id } = useProfileStore();
   const [talentPoolProfiles, setTalentPoolProfiles] = useState<ProfileData[]>();
+  const [talentMatches, setTalentMatches] = useState<any[]>([])
 
   useEffect(() => {
     const getTalentProfiles = async (id: string) => {
@@ -45,10 +52,38 @@ export default function TalentMatchPage() {
       setTalentPoolProfiles(profiles);
     };
 
+    const getMatches = async (id: string) => {
+      console.log("match for : ", id)
+      const res = await getTalentMatches(id)
+      if (res && Array.isArray(res)) {
+        setTalentMatches(res);
+        console.log("talentmatches:: ", res)
+      } else {
+        console.error("Failed to fetch talent matches:", res);
+      }
+    }
+
     if (id) {
       getTalentProfiles(id);
+      getMatches(id);
     }
   }, [id]);
+
+  const handleConfirmMatch = async (matchId: string) => {
+    try {
+      const res = await acceptTalentMatch(matchId);
+
+      if (res === "success") {
+        toast.success("Match confirmed successfully");
+      } else {
+        toast.error("Failed to confirm match");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to confirm match");
+    }
+  };
+
 
   if (!id) {
     return <div>Loading...</div>; // or any other placeholder UI
@@ -57,18 +92,81 @@ export default function TalentMatchPage() {
   return (
     <div className="flex sm:flex-row flex-col px-2 py-2 sm:py-0 sm:pr-2">
       <ScrollArea className="h-screen w-full sm:w-5/12 sm:p-4">
-        <div className="h-52 sm:h-[calc(100vh-20rem)] flex items-center border rounded-lg">
+        <div className="h-52 sm:h-[calc(100vh-20rem)] flex items-center border rounded-lg ">
           <div
             className={`${TalentMatchCSS.verticalText} h-full text-white rounded-r-lg px-2 text-center bg-primary`}
           >
             Your Matches
           </div>
-          <div className="w-full flex flex-col items-center justify-center py-2">
-            <Lock className="w-8 h-8 text-primary" />
-            <div className="text-center max-w-[400px] text-sm text-muted-foreground mt-2 p-4">
-              Complete your profile and attempt the AI interview to be
-              considered for the talent pool.
-            </div>
+
+          <div className="w-full flex flex-col justify-center py-1 overflow-y-auto">
+            <ScrollArea className="h-52 overflow-auto" >
+              {
+                talentMatches.length > 0 && talentMatches.map((pool,index) => (
+                  <Card className="overflow-hidden m-2" key={index}>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Developer Profile</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <h3 className="font-semibold mr-2">Skills: </h3>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {pool.talentPool.skills.map((skill: any) => (
+                              <Badge key={skill} variant="secondary">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                        {/* <div>
+                        <h3 className="font-semibold">Profiles</h3>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {pool.talentPool.profiles.map((prof: any) => (
+                            <Badge key={prof} variant="outline">
+                              {prof}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <DollarSignIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span>Salary: ₹{pool.talentPool.salary}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <MapPinIcon className="w-4 h-4 mr-2 text-muted-foreground" />
+                        <span>Location Preference: {pool.talentPool.locationPref}</span>
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <CalendarIcon className="w-4 h-4 mr-2" />
+                        <span>
+                          Created: {new Date(pool.talentPool.createdAt).toLocaleDateString()}
+                        </span>
+                      </div> */}
+                      </div>
+                    </CardContent>
+                    <CardFooter>
+                      {!pool.isMatched
+                        ? <Button onClick={() => handleConfirmMatch(pool.id)}>Accept</Button>
+                        : <Button disabled>Accepted</Button>
+                      }
+
+                    </CardFooter>
+                  </Card>
+                ))
+              }
+            </ScrollArea>
+            {talentMatches.length === 0 && (
+              <>
+                <Lock className="w-8 h-8 text-primary" />
+                <div className="text-center max-w-[400px] text-sm text-muted-foreground mt-2 p-4">
+                  Complete your profile and attempt the AI interview to be
+                  considered for the talent pool.
+                </div>
+              </>
+
+            )
+            }
           </div>
         </div>
         <div className="flex flex-col border my-4 w-full  rounded-lg h-[calc(100vh-2rem)]">

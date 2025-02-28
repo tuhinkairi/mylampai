@@ -25,7 +25,7 @@ import { fetchResumeAnalysis, updateResumeAnalysis } from "@/actions/resumeAnaly
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from "@/lib/utils";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 

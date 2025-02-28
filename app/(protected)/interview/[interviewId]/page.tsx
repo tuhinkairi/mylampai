@@ -1,9 +1,8 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import * as pdfJSLib from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist/webpack";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { toast } from "sonner";
 import { FiX } from "react-icons/fi";
 import { IoDocumentAttach, IoCloudUploadOutline } from "react-icons/io5";
@@ -35,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 
-pdfJSLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfJSLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 function generateFileName(
   interviewId: string,
@@ -312,7 +311,7 @@ const InterviewComponent = () => {
         const typedArray = new Uint8Array(event.target?.result as ArrayBuffer);
 
         if (typeof window !== "undefined") {
-          const pdf = await pdfJSLib.getDocument(typedArray).promise;
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
           let text = "";
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
