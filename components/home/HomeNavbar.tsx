@@ -29,7 +29,7 @@ const HomeNavbar = () => {
 
   const { userData, setUserData } = useUserStore();
   const [initials, setInitials] = useState("Home");
-  const hiddenOn = ["/recruiter/"];
+  const hiddenOn = ["/recruit/"];
 
   const isHidden = hiddenOn.some((route) =>
     pathname.startsWith(route.replace(/\/$/, ""))

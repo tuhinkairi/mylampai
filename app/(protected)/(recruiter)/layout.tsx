@@ -8,7 +8,6 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const user = await auth();
-  console.log(user)
   // const {setRecruiterId}= usejobCreateStore()
   
   if (!user || user?.role !== "recruiter") {

@@ -44,12 +44,17 @@ export const getTalentMatches = async (userId: string) => {
       where: {
         talentId: userId,
       },
+      select:{
+        talentPool:true,
+        id:true,
+        isMatched:true,
+        isHired:true
+      }
     });
-
     return talentMatches;
   } catch (error) {
     console.error(error);
-    return [];
+    return "failed";
   }
 };
 

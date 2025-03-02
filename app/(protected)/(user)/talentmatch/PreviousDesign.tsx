@@ -11,7 +11,7 @@
 // import TalentMatchCSS from "./Talent.module.css";
 // import CreateTalentPoolProfileDialog from "./CreateTalentPoolProfile";
 // // import * as pdfjsLib from "pdfjs-dist";
-// // pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// // pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 // // type TalentMatchType = {
 // //   id: string;
@@ -101,107 +101,107 @@
 //   //   }
 //   // }
 
-//   // const extractStructuredData = useCallback(async (text: string) => {
-//   //   try {
-//   //     const response = await fetch(`${baseUrl}/extract_structured_data`, {
-//   //       method: "POST",
-//   //       headers: {
-//   //         "Content-Type": "application/json",
-//   //       },
-//   //       body: JSON.stringify({ cv_text: text }),
-//   //     });
+  // const extractStructuredData = useCallback(async (text: string) => {
+  //   try {
+  //     const response = await fetch(`${baseUrl}/extract_structured_data`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ cv_text: text }),
+  //     });
 
-//   //     const result = await response.json();
+  //     const result = await response.json();
 
-//   //     return response.ok ? result.message : null;
-//   //   } catch (error) {
-//   //     return null;
-//   //   }
-//   // }, []);
+  //     return response.ok ? result.message : null;
+  //   } catch (error) {
+  //     return null;
+  //   }
+  // }, []);
 
-//   // const handleFileChange = async (
-//   //   event: React.ChangeEvent<HTMLInputElement>
-//   // ) => {
-//   //   event.preventDefault();
-//   //   const file = event.target.files?.[0];
+  // const handleFileChange = async (
+  //   event: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   event.preventDefault();
+  //   const file = event.target.files?.[0];
 
-//   //   if (!file || file.type !== "application/pdf") {
-//   //     toast.error("Please upload a PDF file");
-//   //     return;
-//   //   }
+  //   if (!file || file.type !== "application/pdf") {
+  //     toast.error("Please upload a PDF file");
+  //     return;
+  //   }
 
-//   //   if (file.size > 1 * 1024 * 1024) {
-//   //     toast.error("File size should not exceed 1MB");
-//   //     return;
-//   //   }
+  //   if (file.size > 1 * 1024 * 1024) {
+  //     toast.error("File size should not exceed 1MB");
+  //     return;
+  //   }
 
-//   //   try {
-//   //     const formData = new FormData();
-//   //     formData.append("file", file);
-//   //     const res = await uploadResumeToAzure(formData);
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+  //     const res = await uploadResumeToAzure(formData);
 
-//   //     if (res.status === "failed") {
-//   //       toast.error(res.message);
-//   //       return;
-//   //     }
-//   //   } catch (error) {
-//   //     console.error("Error uploading resume:", error);
-//   //     toast.error("Failed to upload resume");
-//   //     return;
-//   //   }
+  //     if (res.status === "failed") {
+  //       toast.error(res.message);
+  //       return;
+  //     }
+  //   } catch (error) {
+  //     console.error("Error uploading resume:", error);
+  //     toast.error("Failed to upload resume");
+  //     return;
+  //   }
 
-//   //   const fileReader = new FileReader();
-//   //   let extractedText = "";
+  //   const fileReader = new FileReader();
+  //   let extractedText = "";
 
-//   //   fileReader.onload = async function () {
-//   //     const typedArray = new Uint8Array(this.result as ArrayBuffer);
+  //   fileReader.onload = async function () {
+  //     const typedArray = new Uint8Array(this.result as ArrayBuffer);
 
-//   //     const pdf = await pdfjsLib.getDocument(typedArray).promise;
+  //     const pdf = await pdfjsLib.getDocument(typedArray).promise;
 
-//   //     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-//   //       const page = await pdf.getPage(pageNumber);
-//   //       const textContent = await page.getTextContent();
+  //     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+  //       const page = await pdf.getPage(pageNumber);
+  //       const textContent = await page.getTextContent();
 
-//   //       const pageText = textContent.items
-//   //         .map((item: any) => item.str)
-//   //         .join(" ");
-//   //       extractedText += pageText + "\n";
-//   //     }
+  //       const pageText = textContent.items
+  //         .map((item: any) => item.str)
+  //         .join(" ");
+  //       extractedText += pageText + "\n";
+  //     }
 
-//   //     if (!extractedText) {
-//   //       toast.error("Error extracting text");
-//   //       return;
-//   //     }
+  //     if (!extractedText) {
+  //       toast.error("Error extracting text");
+  //       return;
+  //     }
 
-//   //     const structuredDataResult = await extractStructuredData(extractedText);
+  //     const structuredDataResult = await extractStructuredData(extractedText);
 
-//   //     if (!structuredDataResult) {
-//   //       toast.error("Failed to analyse resume");
-//   //       return;
-//   //     }
+  //     if (!structuredDataResult) {
+  //       toast.error("Failed to analyse resume");
+  //       return;
+  //     }
 
-//   //     structuredData.current = structuredDataResult;
+  //     structuredData.current = structuredDataResult;
 
-//   //     console.log(structuredDataResult);
-//   //   };
+  //     console.log(structuredDataResult);
+  //   };
 
-//   //   fileReader.readAsArrayBuffer(file);
-//   // };
+  //   fileReader.readAsArrayBuffer(file);
+  // };
 
-//   // const handleConfirmMatch = async (matchId: string) => {
-//   //   try {
-//   //     const res = await acceptTalentMatch(matchId);
+  // const handleConfirmMatch = async (matchId: string) => {
+  //   try {
+  //     const res = await acceptTalentMatch(matchId);
 
-//   //     if (res === "success") {
-//   //       toast.success("Match confirmed successfully");
-//   //     } else {
-//   //       toast.error("Failed to confirm match");
-//   //     }
-//   //   } catch (error) {
-//   //     console.error(error);
-//   //     toast.error("Failed to confirm match");
-//   //   }
-//   // };
+  //     if (res === "success") {
+  //       toast.success("Match confirmed successfully");
+  //     } else {
+  //       toast.error("Failed to confirm match");
+  //     }
+  //   } catch (error) {
+  //     console.error(error);
+  //     toast.error("Failed to confirm match");
+  //   }
+  // };
 
 //   useEffect(() => {
 //     if (!userData || !userData.id) return;
@@ -219,18 +219,18 @@
 //           setTalentProfiles(profiles);
 //         }
 
-//         // if (matches && matches.length) {
-//         //   const talentPoolIds = matches.map((match) => match.talentPoolId);
-//         //   const talentPoolsData = await getTalentPoolsData(talentPoolIds);
+        // if (matches && matches.length) {
+        //   const talentPoolIds = matches.map((match) => match.talentPoolId);
+        //   const talentPoolsData = await getTalentPoolsData(talentPoolIds);
 
-//         //   const mergedData = matches.map((match, index) => ({
-//         //     matchId: match.id,
-//         //     isMatched: match.isMatched,
-//         //     ...(talentPoolsData[index] || {}),
-//         //   }));
+        //   const mergedData = matches.map((match, index) => ({
+        //     matchId: match.id,
+        //     isMatched: match.isMatched,
+        //     ...(talentPoolsData[index] || {}),
+        //   }));
 
-//         //   setTalentMatches(mergedData);
-//         // }
+        //   setTalentMatches(mergedData);
+        // }
 //       } catch (error) {
 //         console.error("Error fetching data:", error);
 //       }

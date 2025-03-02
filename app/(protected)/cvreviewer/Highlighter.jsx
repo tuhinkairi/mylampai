@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import * as pdfjs from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist";
 import "mark.js";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const Highlighter = () => {
   const [pdfDocument, setPdfDocument] = useState(null);

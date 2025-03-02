@@ -6,18 +6,20 @@ export default async function TalentPoolPage({
 }: {
   params: { talentPoolId: string };
 }) {
-  const res = await getTalentPoolData(params.talentPoolId);
+  const { talentPoolId } = await params;
 
+  const res = await getTalentPoolData(talentPoolId);
+  // console.log("res:: ",res)
   return (
     <div>
-      <h1>Talent Pool Page</h1>
+      {/* <h1>Talent Pool Page</h1> */}
 
       {res ? (
         <div>
           <ProfileMatches poolData={res} />
         </div>
       ) : (
-        <div>No talent pool found</div>
+        <div>No talents found</div>
       )}
     </div>
   );
