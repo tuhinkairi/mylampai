@@ -30,7 +30,7 @@ interface JobProps {
 
 export function Job({ job }: JobProps) {
   const handelShare = () => {
-    navigator.clipboard.writeText(`${window.location}/${job.id}`)
+    navigator.clipboard.writeText(`${window.location.host}/login?redirect=/career/${job.id}`)
     toast.success("copy to clipboard");
   }
   return (
@@ -88,7 +88,7 @@ export function Job({ job }: JobProps) {
               : "No deadline available"}
           </p>
           <div>
-            <Link href={`${window.location}/${job.id}`} target="_blank">
+          <Link href={`${window.location}/${job.id}`} target="_blank">
               <Button className="clear-both" >Apply</Button>
             </Link>
           </div>

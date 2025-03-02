@@ -1,21 +1,35 @@
-import { auth } from "@/lib/authlib";
-import { redirect } from "next/navigation";
+"use client"
+import { useUserStore } from "@/utils/userStore";
+import { redirect, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await auth();
-
-  if (user) {
-    redirect("/talentmatch");
-  }
+  const { userData } = useUserStore();
+  const redirecting = useSearchParams().get("redirect")
+  const [state, setState] = useState<boolean>(true)
+  useEffect(() => {
+    if (userData) {
+      if (!redirecting) {
+        setState(false)
+        redirect("/talentmatch");
+      } else {
+        console.log(redirecting)
+        setState(false)
+        redirect(redirecting);
+      }
+    }
+  }, [redirecting])
 
   return (
     <>
-      <main className="h-full">{children}</main>
+      {state ? (<>loading ....</>) : (
+        <main className="h-full">{children}</main>
+      )}
     </>
   );
 }
