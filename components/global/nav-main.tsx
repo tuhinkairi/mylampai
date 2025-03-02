@@ -101,11 +101,12 @@ export default function NavMain() {
   }, [setUser]);
   
   return (
-    <div key={`${uniKey}`} className="flex flex-col gap-3">
+    <div key={`${uniKey()}`} className="flex flex-col gap-3">
       
       {items.map((item, index) => (
         <>
-          {user?.role === item.view && (<div key={index} className="group">
+          {user?.role === item.view && (
+            <div key={index.toString().concat(uniKey())} className="group">
             <Link
               href={item.url}
               className="flex flex-col gap-1 w-full items-center"

@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import ApplyJob from "./apply-job";
 
+
 const formatDate = (date: string) => format(new Date(date), "PPP");
 
 const JobDetail = ({
