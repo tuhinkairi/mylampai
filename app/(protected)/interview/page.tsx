@@ -32,7 +32,7 @@ export default function InterviewsPage() {
 
   const onSelectInterview = async (interviewId: string, userId: string) => {
     const res = await verifyInterview({ interviewId, userId });
-
+    
     if (res.status === "failed") {
       if (res.code === 3) toast.error("Interview not found");
       else toast.error(res.message);
