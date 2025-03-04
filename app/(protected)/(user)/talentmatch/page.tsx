@@ -102,7 +102,7 @@ export default function TalentMatchPage() {
           <div className="w-full flex flex-col justify-center py-1 overflow-y-auto">
             <ScrollArea className="h-52 overflow-auto" >
               {
-                talentMatches.length > 0 && talentMatches.map((pool,index) => (
+                talentMatches.length > 0 && talentMatches.map((pool, index) => (
                   <Card className="overflow-hidden m-2" key={index}>
                     <CardHeader>
                       <CardTitle className="text-lg">Developer Profile</CardTitle>
@@ -155,18 +155,20 @@ export default function TalentMatchPage() {
                   </Card>
                 ))
               }
-            </ScrollArea>
-            {talentMatches.length === 0 && (
-              <>
-                <Lock className="w-8 h-8 text-primary" />
-                <div className="text-center max-w-[400px] text-sm text-muted-foreground mt-2 p-4">
-                  Complete your profile and attempt the AI interview to be
-                  considered for the talent pool.
-                </div>
-              </>
+              {talentMatches.length === 0 && (
+                <>
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <Lock className="w-8 h-8 text-primary" />
+                    <div className="text-center max-w-[400px] text-sm text-muted-foreground mt-2 p-4">
+                      Complete your profile and attempt the AI interview to be
+                      considered for the talent pool.
+                    </div>
+                  </div>
+                </>
 
-            )
-            }
+              )
+              }
+            </ScrollArea>
           </div>
         </div>
         <div className="flex flex-col border my-4 w-full  rounded-lg h-[calc(100vh-2rem)]">

@@ -2,6 +2,7 @@
 import prisma from "@/lib/index";
 import { auth } from "@/lib/authlib";
 import { redirect } from "next/navigation";
+import { useUserStore } from "@/utils/userStore";
 
 export default async function UserLayout({
   children,

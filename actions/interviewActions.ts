@@ -2,12 +2,12 @@
 import prisma from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
 
-export const getInterviews = async (userId: string) => {
+export const getMockInterviews = async (talentProfileId: string) => {
   try {
-    if (!userId) return [];
+    if (!talentProfileId) return [];
 
     const interviews = await prisma.interview.findMany({
-      where: { userId },
+      where: { talentProfileId },
       select: {
         id: true,
       },
@@ -20,17 +20,21 @@ export const getInterviews = async (userId: string) => {
   return [];
 };
 
-export const createInterview = async (userId: string) => {
+export const createMockInterview = async (
+  talentProfileId?: string,
+  talentPoolProfileId?: string
+) => {
   try {
-    if (!userId)
+    if (!talentProfileId && !talentPoolProfileId) {
       return {
         status: "failed",
-        message: "User not found",
+        message: "TalentProfileId or TalentPoolProfileId is required",
       };
+    }
 
     // const user = await prisma.user.findUnique({
     //   where: {
-    //     id: userId,
+    //     id: talentProfileId,
     //   },
     // });
 
@@ -50,15 +54,39 @@ export const createInterview = async (userId: string) => {
     //   };
     // }
 
+    if (talentProfileId && talentPoolProfileId) {
+      return {
+        status: "failed",
+        message:
+          "Only one of talentProfileId or talentPoolProfileId should be set",
+      };
+    }
+
+    // If talentPoolProfileId is provided, ensure no duplicate interview exists
+    if (talentPoolProfileId) {
+      const existingInterview = await prisma.interview.findUnique({
+        where: { talentPoolProfileId },
+      });
+
+      if (existingInterview) {
+        return {
+          status: "failed",
+          message: "An interview already exists for this TalentPoolProfile",
+        };
+      }
+    }
+
+    // Create interview (ensures only one of the two IDs is set)
     const interview = await prisma.interview.create({
       data: {
-        userId,
+        talentProfileId: talentProfileId || null,
+        // talentPoolProfileId: talentPoolProfileId || null,
       },
     });
 
     // await prisma.user.update({
     //   where: {
-    //     id: userId,
+    //     id: talentProfileId,
     //   },
     //   data: {
     //     credits: credits - 100,
@@ -153,14 +181,14 @@ export const handleJDTextUpload = async ({
 
 export const updateInterviewStarted = async (interviewId: string) => {
   try {
-    console.log("helo1")
+    console.log("helo1");
     if (!interviewId) {
       return {
         status: "failed",
         message: "Interview Id is required",
       };
     }
-    console.log("helo11")
+    console.log("helo11");
 
     await prisma.interview.update({
       where: {
@@ -171,8 +199,7 @@ export const updateInterviewStarted = async (interviewId: string) => {
       },
     });
 
-    console.log("helo111")
-
+    console.log("helo111");
 
     return {
       status: "success",
@@ -187,26 +214,26 @@ export const updateInterviewStarted = async (interviewId: string) => {
   };
 };
 
-export const verifyInterview = async ({
+export const verifyMockInterview = async ({
   interviewId,
-  userId,
+  talentProfileId,
 }: {
   interviewId: string;
-  userId: string;
+  talentProfileId: string;
 }) => {
   try {
-    if (!interviewId || !userId) {
+    if (!interviewId || !talentProfileId) {
       return {
         code: 0,
         status: "failed",
-        message: "Both interviewId and userId is required",
+        message: "Both interviewId and talentProfileId is required",
       };
     }
 
     const interview = await prisma.interview.findUnique({
       where: {
         id: interviewId,
-        userId,
+        talentProfileId,
       },
     });
 

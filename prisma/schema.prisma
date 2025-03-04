@@ -52,7 +52,7 @@ model User {
   JobCandidate      JobCandidate[]
   // newsletters    Newsletter[]    @relation("NewsletterRecipients")
   Resume            Resume[]
-  Interview         Interview[]
+  // Interview         Interview[]
 }
 
 // // job create by recruiter
@@ -274,7 +274,7 @@ model TalentPoolProfile {
   locationPref    String?
   interviewDate   DateTime
   interviewStatus String
-  interview       Interview?
+  //interview       Interview?
   talentProfileId String        @db.ObjectId
   talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
   createdAt       DateTime      @default(now())
@@ -463,25 +463,21 @@ model Recruiter {
 }
 
 model Interview {
-  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
-  cvText              String?
-  jdText              String?
-  audioUrl            String?
-  videoUrl            String?
-  User                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String              @db.ObjectId
-  messages            InterviewMessage[]
-  isStarted           Boolean             @default(false)
-  InterviewFeedback   InterviewFeedback[]
-  Analysis            Analysis[]
-  isCompleted         Boolean             @default(false)
-  isFeedbackGiven     Boolean             @default(false)
-  TalentProfile       TalentProfile?      @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
-  talentProfileId     String?             @db.ObjectId
-  talentPoolProfile   TalentPoolProfile?  @relation(fields: [talentPoolProfileId], references: [id])
-  talentPoolProfileId String?             @unique @db.ObjectId
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id                String              @id @default(auto()) @map("_id") @db.ObjectId
+  cvText            String?
+  jdText            String?
+  audioUrl          String?
+  videoUrl          String?
+  messages          InterviewMessage[]
+  isStarted         Boolean             @default(false)
+  InterviewFeedback InterviewFeedback[]
+  Analysis          Analysis[]
+  isCompleted       Boolean             @default(false)
+  isFeedbackGiven   Boolean             @default(false)
+  TalentProfile     TalentProfile?      @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  talentProfileId   String?             @db.ObjectId
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model InterviewMessage {

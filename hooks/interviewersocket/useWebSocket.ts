@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 
+// const url =
+//   "ws://wize-resume-analyser-bva7bpdpdreae7bb.centralindia-01.azurewebsites.net/ws";
 const url =
-  "ws://wize-resume-analyser-bva7bpdpdreae7bb.centralindia-01.azurewebsites.net/ws";
+  "ws://localhost:5000/ws";
 
 const useWebSocket = () => {
   const [ws, setWs] = useState<WebSocket | null>(null);
