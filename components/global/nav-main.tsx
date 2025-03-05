@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { Bookmark, BookmarkMinus } from "lucide-react";
+import { Bookmark, BookmarkMinus, LucideBriefcaseBusiness } from "lucide-react";
 import {
   House,
   HouseFill,
@@ -16,6 +16,7 @@ import {
   PersonWorkspace,
 } from "react-bootstrap-icons";
 import getUserFromAuth from "@/lib/getUserFromAuth";
+import { useUserStore } from "@/utils/userStore";
 
 const items = [
   {
@@ -89,23 +90,28 @@ const items = [
       { title: "Limits", url: "#" },
     ],
   },
+  {
+    title: "All Jobs",
+    url: "/created-jobs",
+    view: "recruiter",
+    icons: [LucideBriefcaseBusiness,LucideBriefcaseBusiness],
+    items: [
+      { title: "General", url: "#" },
+      { title: "Team", url: "#" },
+      { title: "Billing", url: "#" },
+      { title: "Limits", url: "#" },
+    ],
+  },
 ];
 
 const uniKey = ()=>{return Math.random().toString(36).substr(2, 9)};
 export default function NavMain() {
-  const [user, setUser] = useState<object>()
-  useEffect(() => {
-    getUserFromAuth().then((data) => {
-      setUser(data);
-    });
-  }, [setUser]);
-  
+  const {userData} = useUserStore();
   return (
     <div key={`${uniKey()}`} className="flex flex-col gap-3">
-      
       {items.map((item, index) => (
         <>
-          {user?.role === item.view && (
+          {userData?.role === item.view && (
             <div key={index.toString().concat(uniKey())} className="group">
             <Link
               href={item.url}

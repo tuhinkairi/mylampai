@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import { getJob } from "@/actions/careerActions"; // Replace with your actual API function
 import RubricList from "./RubricsList";
 import { getRubricsList } from "@/actions/jobs/rubricsGet";
+import LoadingGlobal from "@/components/ui/loading";
 
 interface Round {
     id: string;
@@ -59,7 +60,7 @@ const RoundShow = () => {
         <div className="p-4">
             <h2 className="text-xl font-bold mb-4">Job Rounds for {title}</h2>
             {loading ? (
-                <p>Loading rounds...</p>
+                <LoadingGlobal text={"Rounds"}/>
             ) : rounds.length === 0 ? (
                 <p>No rounds found.</p>
             ) : (

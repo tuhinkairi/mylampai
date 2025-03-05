@@ -17,6 +17,7 @@ import PdfToImage from "@/components/misc/pdftoimg";
 import { useProfileStore } from "@/utils/profileStore";
 import { useEffect, useState } from "react";
 import { TalentProfileCard } from "./TalentProfileCard";
+import LoadingGlobal from "@/components/ui/loading";
 
 type ProfileData = {
   resumeUrl: string;
@@ -51,7 +52,7 @@ export default function TalentMatchPage() {
   }, [id]);
 
   if (!id) {
-    return <div>Loading...</div>; // or any other placeholder UI
+    return <LoadingGlobal text="Profile"/>; // or any other placeholder UI
   }
 
   return (

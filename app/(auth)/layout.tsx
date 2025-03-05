@@ -1,4 +1,5 @@
 "use client"
+import LoadingGlobal from "@/components/ui/loading";
 import { useUserStore } from "@/utils/userStore";
 import { redirect, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,8 +12,9 @@ export default function RootLayout({
 }>) {
   const { userData } = useUserStore();
   const redirecting = useSearchParams().get("redirect")
-  const [state, setState] = useState<boolean>(true)
+  const [state, setState] = useState<boolean>()
   useEffect(() => {
+    setState(true)
     if (userData) {
       if (!redirecting) {
         setState(false)
@@ -23,11 +25,11 @@ export default function RootLayout({
         redirect(redirecting);
       }
     }
-  }, [redirecting])
+  }, [redirecting,setState,userData])
 
   return (
     <>
-      {state ? (<>loading ....</>) : (
+      {state ? <LoadingGlobal text=""/> : (
         <main className="h-full">{children}</main>
       )}
     </>

@@ -24,6 +24,7 @@ import {
 import { fetchResumeAnalysis, updateResumeAnalysis } from "@/actions/resumeAnalysis";
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from "@/lib/utils";
+import LoadingGlobal from "@/components/ui/loading";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -49,7 +50,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
   const [sentencesToHighlight, setSentencesToHighlight] = useState<string[]>(
     []
   );
-  const { token } = useUserStore();
+  // const { token } = useUserStore();
   const [experience, setExperience] = useState<string>("FRESHER")
   const [loadingStates, setLoadingStates] = useState({
     summary: false,
@@ -1438,7 +1439,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
   return (
     <div className="flex h-full justify-between bg-primary-foreground items-stretch gap-2 px-2 pl-0">
-      {loading ? (<div className="flex items-center justify-center w-full min-h-screen"><span className="w-16 h-16 border-4 border-x-gray-400 border-t-gray-400 rounded-full animate-spin"></span></div>) : (
+      {loading ? <LoadingGlobal text={"Analysis"} /> : (
         <>
           <div
             className="w-full bg-[#fafafa] rounded-tr-lg max-w-[220px] flex flex-col gap-2 "

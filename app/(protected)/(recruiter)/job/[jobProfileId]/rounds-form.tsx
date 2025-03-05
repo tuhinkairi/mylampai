@@ -36,6 +36,7 @@ import { useUserStore } from "@/utils/userStore";
 import { useState } from "react";
 import { error } from "console";
 import { useRouter } from "next/navigation";
+import LoadingGlobal from "@/components/ui/loading";
 
 const roundSchema = z.object({
   roundName: z.string().min(1, "Round name is required"),
@@ -53,9 +54,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
   const { token } = useUserStore();
-  const router = useRouter()
-  const [round, setRound] = useState<RoundsType>([])
-  // const [roundId, setRoundId] = useState("")
+  const router = useRouter();
+  const [round, setRound] = useState<RoundsType>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -156,7 +157,7 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
         ...round,
         jobProfileId,
       }));
-
+      // loading
       addRounds(rounds).then((result) => {
         if (result.data) {
           setRound(result.data)
@@ -166,6 +167,7 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
           toast.success("Rounds added successfully");
           router.push(`/job/${jobProfileId}/evaluation`)
         }
+        // loading end
       });
     } catch (error) {
       toast.error("Error in adding Rounds");
@@ -173,153 +175,160 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
     }
   }
 
-
-
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {fields.map((field, index) => (
-          <div key={field.id} className="space-y-4 p-4 border rounded-lg">
-            <FormField
-              control={form.control}
-              name={`rounds.${index}.roundName`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Round Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`rounds.${index}.roundNumber`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Round Number</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      {...field}
-                      onChange={(e) =>
-                        field.onChange(parseInt(e.target.value, 10))
-                      }
+    <>
+      {
+        loading ? <LoadingGlobal text="" /> :
+          (
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="space-y-4 p-4 border rounded-lg">
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.roundName`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Round Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`rounds.${index}.details`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Details</FormLabel>
-                  <FormControl>
-                    <Textarea {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name={`rounds.${index}.roundType`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Round Type</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select round type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="technical">Technical</SelectItem>
-                      <SelectItem value="hr">HR</SelectItem>
-                      <SelectItem value="managerial">Managerial</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.roundNumber`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Round Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(parseInt(e.target.value, 10))
+                              }
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.details`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Details</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.roundType`}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Round Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select round type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="technical">Technical</SelectItem>
+                              <SelectItem value="hr">HR</SelectItem>
+                              <SelectItem value="managerial">Managerial</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-            <FormField
-              control={form.control}
-              name={`rounds.${index}.roundDate`}
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Round {index} Date</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-[240px] pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) =>
-                          date < new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {index > 0 && (
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => remove(index)}
-              >
-                Remove Round
-              </Button>
-            )}
-          </div>
-        ))}
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() =>
-            append({
-              roundName: "",
-              roundNumber: fields.length + 1,
-              details: "",
-              roundType: "",
-              roundDate: new Date(),
-            })
-          }
-        >
-          Add Round
-        </Button>
-        <Button type="submit">Submit</Button>
-      </form>
-    </Form>
+                    <FormField
+                      control={form.control}
+                      name={`rounds.${index}.roundDate`}
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Round {index} Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                    "w-[240px] pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value ? (
+                                    format(field.value, "PPP")
+                                  ) : (
+                                    <span>Pick a date</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value}
+                                onSelect={field.onChange}
+                                disabled={(date) =>
+                                  date < new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {index > 0 && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => remove(index)}
+                      >
+                        Remove Round
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() =>
+                    append({
+                      roundName: "",
+                      roundNumber: fields.length + 1,
+                      details: "",
+                      roundType: "",
+                      roundDate: new Date(),
+                    })
+                  }
+                >
+                  Add Round
+                </Button>
+                <Button type="submit">Submit</Button>
+              </form>
+            </Form>
+          )
+
+      }
+    </>
+
   );
 }

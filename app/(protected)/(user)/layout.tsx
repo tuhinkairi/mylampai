@@ -16,7 +16,10 @@ export default async function UserLayout({
     },
   });
   console.log("user found ",user)
-  if (!user || user?.role !== "user") {
+  // if (!user || user?.role !== "user") {
+  //   redirect("/not-found");
+  // }
+  if (!user?.role) {
     redirect("/not-found");
   }
   

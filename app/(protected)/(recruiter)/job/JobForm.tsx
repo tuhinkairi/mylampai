@@ -36,6 +36,7 @@ import { createJob } from "@/actions/createJobActions";
 import { toast } from "sonner";
 import { ArrayInput } from "@/components/misc/ArrayInput";
 import { useRouter } from "next/navigation";
+import LoadingGlobal from "@/components/ui/loading";
 
 const formSchema = z.object({
   jobTitle: z.string().min(1, "Job title is required"),
@@ -71,7 +72,7 @@ const formSchema = z.object({
 export default function JobForm() {
   const { userData } = useUserStore();
   const router = useRouter()
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -91,7 +92,6 @@ export default function JobForm() {
     setIsSubmitting(true);
     try {
       if (!userData) return;
-
       const res:{status:string, data:object} = await createJob(values, userData.id);
       console.log("the job id", res.data)
       if (res.status === "success") {
@@ -110,6 +110,8 @@ export default function JobForm() {
   }
 
   return (
+    <>
+    {isSubmitting?<LoadingGlobal text="Process"/>:
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
@@ -407,5 +409,9 @@ export default function JobForm() {
         </Button>
       </form>
     </Form>
+    }
+
+    </>
+
   );
 }
