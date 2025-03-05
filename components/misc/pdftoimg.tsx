@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import * as pdfjs from "pdfjs-dist";
+import * as pdfjsLib from "pdfjs-dist/webpack";
 import Image from "next/image";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const PdfToImage = ({ pdfUrl }: { pdfUrl: string }) => {
   const [imageSrc, setImageSrc] = useState("");
@@ -20,7 +20,7 @@ const PdfToImage = ({ pdfUrl }: { pdfUrl: string }) => {
   useEffect(() => {
     const renderPdfToImage = async () => {
       try {
-        const pdf = await pdfjs.getDocument(pdfUrl).promise;
+        const pdf = await pdfjsLib.getDocument(pdfUrl).promise;
         const page = await pdf.getPage(1); // Render the first page
 
         const viewport = page.getViewport({ scale: 1.5 });

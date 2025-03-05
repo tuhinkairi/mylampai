@@ -65,7 +65,7 @@ const RoundShow = () => {
                 <p>No rounds found.</p>
             ) : (
                 <ul className="space-y-4">
-                    {rounds.map((round) => (
+                    {rounds.map((round:any) => (
                         <li
                             key={round.id}
                             className="p-4 border rounded-lg shadow-sm bg-gray-50"

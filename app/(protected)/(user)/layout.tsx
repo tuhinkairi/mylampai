@@ -23,7 +23,7 @@ export default async function UserLayout({
     redirect("/not-found");
   }
   
-  console.log("isTalentProfileExist: ", isTalentProfileExist)
+  // console.log("isTalentProfileExist: ", isTalentProfileExist)
   if (!isTalentProfileExist) {
     redirect("/create-profile");
   } else {

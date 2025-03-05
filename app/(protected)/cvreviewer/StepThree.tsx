@@ -26,7 +26,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { cn } from "@/lib/utils";
 import LoadingGlobal from "@/components/ui/loading";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 

@@ -104,19 +104,28 @@ const items = [
   },
 ];
 
-const uniKey = ()=>{return Math.random().toString(36).substr(2, 9)};
+const uniKey = () => { return Math.random().toString(36).substr(2, 9) };
 export default function NavMain() {
-  const {userData} = useUserStore();
+  interface User {
+    role: string;
+    [key: string]: any;
+  }
+  // const {userData} = useUserStore();
+  const [user, setUser] = useState<User | null>(null);
+  useEffect(() => {
+    getUserFromAuth().then((data) => {
+      setUser(data);
+    });
+  }, [setUser]);
+
   return (
-    <div key={`${uniKey()}`} className="flex flex-col gap-3">
+    // <div key={`${uniKey()}`} className="flex flex-col gap-3">
+    <div key={`${uniKey}`} className="flex flex-col gap-3">
       {items.map((item, index) => (
-        <>
-          {userData?.role === item.view && (
-            <div key={index.toString().concat(uniKey())} className="group">
-            <Link
-              href={item.url}
-              className="flex flex-col gap-1 w-full items-center"
-            >
+        // userData?.role === item.view && (
+        user?.role === item.view && (
+          <div key={index} className="group">
+            <Link href={item.url} className="flex flex-col gap-1 w-full items-center">
               <div className="p-[7px] border border-white group-hover:border-slate-200 rounded-lg">
                 {item.icons?.[0] &&
                   React.createElement(item.icons[0], {
@@ -131,10 +140,10 @@ export default function NavMain() {
               </div>
               <p className="text-[0.6rem]">{item.title}</p>
             </Link>
-          </div>)}
-        </>
-
+          </div>
+        )
       ))}
+
     </div>
   );
 }

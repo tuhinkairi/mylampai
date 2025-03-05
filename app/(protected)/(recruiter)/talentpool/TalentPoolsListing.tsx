@@ -1,19 +1,19 @@
 "use client";
-import { getRecruiterTalentPool } from "@/actions/talentPoolActions";
+import { getRecruiterTalentPools } from "@/actions/talentPoolActions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, MapPinIcon, DollarSignIcon } from "lucide-react";
 import Link from "next/link";
-import InfiniteScroll from "react-infinite-scroll-component";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 type TalentPool = {
   id: string;
-  name: string;
+  title?: string | null;
   skills: string[];
   profiles: string[];
-  salary: number;
-  createdAt: string;
+  salary: string;
+  createdAt: Date;
   locationPref: string;
 };
 
@@ -24,50 +24,37 @@ type TalentPoolResponse = {
   totalItems: number;
 };
 
-export default function InfiniteScrollComponent() {
+export default function ListTalentPool({userId}:{userId:string}) {
   const [talentPools, setTalentPools] = useState<TalentPool[]>([]);
-  const [page, setPage] = useState<number>(1);
-  const [hasMore, setHasMore] = useState<boolean>(true);
+  
 
-  const fetchTalentPools = async (page: number): Promise<void> => {
+  const fetchTalentPools = async ()=> {
     try {
-      const response = await getRecruiterTalentPool({}, page, 10);
-      // if (!response.ok) {
-      //   throw new Error("Failed to fetch data");
-      // }
-
-      if (!Array.isArray(response)) {
-        const result: TalentPoolResponse = await response.json();
-        setTalentPools((prev) => [...prev, ...result.data]);
-        setHasMore(page < result.totalPages);
-      } else {
-        throw new Error("Unexpected response format");
+      const response = await getRecruiterTalentPools(userId);
+      if(response&&response.success){
+        if (response?.data) {
+          setTalentPools(response.data);
+        }
+      }else{
+        toast.error("Facing some issue,Try again!")
       }
     } catch (error) {
       console.error("Error fetching talent pool data:", error);
     }
   };
 
-  useEffect(() => {
-    fetchTalentPools(page);
-  }, [page]);
+  useEffect(()=>{
+   fetchTalentPools()
+  },[])
 
-  const fetchNextPage = () => {
-    setPage((prev) => prev + 1);
-  };
 
   return (
     <>
-      <InfiniteScroll
-        dataLength={talentPools.length}
-        next={fetchNextPage}
-        hasMore={hasMore}
-        loader={<h4>Loading...</h4>}
-        endMessage={<p>No more data to display.</p>}
-      >
-        {talentPools.map((pool) => (
+      {talentPools.length == 0 && <div>No Data to show</div>}
+      {talentPools.length > 0 &&
+        talentPools.map((pool) => (
           <Link href={`/talentpool/${pool.id}`} key={pool.id}>
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden w-[22rem]">
               <CardHeader>
                 <CardTitle className="text-lg">Developer Profile</CardTitle>
               </CardHeader>
@@ -76,23 +63,23 @@ export default function InfiniteScrollComponent() {
                   <div>
                     <h3 className="font-semibold">Skills</h3>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {pool.skills.map((skill) => (
+                      {pool.skills.map((skill: any) => (
                         <Badge key={skill} variant="secondary">
                           {skill}
                         </Badge>
                       ))}
                     </div>
                   </div>
-                  <div>
+                  {/* <div>
                     <h3 className="font-semibold">Profiles</h3>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {pool.profiles.map((prof) => (
+                      {pool.profiles.map((prof: any) => (
                         <Badge key={prof} variant="outline">
                           {prof}
                         </Badge>
                       ))}
                     </div>
-                  </div>
+                  </div> */}
                   <div className="flex items-center">
                     <DollarSignIcon className="w-4 h-4 mr-2 text-muted-foreground" />
                     <span>Salary: ₹{pool.salary}</span>
@@ -111,8 +98,8 @@ export default function InfiniteScrollComponent() {
               </CardContent>
             </Card>
           </Link>
-        ))}
-      </InfiniteScroll>
+        ))
+      }
     </>
   );
 }

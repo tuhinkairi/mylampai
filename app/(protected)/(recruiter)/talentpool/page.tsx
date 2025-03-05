@@ -1,6 +1,8 @@
+"use server"
 import TalentPoolForm from "./TalentPoolForm";
+import ListTalentPool from "./TalentPoolsListing";
 import { auth } from "@/lib/authlib";
-import InfiniteScrollComponent from "./InfiniteScroll";
+
 
 export default async function TalentPoolPage() {
   const user = await auth();
@@ -12,14 +14,14 @@ export default async function TalentPoolPage() {
   return (
     <div>
       <div>
-        <h1>Talent Pools</h1>
-        <div className="flex gap-4 p-4">
-          <InfiniteScrollComponent />
-        </div>
-      </div>
-      <div>
         <h2>Create Talent Pool</h2>
         <TalentPoolForm />
+      </div>
+      <div>
+        <h1>Talent Pools</h1>
+        <div className="flex flex-wrap justify-between gap-2 p-4">
+          <ListTalentPool userId={user.id} />
+        </div>
       </div>
     </div>
   );

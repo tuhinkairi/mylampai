@@ -21,18 +21,19 @@ export function AppSidebar({ user }: { user: User }) {
   const pathname = usePathname();
   const hiddenOn = ["/create-profile"];
 
+
   const isHidden = hiddenOn.some((route) => pathname.startsWith(route));
 
   useEffect(() => {
     setUser(user);
   }, [setUser, user]);
 
-  if (isHidden) return null;
+  if (isHidden||pathname.match(/^\/talentpool\/.*/)) return null;
 
   return (
     <div className="hidden sm:flex flex-col items-center justify-between py-4 max-w-20 w-full">
       <div className="flex items-center flex-col gap-4">
-        <Link href={"/talentmatch"} className="shadow-lg">
+        <Link href={user.role==="recruiter"?'/talentpool':'/talentmatch'} className="shadow-lg">
           <Image
             src={"/sidebar/wize_logo_whitebg.svg"}
             alt="wiZe logo"

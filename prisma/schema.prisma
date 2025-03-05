@@ -54,6 +54,7 @@ model User {
   Resume            Resume[]
   Interview         Interview[]
 }
+
 // // job create by recruiter
 // model Job {
 //   id             String           @id @default(auto()) @map("_id") @db.ObjectId
@@ -124,7 +125,6 @@ model User {
 
 // // end section for recruiter for job
 
-
 model Account {
   id                String  @id @default(auto()) @map("_id") @db.ObjectId
   userId            String  @db.ObjectId
@@ -139,6 +139,7 @@ model Account {
   id_token          String? @db.String
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([provider, providerAccountId])
 }
 
@@ -198,16 +199,18 @@ model Resume {
 
 // recruiter
 model TalentPool {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String        @db.ObjectId
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String                @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String                @db.ObjectId
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String?
   skills       String[]
   profiles     String[]
   salary       String
   locationPref String
   talents      TalentMatch[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  favourites   TalentPoolFavourite[] // Explicit relation
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
 }
 
 model TalentMatch {
@@ -225,7 +228,9 @@ model TalentMatch {
 }
 
 model TalentProfile {
-  id                 String              @id @default(auto()) @map("_id") @db.ObjectId
+  id                 String                @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String                @unique @db.ObjectId
+  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   resumeUrl          String?
   title              String?
   bio                String?
@@ -242,10 +247,21 @@ model TalentProfile {
   employment         Employment[]
   candidates         JobCandidate[]
   moreSections       MoreSections[]
-  userId             String              @unique @db.ObjectId
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  favouritedBy       TalentPoolFavourite[] // Explicit relation
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+}
+
+// Junction table for many-to-many relationship
+model TalentPoolFavourite {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  talentPoolId    String @db.ObjectId
+  talentProfileId String @db.ObjectId
+
+  talentPool    TalentPool    @relation(fields: [talentPoolId], references: [id], onDelete: Cascade)
+  talentProfile TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 model TalentPoolProfile {
@@ -261,8 +277,8 @@ model TalentPoolProfile {
   interview       Interview?
   talentProfileId String        @db.ObjectId
   talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Project {
@@ -460,7 +476,7 @@ model Interview {
   Analysis            Analysis[]
   isCompleted         Boolean             @default(false)
   isFeedbackGiven     Boolean             @default(false)
-  TalentProfile       TalentProfile?      @relation(fields: [talentProfileId], references: [id],onDelete:Cascade)
+  TalentProfile       TalentProfile?      @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
   talentProfileId     String?             @db.ObjectId
   talentPoolProfile   TalentPoolProfile?  @relation(fields: [talentPoolProfileId], references: [id])
   talentPoolProfileId String?             @unique @db.ObjectId
