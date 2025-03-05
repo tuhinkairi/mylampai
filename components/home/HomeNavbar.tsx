@@ -8,7 +8,12 @@ import {
   RecruiterComponent,
   AboutComponent,
 } from "./HomeNavbarComponents";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import LoginComponent from "../global/Login";
 import { useSession } from "next-auth/react";
 import { nextAuthLogin } from "@/actions/authActions";
@@ -34,7 +39,6 @@ const HomeNavbar = () => {
   const isHidden = hiddenOn.some((route) =>
     pathname.startsWith(route.replace(/\/$/, ""))
   );
-  
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,7 +101,7 @@ const HomeNavbar = () => {
 
     setInitials(getUserInitials);
   }, [userData]);
-  
+
   if (isHidden) return null;
 
   return (
@@ -119,7 +123,9 @@ const HomeNavbar = () => {
         />
       </Link>
 
-      <div className={`flex justify-end backdrop-blur-md rounded-lg md:hidden `}>
+      <div
+        className={`flex justify-end backdrop-blur-md rounded-lg md:hidden `}
+      >
         {userData ? (
           <Link
             href={"/talentmatch"}
@@ -139,7 +145,9 @@ const HomeNavbar = () => {
               </div>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-none max-w-3xl">
-              <LoginComponent />
+              <DialogHeader>
+                <LoginComponent />
+              </DialogHeader>
             </DialogContent>
           </Dialog>
         )}
