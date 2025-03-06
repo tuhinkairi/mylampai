@@ -119,7 +119,9 @@ const HomeNavbar = () => {
         />
       </Link>
 
-      <div className={`flex justify-end backdrop-blur-md rounded-lg md:hidden `}>
+      <div
+        className={`flex justify-end backdrop-blur-md rounded-lg md:hidden `}
+      >
         {userData ? (
           <Link
             href={"/talentmatch"}
