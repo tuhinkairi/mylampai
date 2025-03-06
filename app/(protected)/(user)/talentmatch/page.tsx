@@ -84,6 +84,11 @@ export default function TalentMatchPage() {
     }
   };
 
+  // Callback to add a new profile
+  const addNewProfile = (newProfile: ProfileData) => {
+    setTalentPoolProfiles((prevProfiles) => [...(prevProfiles || []), newProfile]);
+  };
+
 
   if (!id) {
     return <div>Loading...</div>; // or any other placeholder UI
@@ -174,7 +179,7 @@ export default function TalentMatchPage() {
         <div className="flex flex-col border my-4 w-full  rounded-lg h-[calc(100vh-2rem)]">
           <div className="border-b py-3 px-5 flex relative text-sm gap-4 ">
             {talentPoolProfiles && talentPoolProfiles.length < 3 && (
-              <CreateTalentPoolProfileDialog />
+              <CreateTalentPoolProfileDialog onProfileCreate={addNewProfile} />
             )}
             <div className="font-medium cursor-pointer">Career Profile</div>
             <div className="text-muted-foreground">Work Preference</div>

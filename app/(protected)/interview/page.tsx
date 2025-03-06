@@ -29,6 +29,7 @@ export default function InterviewsPage() {
 
   const fetchInterviews = useCallback(async (talentProfileId: string) => {
     const res = await getMockInterviews(talentProfileId);
+    // console.log("interviews:: ",res," for:: ",talentProfileId)
     setInterviews(res);
   }, []);
 
@@ -56,22 +57,23 @@ export default function InterviewsPage() {
     }
   };
 
-  // useEffect(() => {
-  //   const talentProfileId = userData?.id;
+  useEffect(() => {
+    const talentProfileId = id;
+    const userId=userData?.id
 
-  //   const getCredits = async (talentProfileId: string) => {
-  //     const res = await getCreditBalance(talentProfileId);
-  //     console.log(res);
-  //     if (res.status === "failed") {
-  //       toast.error(res.message);
-  //     } else if (res.status === "success")
-  //       setIsRegistered(res.isRegistered as boolean);
-  //   };
-  //   if (talentProfileId) {
-  //     fetchInterviews(talentProfileId);
-  //     getCredits(talentProfileId);
-  //   }
-  // }, [userData?.id, fetchInterviews]);
+    const getCredits = async (userId: string) => {
+      const res = await getCreditBalance(userId);
+      // console.log("saljdsl ", res);
+      if (res.status === "failed") {
+        toast.error(res.message);
+      } else if (res.status === "success")
+        setIsRegistered(res.isRegistered as boolean);
+    };
+    if (talentProfileId &&userId) {
+      fetchInterviews(talentProfileId);
+      getCredits(userId);
+    }
+  }, [id, fetchInterviews]);
 
   return (
     <div className="container mx-auto py-8">
@@ -79,11 +81,6 @@ export default function InterviewsPage() {
       <div className="flex justify-between gap-8 items-center mb-6">
         <h1 className="text-3xl font-bold">Past Interviews</h1>
         <CreateInterview/>
-        {/* speech recognition integration testing */}
-        {/* <div className="container mx-auto">
-          <h1 className="text-2xl font-bold mb-4">Technical Interview</h1>
-          <SpeechRecognition/>
-        </div> */}
       </div>
       {!isRegistered && (
         <Button

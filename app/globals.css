@@ -147,3 +147,8 @@ body::--webkit-scrollbar {
     @apply bg-background text-foreground;
   }
 }
+
+.selectedItemBg[data-state="checked"] {
+  background-color: #e0f7fa; /* Desired background color for selected item */
+  color: #006064; /* Optional: Desired text color for selected item */
+}

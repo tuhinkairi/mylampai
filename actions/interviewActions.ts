@@ -80,7 +80,7 @@ export const createMockInterview = async (
     const interview = await prisma.interview.create({
       data: {
         talentProfileId: talentProfileId || null,
-        // talentPoolProfileId: talentPoolProfileId || null,
+        talentPoolProfileId: talentPoolProfileId || null,
       },
     });
 

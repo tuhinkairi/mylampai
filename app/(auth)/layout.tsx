@@ -9,7 +9,10 @@ export default async function RootLayout({
 }>) {
   const user = await auth();
 
-  if (user&&user.role!="recruiter") {
+  if(!user){
+    console.log("user not found")
+    redirect("/");
+  }else if (user&&user.role!="recruiter") {
     redirect("/talentmatch");
   }else{
     redirect("/talentpool")

@@ -7,7 +7,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Check, CirclePlus, LoaderIcon, Upload } from "lucide-react";
+import { CalendarIcon, Check, CirclePlus, LoaderIcon, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Form,
@@ -24,7 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -44,6 +43,7 @@ import { useUserStore } from "@/utils/userStore";
 import { createTalentPoolProfile } from "@/actions/talentMatchActions";
 import { ArrayInput } from "@/components/misc/ArrayInput";
 import { useProfileStore } from "@/utils/profileStore";
+import { Calendar } from "@/components/ui/calendar";
 
 const profileSchema = z.object({
   resumeUrl: z.string(),
@@ -116,7 +116,21 @@ const roundToNearest30 = () => {
   return now;
 };
 
-export default function CreateTalentPoolProfileDialog() {
+
+type ProfileData = {
+  resumeUrl: string;
+  role: string;
+  skills: string[];
+  targetFor: string;
+  locationPref?: "onsite" | "remote" | "hybrid" | null | undefined;
+  availability: "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT" | null;
+  interviewStatus: string;
+  interviewDate: Date;
+};
+
+export default function CreateTalentPoolProfileDialog({ onProfileCreate }: {
+  onProfileCreate: (newProfile: ProfileData) => void;
+}) {
   const [open, setOpen] = useState(false);
   const { userData } = useUserStore();
   const [resumeList, setResumeList] = useState<ResumeList>([]);
@@ -126,16 +140,16 @@ export default function CreateTalentPoolProfileDialog() {
   const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string | null>(
     null
   );
-  const [isUploading,setIsUploading]=useState<boolean>(false);
-  const [isUploaded,setIsUploaded]=useState<boolean>(false);
-  
-  const {id}=useProfileStore()
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isUploaded, setIsUploaded] = useState<boolean>(false);
+
+  const { id } = useProfileStore()
 
   const createProfile = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       resumeUrl: "",
-      role:"",
+      role: "",
       availability: "FULL_TIME",
       skills: [],
       interviewDate: roundToNearest30(),
@@ -169,12 +183,17 @@ export default function CreateTalentPoolProfileDialog() {
       const res = await createTalentPoolProfile({
         ...values,
         resumeUrl: uploadedResumeUrl || values.resumeUrl,
-        talentProfileId:id,
-        interviewStatus:"scheduled"
+        talentProfileId: id,
+        interviewStatus: "scheduled"
       });
 
-      if (res.status === "success") {
+      if (res.status === "success" && res.data) {
         toast.success(res.message);
+        onProfileCreate({
+          ...res.data,
+          locationPref: res.data.locationPref as 'onsite' | 'remote' | 'hybrid' | null,
+          availability: res.data.availability as 'FULL_TIME' | 'PART_TIME' | 'INTERN' | 'CONTRACT' | null,
+        });
         setOpen(false);
       } else {
         toast.error(res.message);
@@ -210,7 +229,7 @@ export default function CreateTalentPoolProfileDialog() {
     const formData = new FormData();
 
     formData.append("file", file);
-    
+
     try {
       const res = await addUsersResume(formData, userData.id);
 
@@ -224,7 +243,7 @@ export default function CreateTalentPoolProfileDialog() {
       console.error(error);
       toast.error("Failed to upload resume");
       return null;
-    }finally{
+    } finally {
       setIsUploading(false)
       setIsUploaded(true)
     }
@@ -346,11 +365,10 @@ export default function CreateTalentPoolProfileDialog() {
                                   handleTitleChange(profile);
                                   setMatchingProfiles([]);
                                 }}
-                                className={`cursor-default hover:bg-accent text-sm py-1.5 px-2 rounded-md ${
-                                  selectedIndex === index
+                                className={`cursor-default hover:bg-accent text-sm py-1.5 px-2 rounded-md ${selectedIndex === index
                                     ? "bg-accent text-accent-foreground"
                                     : ""
-                                }`}
+                                  }`}
                               >
                                 {profile}
                               </div>
@@ -482,7 +500,7 @@ export default function CreateTalentPoolProfileDialog() {
                               }}
                               className="flex-1"
                             >
-                              {isUploading?(<LoaderIcon className="w-4 h-4 mr-2"/>):(isUploaded?(<Check className="w-4 h-4 mr-2"/>):<Upload className="w-4 h-4 mr-2" />)}
+                              {isUploading ? (<LoaderIcon className="w-4 h-4 mr-2" />) : (isUploaded ? (<Check className="w-4 h-4 mr-2" />) : <Upload className="w-4 h-4 mr-2" />)}
                               Upload Resume
                             </Button>
                           </div>
@@ -585,7 +603,7 @@ export default function CreateTalentPoolProfileDialog() {
                   <FormItem className="flex flex-col">
                     <FormLabel>Schedule Interview</FormLabel>
                     <div className="flex gap-2">
-                      <Popover>
+                      <Popover modal={true}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -600,6 +618,7 @@ export default function CreateTalentPoolProfileDialog() {
                               ) : (
                                 <span>Pick a date</span>
                               )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -650,10 +669,10 @@ export default function CreateTalentPoolProfileDialog() {
                             const time = `${hours
                               .toString()
                               .padStart(2, "0")}:${minutes
-                              .toString()
-                              .padStart(2, "0")}`;
+                                .toString()
+                                .padStart(2, "0")}`;
                             return (
-                              <SelectItem key={time} value={time}>
+                              <SelectItem key={time} value={time} className="selectedItemBg border-2 border-gray-100 cursor-pointer">
                                 {time}
                               </SelectItem>
                             );

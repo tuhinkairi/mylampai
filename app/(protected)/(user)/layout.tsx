@@ -10,16 +10,17 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const user = await auth();
-
+  
+  if (!user || user?.role !== "user") {
+    redirect("/not-found");
+  }
+  console.log("user found ",user)
+  
   const isTalentProfileExist=await prisma.talentProfile.findFirst({
     where: {
       userId: user?.id,
     },
   });
-  console.log("user found ",user)
-  if (!user || user?.role !== "user") {
-    // redirect("/not-found");
-  }
   
   // console.log("isTalentProfileExist: ", isTalentProfileExist)
   if (!isTalentProfileExist) {
