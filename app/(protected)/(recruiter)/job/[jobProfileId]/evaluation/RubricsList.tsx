@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import LoadingGlobal from "@/components/ui/loading";
 // import { getJobRoundRubrics } from "@/actions/createJobActions";
 
 interface JobRoundRubric {
@@ -54,7 +55,7 @@ export default function RubricList({ rubrics }: { rubrics: JobRoundRubric[] }) {
       <h2 className="text-xl font-bold mb-4">Job Round Rubrics</h2>
 
       {loading ? (
-        <p>Loading rubrics...</p>
+        <LoadingGlobal text={"Rubrics"}/>
       ) : rubrics.length === 0 ? (
         <p>No rubrics found.</p>
       ) : (

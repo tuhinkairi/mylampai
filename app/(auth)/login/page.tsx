@@ -55,6 +55,11 @@ export default function LoginPage() {
   const [sending, setSending] = useState(false);
 
   const searchParams = useSearchParams();
+  console.log(searchParams)
+  const redirecting =searchParams.get("redirect")
+  if (redirecting) {
+    console.log(redirecting)
+  }
   const role = searchParams.get("role") === "recruiter" ? "recruiter" : "user";
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -78,7 +83,11 @@ export default function LoginPage() {
         if (res.user && res.accessToken) {
           setUserData(res.user, res.accessToken);
           setCookie("accessToken", res.accessToken);
-          router.push("/talentmatch");
+          if (redirecting) {
+            router.push(redirecting)
+          }else{
+            router.push("/talentmatch");
+          }
         } else {
           toast.error("Failed to login");
         }

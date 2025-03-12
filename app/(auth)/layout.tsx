@@ -1,13 +1,30 @@
-import { auth } from "@/lib/authlib";
-import { redirect } from "next/navigation";
+"use client"
+import LoadingGlobal from "@/components/ui/loading";
+import { useUserStore } from "@/utils/userStore";
+import { redirect, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await auth();
+  const { userData } = useUserStore();
+  const redirecting = useSearchParams().get("redirect")
+  const [state, setState] = useState<boolean>()
+  useEffect(() => {
+    setState(true)
+    if (userData?.id) {
+      if (!redirecting) {
+        setState(false)
+        redirect("/talentmatch");
+      } else {
+        console.log(redirecting)
+        setState(false)
+        redirect(redirecting);
+      }
+    } else {
 
   if(!user){
     console.log("user not found")
@@ -20,7 +37,9 @@ export default async function RootLayout({
 
   return (
     <>
-      <main className="h-full">{children}</main>
+      {state ? <LoadingGlobal text="" /> : (
+        <main className="h-full">{children}</main>
+      )}
     </>
   );
 }

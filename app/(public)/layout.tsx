@@ -4,6 +4,8 @@ import BottomNavBar from "@/components/home/BottomNavBar";
 import RecruiterNavbar from "@/components/home/RecruiterNavbar";
 
 import { Metadata } from "next";
+import { Suspense } from "react";
+import LoadingGlobal from "@/components/ui/loading";
 
 export const metadata: Metadata = {
   title: "wiZe (myLampAI) | Home",
@@ -17,6 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <>
+    <Suspense fallback={<LoadingGlobal text=""/>}>
       <HomeNavbar />
       <RecruiterNavbar />
 
@@ -24,6 +27,7 @@ export default function RootLayout({
       <Footer />
 
       <BottomNavBar />
+    </Suspense>
     </>
   );
 }

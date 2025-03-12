@@ -8,6 +8,7 @@ import {
   updateRubric,
   addSingleRubric,
 } from "@/actions/jobs/rubricsGet";
+import LoadingGlobal from "@/components/ui/loading";
 
 const EvaluationPage = () => {
   const { roundId } = useParams<{ roundId: string }>();
@@ -85,7 +86,7 @@ const EvaluationPage = () => {
       </div>
 
       {loading ? (
-        <p>Loading rubrics...</p>
+      <LoadingGlobal text={""}/>
       ) : rubrics.length === 0 ? (
         <p>No rubrics found.</p>
       ) : (
