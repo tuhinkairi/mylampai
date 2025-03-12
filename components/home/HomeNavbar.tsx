@@ -8,7 +8,7 @@ import {
   RecruiterComponent,
   AboutComponent,
 } from "./HomeNavbarComponents";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LoginComponent from "../global/Login";
 import { useSession } from "next-auth/react";
 import { nextAuthLogin } from "@/actions/authActions";
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useRoleStore } from "@/utils/loginStore";
 import { usePathname } from "next/navigation";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 const HomeNavbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -34,7 +35,7 @@ const HomeNavbar = () => {
   const isHidden = hiddenOn.some((route) =>
     pathname.startsWith(route.replace(/\/$/, ""))
   );
-  
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -97,7 +98,7 @@ const HomeNavbar = () => {
 
     setInitials(getUserInitials);
   }, [userData]);
-  
+
   if (isHidden) return null;
 
   return (
@@ -106,9 +107,8 @@ const HomeNavbar = () => {
     >
       <Link
         href={"/"}
-        className={`flex items-center h-11 overflow-hidden ${
-          scrolled ? "p-1 px-2" : "p-0"
-        } md:max-w-[150px] max-w-24 w-full absolute left-8 z-10 transition-all duration-300`}
+        className={`flex items-center h-11 overflow-hidden ${scrolled ? "p-1 px-2" : "p-0"
+          } md:max-w-[150px] max-w-24 w-full absolute left-8 z-10 transition-all duration-300`}
       >
         <Image
           src={"/home/navbar/wizelogo.svg"}
@@ -119,7 +119,9 @@ const HomeNavbar = () => {
         />
       </Link>
 
-      <div className={`flex justify-end backdrop-blur-md rounded-lg md:hidden `}>
+      <div
+        className={`flex justify-end backdrop-blur-md rounded-lg md:hidden `}
+      >
         {userData ? (
           <Link
             href={"/talentmatch"}
@@ -139,6 +141,11 @@ const HomeNavbar = () => {
               </div>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-none max-w-3xl">
+              <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
               <LoginComponent />
             </DialogContent>
           </Dialog>
@@ -146,11 +153,9 @@ const HomeNavbar = () => {
       </div>
 
       <div
-        className={`md:flex relative text-sm hidden justify-end border items-center w-${
-          scrolled ? "full" : "[600px]"
-        } gap-${
-          userData ? 6 : 4
-        } px-[5px] my-2 min-h-[45px] backdrop-blur-md font-medium rounded-lg shadow-sm`}
+        className={`md:flex relative text-sm hidden justify-end border items-center w-${scrolled ? "full" : "[600px]"
+          } gap-${userData ? 6 : 4
+          } px-[5px] my-2 min-h-[45px] backdrop-blur-md font-medium rounded-lg shadow-sm`}
       >
         <Link
           href={"/"}
@@ -184,6 +189,11 @@ const HomeNavbar = () => {
               </div>
             </DialogTrigger>
             <DialogContent className="bg-transparent border-none max-w-3xl">
+              <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
               <LoginComponent />
             </DialogContent>
           </Dialog>

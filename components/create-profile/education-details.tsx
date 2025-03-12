@@ -181,7 +181,7 @@ export function EducationDetails({
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Start Date (Optional)</FormLabel>
-                        <Popover>
+                        <Popover modal={true}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button

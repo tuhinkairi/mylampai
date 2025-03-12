@@ -65,6 +65,7 @@ const InterviewPage = () => {
   const [analysisData, setAnalysisData] = useState<any>(null);
   const [audioURL, setAudioURL] = useState("");
   const [codingQuestion, setCodingQuestion] = useState("");
+  const [timer, setTimer] = useState<Number>(0)
 
   const mediaRecorder = useRef<MediaRecorder | null>(null);
   const emptyTranscribeCnt = useRef<number>(0);

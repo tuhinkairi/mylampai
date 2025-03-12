@@ -18,7 +18,7 @@ export const createTalentPoolProfile = async (
   talentPoolProfileData: TalentPoolProfileType
 ) => {
   try {
-    await prisma.talentPoolProfile.create({
+    const res= await prisma.talentPoolProfile.create({
       data: {
         ...talentPoolProfileData,
         interviewStatus: talentPoolProfileData.interviewStatus || ""
@@ -28,6 +28,7 @@ export const createTalentPoolProfile = async (
     return {
       message: "Profile created successfully",
       status: "success",
+      data:res
     };
   } catch (error) {
     console.error(error);
@@ -136,40 +137,40 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
   }
 };
 
-export const getResumeAndInterviewIds = async (userId: string) => {
-  try {
-    const cvIds = await prisma.cV.findMany({
-      where: {
-        userId,
-      },
-      select: {
-        id: true,
-      },
-    });
+// export const getResumeAndInterviewIds = async (userId: string) => {
+//   try {
+//     const cvIds = await prisma.cV.findMany({
+//       where: {
+//         userId,
+//       },
+//       select: {
+//         id: true,
+//       },
+//     });
 
-    const interviewIds = await prisma.interview.findMany({
-      where: {
-        userId,
-      },
-      select: {
-        id: true,
-      },
-    });
+//     const interviewIds = await prisma.interview.findMany({
+//       where: {
+//         userId,
+//       },
+//       select: {
+//         id: true,
+//       },
+//     });
 
-    return {
-      status: "success",
-      cvIds,
-      interviewIds,
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      status: "failed",
-      cvIds: [],
-      interviewIds: [],
-    };
-  }
-};
+//     return {
+//       status: "success",
+//       cvIds,
+//       interviewIds,
+//     };
+//   } catch (error) {
+//     console.error(error);
+//     return {
+//       status: "failed",
+//       cvIds: [],
+//       interviewIds: [],
+//     };
+//   }
+// };
 
 export const uploadResumeToAzure = async (formData: FormData) => {
   try {
