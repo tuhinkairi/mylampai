@@ -1,10 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import CreateInterview from "./CreateInterview";
-import { getInterviews } from "@/actions/interviewActions";
+import { getMockInterviews } from "@/actions/interviewActions";
 import { useCallback, useEffect, useState } from "react";
 import { useUserStore } from "@/utils/userStore";
-import { verifyInterview } from "@/actions/interviewActions";
+import { verifyMockInterview } from "@/actions/interviewActions";
 import { toast } from "sonner";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { getCreditBalance, handleCreditUpdate } from "@/actions/creditsAction";
 import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
 import { TranscriptResult } from "@/types/transcript";
 import { WebSocketProvider } from "@/hooks/interviewersocket/webSocketContext";
+import { useProfileStore } from "@/utils/profileStore";
 // import TranscriptionPage from "@/components/speech-to-text/transcriptionPage";
 
 type Interview = {
@@ -21,18 +22,20 @@ type Interview = {
 export default function InterviewsPage() {
   const router = useRouter();
   const { userData } = useUserStore();
+  const { id } = useProfileStore();
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(true);
 
-  const fetchInterviews = useCallback(async (userId: string) => {
-    const res = await getInterviews(userId);
+  const fetchInterviews = useCallback(async (talentProfileId: string) => {
+    const res = await getMockInterviews(talentProfileId);
+    // console.log("interviews:: ",res," for:: ",talentProfileId)
     setInterviews(res);
   }, []);
 
-  const onSelectInterview = async (interviewId: string, userId: string) => {
-    const res = await verifyInterview({ interviewId, userId });
-
+  const onSelectInterview = async (interviewId: string, talentProfileId: string) => {
+    const res = await verifyMockInterview({ interviewId, talentProfileId });
+    
     if (res.status === "failed") {
       if (res.code === 3) toast.error("Interview not found");
       else toast.error(res.message);
@@ -54,34 +57,30 @@ export default function InterviewsPage() {
     }
   };
 
-  // useEffect(() => {
-  //   const userId = userData?.id;
+  useEffect(() => {
+    const talentProfileId = id;
+    const userId=userData?.id
 
-  //   const getCredits = async (userId: string) => {
-  //     const res = await getCreditBalance(userId);
-  //     console.log(res);
-  //     if (res.status === "failed") {
-  //       toast.error(res.message);
-  //     } else if (res.status === "success")
-  //       setIsRegistered(res.isRegistered as boolean);
-  //   };
-  //   if (userId) {
-  //     fetchInterviews(userId);
-  //     getCredits(userId);
-  //   }
-  // }, [userData?.id, fetchInterviews]);
+    const getCredits = async (userId: string) => {
+      const res = await getCreditBalance(userId);
+      // console.log("saljdsl ", res);
+      if (res.status === "failed") {
+        toast.error(res.message);
+      } else if (res.status === "success")
+        setIsRegistered(res.isRegistered as boolean);
+    };
+    if (talentProfileId &&userId) {
+      fetchInterviews(talentProfileId);
+      getCredits(userId);
+    }
+  }, [id, fetchInterviews]);
 
   return (
     <div className="container mx-auto py-8">
       {loading && <FullScreenLoader message="Starting Interview" />}
       <div className="flex justify-between gap-8 items-center mb-6">
         <h1 className="text-3xl font-bold">Past Interviews</h1>
-        <CreateInterview />
-        {/* speech recognition integration testing */}
-        {/* <div className="container mx-auto">
-          <h1 className="text-2xl font-bold mb-4">Technical Interview</h1>
-          <SpeechRecognition/>
-        </div> */}
+        <CreateInterview/>
       </div>
       {!isRegistered && (
         <Button
@@ -96,7 +95,7 @@ export default function InterviewsPage() {
           <Button
             key={index}
             onClick={() =>
-              onSelectInterview(interview.id, userData?.id as string)
+              onSelectInterview(interview.id, id as string)
             }
             className="w-full p-4"
             variant="outline"

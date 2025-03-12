@@ -1,28 +1,28 @@
 "use client";
 import { WebSocketProvider } from "@/hooks/interviewersocket/webSocketContext";
-import { verifyInterview } from "@/actions/interviewActions";
-import { useRouter } from "next/navigation";
+import { verifyMockInterview } from "@/actions/interviewActions";
+import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useUserStore } from "@/utils/userStore";
+import { useProfileStore } from "@/utils/profileStore";
 
 export default function InterviewLayout({
   children,
   params,
 }: {
   children: React.ReactNode;
-  params: {
-    interviewId: string;
-  };
+  params: Promise<{ interviewId: string }>;
 }) {
   const router = useRouter();
-  const interviewId = params.interviewId as string;
+  const { interviewId } = use(params);
   const { userData } = useUserStore();
+  const {id}=useProfileStore()
   const [showPage, setShowPage] = useState(false);
 
   useEffect(() => {
     const verify = async (userId: string) => {
-      const res = await verifyInterview({ interviewId, userId });
+      const res = await verifyMockInterview({ interviewId, talentProfileId: id as string });
 
       if (res.status === "failed") {
         if (res.code === 3) toast.error("Interview not found");

@@ -281,7 +281,7 @@ export const getFavouriteTalents = async (talentPoolId: string) => {
     // Fetch all favourite TalentProfiles in a given TalentPool
     const favouriteTalents = await prisma.talentPoolFavourite.findMany({
       where: { talentPoolId },
-      include: { talentProfile: true },
+      include: { talentProfile:{include:{user:true}} },
     });
 
     // console.log("Favourite talents:", favouriteTalents);

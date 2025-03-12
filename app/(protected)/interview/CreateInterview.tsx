@@ -1,21 +1,23 @@
 "use client";
-import { createInterview } from "@/actions/interviewActions";
+import { createMockInterview } from "@/actions/interviewActions";
 import { useUserStore } from "@/utils/userStore";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
+import { useProfileStore } from "@/utils/profileStore";
 
 export default function CreateInterview() {
-  const { userData } = useUserStore();
+  const { id } = useProfileStore();
   const router = useRouter();
   const [Loading, setLoading] = useState(false);
 
   const handleInterview = useCallback(
-    async (userId: string) => {
+    async (talentProfileId: string) => {
       try {
-        const res = await createInterview(userId);
+        console.log("talentProfileId", talentProfileId);
+        const res = await createMockInterview(talentProfileId);
 
         if (res.status === "failed") {
           toast.error(res.message);
@@ -39,7 +41,7 @@ export default function CreateInterview() {
       {Loading && <FullScreenLoader />}
       <Button
         className="hover:text-primary"
-        onClick={() => handleInterview(userData?.id as string)}
+        onClick={() => handleInterview(id as string)}
       >
         Start New Interview
       </Button>

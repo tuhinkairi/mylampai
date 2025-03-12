@@ -42,6 +42,8 @@ export const createTalentProfile = async (
       },
     });
 
+    
+
     return {
       status: 200,
       data: {
