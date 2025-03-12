@@ -7,10 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MapPinIcon, ClockIcon } from "lucide-react";
+import { MapPinIcon, ClockIcon, Share2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { redirect } from "next/navigation";
+import { toast } from "sonner";
 
 interface JobProps {
   job: {
@@ -31,12 +32,21 @@ export function JobCard({ job }: JobProps) {
   const handelRedirect = (url: string) => {
     redirect(url)
   }
+  const handelShare = () => {
+    navigator.clipboard.writeText(`${window.location.host}/login?redirect=/career/${job.id}`)
+    toast.success("copy to clipboard");
+  }
   return (
     // <Link href={`/job/${job.id}`}>
     // </Link>
     <Card className="flex flex-col h-full">
       <CardHeader>
-        <CardTitle>{job.jobTitle}</CardTitle>
+        <div className="flex justify-between w-full ">
+          <CardTitle>{job.jobTitle}</CardTitle>
+          <button onClick={handelShare}>
+            <Share2 color="gray" />
+          </button>
+        </div>
         <p className="text-sm text-muted-foreground">{job.company}</p>
       </CardHeader>
       <CardContent className="flex-grow">

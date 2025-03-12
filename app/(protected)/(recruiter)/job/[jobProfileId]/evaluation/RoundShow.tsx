@@ -80,7 +80,7 @@ const RoundShow = () => {
                             <p className="mt-2">Round: {round.roundNumber}</p>
                             <div className="mt-5">
                                 <button onClick={() =>router.push(`/job/${jobProfileId}/evaluation/${round.id}`)}
-                                    className="border rounded-md p-2 bg-purple-400 hover:bg-purple-500 text-white">show rubics</button><button className="border rounded-md p-2 bg-red-400 hover:bg-red-500 ml-2 text-white" >delete</button></div>
+                                    className="border rounded-md p-2 bg-purple-400 hover:bg-purple-500 text-white">show rubics</button><button className="border rounded-md p-2 bg-red-400 hover:bg-red-500 ml-2 text-white">delete</button></div>
                             
                         </li>
                     ))}

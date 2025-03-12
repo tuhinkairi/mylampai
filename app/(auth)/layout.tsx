@@ -15,7 +15,7 @@ export default function RootLayout({
   const [state, setState] = useState<boolean>()
   useEffect(() => {
     setState(true)
-    if (userData) {
+    if (userData?.id) {
       if (!redirecting) {
         setState(false)
         redirect("/talentmatch");
@@ -24,12 +24,15 @@ export default function RootLayout({
         setState(false)
         redirect(redirecting);
       }
+    } else {
+
+      setState(false)
     }
-  }, [redirecting,setState,userData])
+  }, [redirecting, setState, userData])
 
   return (
     <>
-      {state ? <LoadingGlobal text=""/> : (
+      {state ? <LoadingGlobal text="" /> : (
         <main className="h-full">{children}</main>
       )}
     </>

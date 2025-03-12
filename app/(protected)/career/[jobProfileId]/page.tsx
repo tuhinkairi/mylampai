@@ -68,7 +68,8 @@ export default async function JobPage({
     jobProfileId: string;
   };
 }) {
-  const jobProfile = await getJob(params.jobProfileId);
+  const profileId=await params.jobProfileId;
+  const jobProfile = await getJob(profileId);
 
   return (
     <>
