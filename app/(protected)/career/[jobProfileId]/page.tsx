@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import ApplyJob from "./apply-job";
 
+
 const formatDate = (date: string) => format(new Date(date), "PPP");
 
 const JobDetail = ({
@@ -67,7 +68,8 @@ export default async function JobPage({
     jobProfileId: string;
   };
 }) {
-  const jobProfile = await getJob(params.jobProfileId);
+  const profileId=await params.jobProfileId;
+  const jobProfile = await getJob(profileId);
 
   return (
     <>

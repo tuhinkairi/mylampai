@@ -10,7 +10,7 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const user = await auth();
-  
+
   if (!user || user?.role !== "user") {
     redirect("/not-found");
   }
@@ -21,6 +21,7 @@ export default async function UserLayout({
       userId: user?.id,
     },
   });
+
   
   // console.log("isTalentProfileExist: ", isTalentProfileExist)
   if (!isTalentProfileExist) {
@@ -28,6 +29,16 @@ export default async function UserLayout({
   } else {
     console.log("Talent Profile Exist with userId: ", user?.id);
   }
+  if (user?.role === "user") {
+    console.log("isTalentProfileExist: ", isTalentProfileExist)
+    if (!isTalentProfileExist) {
+      redirect("/create-profile");
+    } else {
+      console.log("Talent Profile Exist with userId: ", user?.id);
+      redirect("/talentmatch");
+    }
+  }
+
 
   return <>{children}</>;
 }

@@ -23,6 +23,7 @@ import { TalentProfileCard } from "./TalentProfileCard";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import LoadingGlobal from "@/components/ui/loading";
 
 type ProfileData = {
   resumeUrl: string;
@@ -91,7 +92,7 @@ export default function TalentMatchPage() {
 
 
   if (!id) {
-    return <div>Loading...</div>; // or any other placeholder UI
+    return <LoadingGlobal text="Profile"/>; // or any other placeholder UI
   }
 
   return (

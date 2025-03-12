@@ -76,7 +76,7 @@ export default function LoginComponent() {
         if (res.user && res.accessToken) {
           setUserData(res.user, res.accessToken);
           setCookie("accessToken", res.accessToken);
-          router.push("/talentmatch");
+          res.user.role=="recruiter"?router.push("/talentpool"):router.push("/talentmatch");
         } else {
           toast.error("Failed to login");
         }
