@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = async (req: NextRequest): Promise<NextResponse> => {
   try {
     const interviewId = req.nextUrl.pathname.split("/").pop();
-console.log(interviewId);
+console.log("logs in get_review/id api:: ",interviewId);
     if (!interviewId) {
       return NextResponse.json(
         { message: "Missing interviewId in URL path" },

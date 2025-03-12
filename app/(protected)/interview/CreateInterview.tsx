@@ -1,5 +1,5 @@
 "use client";
-import { createMockInterview } from "@/actions/interviewActions";
+import { createInterview } from "@/actions/interviewActions";
 import { useUserStore } from "@/utils/userStore";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ export default function CreateInterview() {
     async (talentProfileId: string) => {
       try {
         console.log("talentProfileId", talentProfileId);
-        const res = await createMockInterview(talentProfileId);
+        const res = await createInterview(talentProfileId);
 
         if (res.status === "failed") {
           toast.error(res.message);
@@ -25,7 +25,7 @@ export default function CreateInterview() {
         } else if (res.status === "success") {
           toast.success("Interview created successfully");
           setLoading(true);
-          router.push(`/interview/${res.interviewId}`);
+          router.push(`/interview/${res.interviewId}?type=mockInterview`);
         }
       } catch (error) {
         console.log(error);
@@ -34,7 +34,7 @@ export default function CreateInterview() {
     [router],
   );
 
-  
+
 
   return (
     <>

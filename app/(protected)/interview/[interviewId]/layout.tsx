@@ -1,6 +1,6 @@
 "use client";
 import { WebSocketProvider } from "@/hooks/interviewersocket/webSocketContext";
-import { verifyMockInterview } from "@/actions/interviewActions";
+import { verifyInterview } from "@/actions/interviewActions";
 import { useParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { use, useEffect, useState } from "react";
@@ -22,7 +22,7 @@ export default function InterviewLayout({
 
   useEffect(() => {
     const verify = async (userId: string) => {
-      const res = await verifyMockInterview({ interviewId, talentProfileId: id as string });
+      const res = await verifyInterview({ interviewId, talentProfileId: id as string, interviewType:"mockInterview" });
 
       if (res.status === "failed") {
         if (res.code === 3) toast.error("Interview not found");

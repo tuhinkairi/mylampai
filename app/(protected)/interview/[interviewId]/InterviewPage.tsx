@@ -4,6 +4,7 @@ import Analysis from "./Analysis";
 import { BlobServiceClient, BlockBlobClient } from "@azure/storage-blob";
 import OnlineCompiler from "./OnlineCompiler";
 import {
+  handleInterviewState,
   handleMessageUpload,
   submitFeedback,
 } from "@/actions/interviewActions";
@@ -19,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { generateSasUrlForInterview } from "@/actions/azureActions";
-import { useParams } from "next/navigation";
+import { redirect, useParams } from "next/navigation";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { MessageSquare } from "lucide-react";
 import { Mic, MicOff, Video, VideoOff, PhoneOff, User } from "lucide-react";
@@ -35,6 +36,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
+import axios from "axios";
 
 type ChatMessage = {
   user: string;
@@ -79,6 +81,11 @@ const InterviewPage = () => {
   const [isRecording, setIsRecording] = useState(true);
   const [finalTranscript, setFinalTranscript] = useState('');
 
+  // useEffect(() => {
+  //   if (feedbackSubmitted) {
+  //     redirect(`/interview/${interviewId}/analysis`)
+  //   }
+  // }, [feedbackSubmitted])
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -134,6 +141,76 @@ const InterviewPage = () => {
       videoElement.srcObject = null;
     }
   }, []);
+
+  const submitAnalysis = async (analysisData:any) => {
+    if (!analysisData || !Array.isArray(analysisData)) {
+      console.error("Invalid analysis data:", analysisData);
+      return;
+    }
+    // const introductiondata = analysisData[0]?.analysis;
+    // const secondintro = analysisData[1]?.analysis;
+    // const thirdintro = analysisData[2]?.analysis;
+    // const fourthintro = analysisData[3]?.analysis;
+    // const fiveintro = analysisData[4]?.analysis;
+    // const first = analysisData[0]?.answer;
+    // const second = analysisData[1]?.analysis;
+    // const third = analysisData[2]?.analysis;
+    // const fourth = analysisData[3]?.analysis;
+    // const five = analysisData[4]?.analysis;
+    // const body = {
+    //   interviewId,
+    //   Introduction: {
+    //     first,
+    //     ...introductiondata.line_analysis,
+    //     ...introductiondata.overall_assessment,
+    //   },
+    //   Project: {
+    //     second,
+    //     ...secondintro.line_analysis,
+    //     ...secondintro.overall_assessment,
+    //   },
+    //   Coding: {
+    //     third,
+    //     ...thirdintro.line_analysis,
+    //     ...thirdintro.overall_assessment,
+    //   },
+    //   Technical: {
+    //     fourth,
+    //     ...fourthintro.line_analysis,
+    //     ...fourthintro.overall_assessment,
+    //   },
+    //   Outro: {
+    //     five,
+    //     ...fiveintro.line_analysis,
+    //     ...fiveintro.overall_assessment,
+    //   },
+    // };
+    const body = {
+      interviewId,
+      ...["Introduction", "Project", "Coding", "Technical", "Outro"].reduce(
+        (acc: any, section, index) => {
+          const data = analysisData[index]?.analysis || {};
+          acc[section] = {
+            question:analysisData[index]?.question || "",
+            answer: analysisData[index]?.answer || "",
+            analysis: data
+          };
+          return acc;
+        },
+        {}
+      ),
+    };
+
+    console.log("Final Body:", body);
+
+    try {
+      const response = await axios.post("/api/interviewer/post_review", body);
+      console.log("Analysis submitted successfully:", response.data);
+    } catch (error) {
+      console.error("Error submitting analysis:", error);
+    }
+  };
+  
 
   useEffect(() => {
     if (!ws) return;
@@ -192,21 +269,27 @@ const InterviewPage = () => {
           setShowFeedback(true);
           stopCamera();
           handleStop()
-
           ws?.send(
             JSON.stringify({
               type: "get_analysis",
             }),
           );
-
+          await handleInterviewState(interviewId, "Completed", "mockInterview");
           break;
 
         case "analysis":
-          setAnalysisData(data.result);
+          console.log("Analysis data received form ai :", data.result);
+          // setAnalysisData(data.result);
+          if (data.result && Array.isArray(data.result)) {
+            // console.log("debug1234 analysisData: ", data.result)
+            await submitAnalysis(data.result); // Automatically submit when the data is available
+          }
           setChatMessages((prevMessages) => [
             ...prevMessages,
             { user: "Analysis", message: JSON.stringify(data.result) },
           ]);
+          await handleInterviewState(interviewId, "Analysis_Completed", "mockInterview");
+          redirect(`/interview/${interviewId}/analysis`)
           break;
         case "greeting_from_ws":
           console.log("Greeting from ws");
@@ -216,6 +299,82 @@ const InterviewPage = () => {
       }
     };
   }, [ws, handleInterviewer, stopCamera, interviewId]);
+
+  // // Trigger submission on load or when `analysisData` or `interviewId` changes
+  // useEffect(() => {
+  //   const submitAnalysis = async () => {
+  //     if (!analysisData || !Array.isArray(analysisData)) {
+  //       console.error("Invalid analysis data:", analysisData);
+  //       return;
+  //     }
+  //     // const introductiondata = analysisData[0]?.analysis;
+  //     // const secondintro = analysisData[1]?.analysis;
+  //     // const thirdintro = analysisData[2]?.analysis;
+  //     // const fourthintro = analysisData[3]?.analysis;
+  //     // const fiveintro = analysisData[4]?.analysis;
+  //     // const first = analysisData[0]?.answer;
+  //     // const second = analysisData[1]?.analysis;
+  //     // const third = analysisData[2]?.analysis;
+  //     // const fourth = analysisData[3]?.analysis;
+  //     // const five = analysisData[4]?.analysis;
+  //     // const body = {
+  //     //   interviewId,
+  //     //   Introduction: {
+  //     //     first,
+  //     //     ...introductiondata.line_analysis,
+  //     //     ...introductiondata.overall_assessment,
+  //     //   },
+  //     //   Project: {
+  //     //     second,
+  //     //     ...secondintro.line_analysis,
+  //     //     ...secondintro.overall_assessment,
+  //     //   },
+  //     //   Coding: {
+  //     //     third,
+  //     //     ...thirdintro.line_analysis,
+  //     //     ...thirdintro.overall_assessment,
+  //     //   },
+  //     //   Technical: {
+  //     //     fourth,
+  //     //     ...fourthintro.line_analysis,
+  //     //     ...fourthintro.overall_assessment,
+  //     //   },
+  //     //   Outro: {
+  //     //     five,
+  //     //     ...fiveintro.line_analysis,
+  //     //     ...fiveintro.overall_assessment,
+  //     //   },
+  //     // };
+  //     const body = {
+  //       interviewId,
+  //       ...["Introduction", "Project", "Coding", "Technical", "Outro"].reduce(
+  //         (acc: any, section, index) => {
+  //           const data = analysisData[index]?.analysis || {};
+  //           acc[section] = {
+  //             answer: analysisData[index]?.answer || "",
+  //             ...data.line_analysis,
+  //             ...data.overall_assessment,
+  //           };
+  //           return acc;
+  //         },
+  //         {}
+  //       ),
+  //     };
+
+  //     console.log("Final Body:", body);
+
+  //     try {
+  //       const response = await axios.post("/api/interviewer/post_review", body);
+  //       console.log("Analysis submitted successfully:", response.data);
+  //     } catch (error) {
+  //       console.error("Error submitting analysis:", error);
+  //     }
+  //   };
+  //   if (analysisData && Array.isArray(analysisData) && interviewId) {
+  //     console.log("debug1234 analysisData: ", analysisData)
+  //     submitAnalysis(); // Automatically submit when the data is available
+  //   }
+  // }, [analysisData, interviewId]);
 
   const handleInterviewEnd = () => {
     ws?.send(
@@ -663,13 +822,13 @@ const InterviewPage = () => {
         </div>
       )}
 
-      {feedbackSubmitted && (
+      {/* {feedbackSubmitted && (
         <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-20">
           <div className="bg-white w-full min-w-[600px]">
             <Analysis analysisData={analysisData} />
           </div>
         </div>
-      )}
+      )} */}
 
       <OnlineCompiler
         interviewId={interviewId}

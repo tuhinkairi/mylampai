@@ -148,7 +148,7 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
 //       },
 //     });
 
-//     const interviewIds = await prisma.interview.findMany({
+//     const interviewIds = await prisma.mockInterview.findMany({
 //       where: {
 //         userId,
 //       },

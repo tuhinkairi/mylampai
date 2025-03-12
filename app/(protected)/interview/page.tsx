@@ -4,7 +4,7 @@ import CreateInterview from "./CreateInterview";
 import { getMockInterviews } from "@/actions/interviewActions";
 import { useCallback, useEffect, useState } from "react";
 import { useUserStore } from "@/utils/userStore";
-import { verifyMockInterview } from "@/actions/interviewActions";
+import { verifyInterview } from "@/actions/interviewActions";
 import { toast } from "sonner";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { useRouter } from "next/navigation";
@@ -34,14 +34,13 @@ export default function InterviewsPage() {
   }, []);
 
   const onSelectInterview = async (interviewId: string, talentProfileId: string) => {
-    const res = await verifyMockInterview({ interviewId, talentProfileId });
-    
+    const res = await verifyInterview({ interviewId, talentProfileId, interviewType: "mockInterview" });
     if (res.status === "failed") {
       if (res.code === 3) toast.error("Interview not found");
       else toast.error(res.message);
-    } else {
-      setLoading(true);
-      router.push(`/interview/${interviewId}`);
+    } else if(res?.data?.state==="Completed") {
+      // setLoading(true);
+      router.push(`/interview/${interviewId}/analysis`);
     }
   };
 

@@ -42,7 +42,7 @@ export default function TalentMatchPage() {
   const [talentMatches, setTalentMatches] = useState<any[]>([])
 
   useEffect(() => {
-    const getTalentProfiles = async (id: string) => {
+    const getTalentProfiles = async (id:string) => {
       const res = await getTalentPoolProfiles(id);
       const profiles = res?.map(profile => ({
         ...profile,

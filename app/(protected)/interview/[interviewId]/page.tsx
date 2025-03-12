@@ -11,11 +11,11 @@ import { useWebSocketContext } from "@/hooks/interviewersocket/webSocketContext"
 import InterviewPage from "./InterviewPage";
 import { Input } from "@/components/ui/input";
 import { generateSasToken } from "@/actions/azureActions";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   handleCVUpload,
+  handleInterviewState,
   handleJDTextUpload,
-  updateInterviewStarted,
 } from "@/actions/interviewActions";
 import {
   Form,
@@ -55,6 +55,8 @@ const InterviewComponent = () => {
 
   const params = useParams();
   const interviewId = params.interviewId as string;
+  const searchParams = useSearchParams()
+  const interviewType = searchParams.get("type")
 
   const { ws } = useWebSocketContext();
   const [step, setStep] = useState(1);
@@ -179,15 +181,16 @@ const InterviewComponent = () => {
             break;
 
           case "interview_started":
-            const res = await updateInterviewStarted(interviewId);
-
-            if (res.status === "success") setIsInterviewStarted(true);
-            else {
-              toast.error("Internal Server Error");
+            if (interviewType) {
+              const res = await handleInterviewState(interviewId, "In_Progress", interviewType);
+              if (res.status === "success") setIsInterviewStarted(true);
+              else {
+                toast.error("Internal Server Error");
+              }
+            } else {
+              toast.error("Interview type is missing");
             }
-
             break;
-
           case "jd_analyzed":
             uploadJDText(data.job_description);
             break;
@@ -588,19 +591,18 @@ const InterviewComponent = () => {
                   )}
 
                   <button
-                    className={`flex justify-center items-center mt-2 mx-auto bg-primary text-lg md:w-full relative text-white font-bold py-3 px-3 rounded-xl lg:max-h-[40px]   ${
-                      !!cvText
+                    className={`flex justify-center items-center mt-2 mx-auto bg-primary text-lg md:w-full relative text-white font-bold py-3 px-3 rounded-xl lg:max-h-[40px]   ${!!cvText
                         ? "cursor-not-allowed bg-slate-500"
                         : "hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
-                    }`}
+                      }`}
                     onClick={handleUploadClick}
                     disabled={cvText !== ""}
                   >
                     {isUploading
                       ? "Uploading..."
                       : cvText !== ""
-                      ? "Resume Uploaded"
-                      : "Upload Resume"}
+                        ? "Resume Uploaded"
+                        : "Upload Resume"}
                   </button>
                 </div>
               </>

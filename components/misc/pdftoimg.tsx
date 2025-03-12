@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Eye } from "lucide-react";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -58,6 +59,11 @@ const PdfToImage = ({ pdfUrl }: { pdfUrl: string }) => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
+        <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
           <DialogDescription>
             <Image
               src={imageSrc}
