@@ -68,8 +68,8 @@ export default async function JobPage({
     jobProfileId: string;
   };
 }) {
-  const profileId=await params.jobProfileId;
-  const jobProfile = await getJob(profileId);
+  const param= await params;
+  const jobProfile = await getJob(param.jobProfileId);
 
   return (
     <>
@@ -77,7 +77,7 @@ export default async function JobPage({
         {jobProfile ? (
           <div className="container mx-auto py-8 ">
             <Card className="relative">
-              <ApplyJob jobProfileId={params.jobProfileId} />
+              <ApplyJob jobProfileId={param.jobProfileId} />
               <CardHeader>
                 <CardTitle>{jobProfile.jobTitle}</CardTitle>
               </CardHeader>
