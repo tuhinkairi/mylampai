@@ -194,7 +194,7 @@ export default function JobForm() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Start Date</FormLabel>
-                <Popover modal={true}>
+                <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -235,7 +235,7 @@ export default function JobForm() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>End Date</FormLabel>
-                <Popover modal={true}>
+                <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
@@ -276,7 +276,7 @@ export default function JobForm() {
             render={({ field }) => (
               <FormItem className="flex flex-col">
                 <FormLabel>Registration Deadline</FormLabel>
-                <Popover modal={true}>
+                <Popover>
                   <PopoverTrigger asChild>
                     <FormControl>
                       <Button
