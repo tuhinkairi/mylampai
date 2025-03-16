@@ -52,7 +52,7 @@ export function JobCard({ job }: JobProps) {
       <CardContent className="flex-grow">
         <div className="flex flex-wrap gap-2 mb-4">
           {job.skills.map((skill) => (
-            <Badge key={skill} variant="secondary">
+            <Badge key={job.id.concat(skill)} variant="secondary">
               {skill}
             </Badge>
           ))}
