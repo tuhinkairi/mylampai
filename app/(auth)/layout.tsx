@@ -26,15 +26,9 @@ export default function RootLayout({
       }
     } else {
 
-  if(!user){
-    console.log("user not found")
-    redirect("/");
-  }else if (user&&user.role!="recruiter") {
-    redirect("/talentmatch");
-  }else{
-    redirect("/talentpool")
-  }
-
+      setState(false)
+    }
+  }, [redirecting, setState, userData])
   return (
     <>
       {state ? <LoadingGlobal text="" /> : (
