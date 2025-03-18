@@ -1,15 +1,16 @@
-import { auth } from "@/lib/authlib";
+"use client"
+import { useUserStore } from "@/utils/userStore";
 import React from "react";
 
-export default async function NewUserLayout({
+export default function NewUserLayout({
   children,
-  params
 }: {
   children: React.ReactNode;
-  params: Promise<{userId:string | undefined}>;
 }) {
-  const user = await auth();
-  params.userId = user?.id
-  
+  // const {userData} = useUserStore();
+  // console.log(userData?.id);
+  // params.userId = userData?.id;
+
+
   return <>{children}</>;
 }

@@ -101,21 +101,15 @@ interface UserInfo {
   zipCode: string;
 }
 
-export default function CreateProfile(
-//   {
-//   params
-// }: { params: Promise<{ userId: string | undefined }> }
-) 
-{
+export default function CreateProfile() {
   const { id, setId, setResumeUrl } = useProfileStore();
-  const { userData, setUser } = useUserStore();
+  const { userData} = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
-  // console.log(await params.userId)
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
