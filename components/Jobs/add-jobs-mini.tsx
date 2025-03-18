@@ -15,7 +15,7 @@ export default function AddJobsMini() {
     return (
         <Sheet>
             <div className='pt-5 pl-4'>
-                <SheetTrigger><Button className='hover:bg-primary-dark inline-block text-sm '>Add Job</Button></SheetTrigger>
+                <SheetTrigger asChild><Button className='hover:bg-primary-dark inline-block text-sm '>Add Job</Button></SheetTrigger>
             </div>
             <SheetContent className='min-w-[70vw] overflow-y-auto'>
                 <SheetHeader >

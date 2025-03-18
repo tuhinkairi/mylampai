@@ -6,11 +6,10 @@ export default async function NewUserLayout({
   params
 }: {
   children: React.ReactNode;
-  params: {userId:string | undefined};
+  params: Promise<{userId:string | undefined}>;
 }) {
   const user = await auth();
   params.userId = user?.id
-
   
   return <>{children}</>;
 }

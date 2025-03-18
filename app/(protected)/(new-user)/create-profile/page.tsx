@@ -101,10 +101,12 @@ interface UserInfo {
   zipCode: string;
 }
 
-export default function CreateProfile({
-  params
-}:{params:
-  {userId:string|undefined}}) {
+export default function CreateProfile(
+//   {
+//   params
+// }: { params: Promise<{ userId: string | undefined }> }
+) 
+{
   const { id, setId, setResumeUrl } = useProfileStore();
   const { userData, setUser } = useUserStore();
   const [step, setStep] = useState(1);
@@ -113,7 +115,7 @@ export default function CreateProfile({
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
-  console.log(params.userId) 
+  // console.log(await params.userId)
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -179,12 +181,12 @@ export default function CreateProfile({
       toast.error("Please upload a PDF file");
       return;
     }
-  
+
     if (!userData) {
       toast.error("Unknown error occurred");
       return;
     }
-  
+
     if (file && file.type === "application/pdf") {
       if (file.size > 1 * 1024 * 1024) {
         toast.error("File size should be less than 1MB");
@@ -192,20 +194,20 @@ export default function CreateProfile({
         return;
       }
       setUploading(true);
-  
+
       // Calling createTalentProfile
       const data = new FormData();
       data.append("resume", file);
-      let newTalentProfileId=null
+      let newTalentProfileId = null
       try {
         const res = await createTalentProfile(data, userData.id);
-  
+
         if (res.status !== 200) {
           toast.error(res.error);
         } else {
           if (res.data) {
             console.log("Result from createTalentProfile:: ", res.data.id);
-            newTalentProfileId=res.data.id
+            newTalentProfileId = res.data.id
             setResumeUrl(res.data?.resumeUrl ?? '');
             setId(res.data.id);
           }
@@ -213,16 +215,16 @@ export default function CreateProfile({
       } catch (error) {
         toast.error("Failed to upload resume");
       }
-  
+
       const blobName = generateFileName("resume.pdf", "cv");
       const sasUrl = await generateSasToken(blobName);
-  
+
       if (!sasUrl) {
         toast.error("Error uploading resume");
         setUploading(false);
         return;
       }
-  
+
       try {
         const uploadResponse = await fetch(sasUrl, {
           method: "PUT",
@@ -231,7 +233,7 @@ export default function CreateProfile({
           },
           body: file,
         });
-  
+
         if (!uploadResponse.ok) {
           toast.error("Resume Upload Failed");
         } else {
@@ -243,46 +245,46 @@ export default function CreateProfile({
       } finally {
         setUploading(false);
       }
-  
+
       // Start analysing
       setAnalysing(true);
-  
+
       const fileReader = new FileReader();
       let extractedText = "";
-  
+
       fileReader.onload = async function () {
         const typedArray = new Uint8Array(this.result as ArrayBuffer);
-  
+
         // Load the PDF document
         const pdf = await pdfjsLib.getDocument(typedArray).promise;
-  
+
         // Loop through each page
         for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
           const page = await pdf.getPage(pageNumber);
           const textContent = await page.getTextContent();
-  
+
           // Extract text
           const pageText = textContent.items
             .map((item: any) => item.str)
             .join(" ");
           extractedText += pageText + "\n";
         }
-  
+
         // Convert the file to base64
         const base64Reader = new FileReader();
         base64Reader.onloadend = async () => {
           const base64String = base64Reader.result?.toString().split(",")[1];
-  
+
           if (base64String && extractedText) {
             try {
               const structuredDataResult = await extractStructuredData(
                 extractedText
               );
-  
+
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
 
               if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
-                console.log("userId::",userData.id," talentProfileId:: ",newTalentProfileId)
+                console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
                 await processAndSaveData(
                   structuredDataResult,
                   userData?.id,
@@ -301,7 +303,7 @@ export default function CreateProfile({
           }
           setAnalysing(false);
         };
-  
+
         base64Reader.readAsDataURL(file); // Start reading the file as a data URL
       };
       fileReader.readAsArrayBuffer(file);
@@ -381,20 +383,20 @@ export default function CreateProfile({
 
   //manual createTalentProfile without resume
 
-  const handleManualCreateProfile=async()=>{
+  const handleManualCreateProfile = async () => {
     try {
       if (!userData) {
         toast.error("Unknown error occurred");
         return;
       }
-      const res=await createManualProfile(userData?.id)
+      const res = await createManualProfile(userData?.id)
       if (res.status !== 200) {
         toast.error(res.error);
       } else {
         if (res.data) {
           console.log("Result from createTalentProfile:: ", res.data.id);
           setId(res.data.id);
-          handleIncStep(step+1);
+          handleIncStep(step + 1);
         }
       }
     } catch (error) {
@@ -593,7 +595,7 @@ export default function CreateProfile({
               <Button
                 type="button"
                 className="bg-white text-primary border border-primary hover:bg-primary mt-3 hover:text-white"
-                onClick={async() =>(await handleManualCreateProfile())}
+                onClick={async () => (await handleManualCreateProfile())}
               >
                 Manually enter details
               </Button>

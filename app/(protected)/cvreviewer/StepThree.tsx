@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useInterviewStore } from "@/utils/store";
-import * as pdfjsLib from "pdfjs-dist/webpack";
+import * as pdfjsLib from "pdfjs-dist";
+import { TextLayer } from "pdfjs-dist";
 import Image from "next/image";
 import { useUserStore } from "@/utils/userStore";
 import { CircularProgressbarWithChildren } from "react-circular-progressbar";
@@ -27,6 +28,9 @@ import { cn } from "@/lib/utils";
 import LoadingGlobal from "@/components/ui/loading";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+// Add this temporarily to your code for debugging
+console.log(Object.keys(pdfjsLib));
 
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 
@@ -1338,27 +1342,30 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       canvas.height = viewport.height;
       canvas.width = viewport.width;
 
-      const renderContext = {
-        canvasContext: context,
-        viewport,
-      };
+      if (context) {
+        const renderContext = {
+          canvasContext: context,
+          viewport,
+        };
 
-      await page.render(renderContext).promise;
+        await page.render(renderContext).promise;
+      } else {
+        console.error("Canvas context is null.");
+      }
 
       if (textLayerRef.current) {
         textLayerRef.current.innerHTML = "";
-
         const textContent = await page.getTextContent();
         textLayerRef.current.style.width = `${canvas.offsetWidth}px`;
         textLayerRef.current.style.height = `${canvas.offsetHeight}px`;
-
-        await pdfjsLib.renderTextLayer({
-          textContent: textContent,
+        
+        const textLayer = new TextLayer({
+          textContentSource: textContent,
           container: textLayerRef.current,
-          viewport: viewport,
-          textDivs: [],
-        }).promise;
-
+          viewport: viewport
+        });
+        
+        await textLayer.render();
         setIsTextLayerReady(true);
       }
     } catch (error) {
