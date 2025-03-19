@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 
 export const POST = async (
   req: NextRequest,
-  { params }: { params: { dmId: string } }
+  { params }: { params: Promise<{ dmId: string }> }
 ) => {
   try {
     // Extract authorization token from request headers
@@ -36,7 +36,7 @@ export const POST = async (
     } = decodedToken;
 
     const user = await prisma.user.findUnique({
-      where: { id: params.dmId },
+      where: { id: (await params).dmId },
     });
 
     if (!user) {

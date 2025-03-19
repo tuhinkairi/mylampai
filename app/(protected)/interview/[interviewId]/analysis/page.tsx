@@ -52,11 +52,11 @@ interface AnalysisItem {
   question: string;
 }
 
-interface AnalysisProps {
-  analysisData: AnalysisItem[];
-}
+// interface AnalysisProps {
+//   analysisData: AnalysisItem[];
+// }
    
-const Analysis: React.FC<AnalysisProps> = () => {
+const Analysis: React.FC = () => {
   const [analysisData, setAnalysisData] = useState<AnalysisItem[] | null>(null);
   const [expandedSections, setExpandedSections] = useState<boolean[]>(
     analysisData ? analysisData.map(() => false) : []

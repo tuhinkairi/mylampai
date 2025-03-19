@@ -4,7 +4,7 @@ import Offers from "./Offers";
 export default async function page({
   params,
 }: {
-  params: { talentPoolId: string };
+  params: Promise<{ talentPoolId: string }>;
 }) {
   const { talentPoolId } = await params;
 
