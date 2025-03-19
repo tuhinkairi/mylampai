@@ -78,6 +78,7 @@ export const getRubricsList = async (RoundId: string) => {
     return { status: "failed", message: "Internal Server Error", error };
   }
 };
+
 // export const getRubricsList = async (RoundId: string) => {
 //   try {
 //     const rubrics = await prisma.jobRoundRubric.findMany({

@@ -27,7 +27,9 @@ import { Spinner } from '@/components/ui/spinner';
 import { cn } from "@/lib/utils";
 import LoadingGlobal from "@/components/ui/loading";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 // Add this temporarily to your code for debugging
 console.log(Object.keys(pdfjsLib));
@@ -1301,11 +1303,11 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       setIsTextLayerReady(true);
       // console.log("lorem", reviewedData)
     },
-    [structuredData, extractedText, profile, reviewedData,analyzeResume,cvId,experience,highlightSentences]
+    [structuredData, extractedText, profile, reviewedData, analyzeResume, cvId, experience, highlightSentences]
   );
 
 
-  
+
 
   const base64ToUint8Array = useCallback((base64: string): Uint8Array => {
     // Remove data URL prefix if present
@@ -1358,13 +1360,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
         const textContent = await page.getTextContent();
         textLayerRef.current.style.width = `${canvas.offsetWidth}px`;
         textLayerRef.current.style.height = `${canvas.offsetHeight}px`;
-        
+
         const textLayer = new TextLayer({
           textContentSource: textContent,
           container: textLayerRef.current,
           viewport: viewport
         });
-        
+
         await textLayer.render();
         setIsTextLayerReady(true);
       }
@@ -1379,7 +1381,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       if (score < 50) return "#FF0000";
       if (score < 70) return "#FFA500";
       return "#00FF00";
-    },[]
+    }, []
   );
 
   const getColorClass = useCallback(
@@ -1388,7 +1390,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       if (score < 50) return "text-red-500";
       if (score < 70) return "text-yellow-500";
       return "text-green-500";
-    },[]
+    }, []
   );
 
   useEffect(() => {
@@ -1412,7 +1414,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
     if (isTextLayerReady) {
       highlightSentences(sentencesToHighlight, "highlighted", false);
     }
-  }, [isTextLayerReady, sentencesToHighlight, resumeFile, resumeId, setLoading,highlightSentences,isRendered,renderPDF]);
+  }, [isTextLayerReady, sentencesToHighlight, resumeFile, resumeId, setLoading, highlightSentences, isRendered, renderPDF]);
 
 
   const isFirstRender = useRef(true);
@@ -1676,6 +1678,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                             </AccordionItem>
                           </Accordion>
                         </DialogDescription>
+
                       </DialogHeader>
                     </DialogContent>)}
                 </Dialog>
@@ -1822,7 +1825,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                         <DialogTitle> Total Bullet Points </DialogTitle>
                         <DialogDescription>
                           {reviewedData?.total_bullet_points ?
-                            reviewedData?.total_bullet_points.Result : <h1>data not found</h1>}
+                            reviewedData?.total_bullet_points.Result : "data not found"}
                         </DialogDescription>
                       </DialogHeader>
                     </DialogContent>)}
@@ -1864,7 +1867,6 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                           <Accordion type="single" collapsible>
                             {reviewedData?.verbtense && (
                               <div>
-                                {" "}
                                 {Object.keys(reviewedData?.verbtense).map(
                                   (key, ind: number) => (
                                     <AccordionItem
@@ -1875,7 +1877,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                                         {key}
                                       </AccordionTrigger>
                                       {Object.keys(reviewedData?.verbtense[key]).map((key1, ind1: number) => (
-                                        <>
+                                        <div key={ind1}>
                                           <AccordionContent>
                                             <span className="mr-2">Correction:</span>
                                             {
@@ -1894,12 +1896,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                                             </span>
                                             {reviewedData?.verbtense[key][key1].impact}
                                           </AccordionContent>
-                                        </>
+                                        </div>
                                       ))}
                                     </AccordionItem>
                                   )
                                 )}
                               </div>
+
                             )}
                           </Accordion>
                         </DialogDescription>
@@ -2280,7 +2283,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                         <DialogTitle>Spelling Checker</DialogTitle>
                         <DialogDescription>
                           {reviewedData?.spellingerrors &&
-                            reviewedData?.spellingerrors["Result"].length>0?reviewedData?.spellingerrors["Result"].join(", "):"No Error in spellings"}
+                            reviewedData?.spellingerrors["Result"].length > 0 ? reviewedData?.spellingerrors["Result"].join(", ") : "No Error in spellings"}
                         </DialogDescription>
                       </DialogHeader>
                     </DialogContent>)}

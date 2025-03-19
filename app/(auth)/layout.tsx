@@ -2,33 +2,35 @@
 import LoadingGlobal from "@/components/ui/loading";
 import { useUserStore } from "@/utils/userStore";
 import { redirect, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+function AuthLayoutContent({ children }: { children: React.ReactNode }) {
   const { userData } = useUserStore();
-  const redirecting = useSearchParams().get("redirect")
-  const [state, setState] = useState<boolean>()
+  const searchParams = useSearchParams();
+  const redirecting = searchParams.get("redirect");
+  const [state, setState] = useState<boolean>(true);
+  
   useEffect(() => {
-    setState(true)
+    // Checking if we're already on /talentmatch to prevent loops
+    if (window.location.pathname === "/talentmatch") {
+      setState(false);
+      return;
+    }
+    
     if (userData?.id) {
       if (!redirecting) {
-        setState(false)
-        redirect("/talentmatch");
+        setState(false);
+        // Using router.push instead of redirect to avoid potential server redirect loops
+        window.location.href = "/talentmatch";
       } else {
-        console.log(redirecting)
-        setState(false)
-        redirect(redirecting);
+        console.log(redirecting);
+        setState(false);
+        window.location.href = redirecting;
       }
     } else {
-
-      setState(false)
+      setState(false);
     }
-  }, [redirecting, setState, userData])
+  }, [redirecting, userData]);
 
   return (
     <>
@@ -36,5 +38,17 @@ export default function RootLayout({
         <main className="h-full">{children}</main>
       )}
     </>
+  );
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <Suspense fallback={<LoadingGlobal text="page" />}>
+      <AuthLayoutContent>{children}</AuthLayoutContent>
+    </Suspense>
   );
 }

@@ -22,7 +22,7 @@ const formSchema = z.object({
 });
 
 export function BioDetails({ setStep }: { setStep: (step: number) => void }) {
-  const { id, setDescription } = useProfileStore();
+  const { id, setBio } = useProfileStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,7 +39,7 @@ export function BioDetails({ setStep }: { setStep: (step: number) => void }) {
       const res = await updateBio(values.bio, id);
 
       if (res.status === 200) {
-        setDescription(values.bio);
+        setBio(values.bio);
         setStep(9);
       } else {
         toast.error("Failed to update bio");

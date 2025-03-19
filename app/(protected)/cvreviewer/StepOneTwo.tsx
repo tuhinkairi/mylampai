@@ -22,6 +22,8 @@ import { generateSasToken } from "@/actions/azureActions";
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
 // console.log(baseUrl)
 
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
 interface StepOneTwoProps {
   step: number;
   handleResumeUpload: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;

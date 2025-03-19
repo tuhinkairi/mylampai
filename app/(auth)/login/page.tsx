@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { useSession } from "next-auth/react";
 import { useUserStore } from "@/utils/userStore";
-import { useEffect, useState } from "react";
+import { useEffect, useState ,Suspense} from "react";
 import { setCookie } from "@/utils/cookieUtils";
 import {
   handleSendOTP,
@@ -29,6 +29,7 @@ import {
 import Globe from "@/components/ui/globe";
 import { useSearchParams } from "next/navigation";
 import { Linkedin } from "react-bootstrap-icons";
+import LoadingGlobal from "@/components/ui/loading";
 
 const FormSchema = z.object({
   email: z.string().email({
@@ -47,7 +48,7 @@ const FormSchema = z.object({
     }),
 });
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const { data } = useSession();
   const { setUserData } = useUserStore();
@@ -318,5 +319,16 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+
+
+// Main component with suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoadingGlobal text="login" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

@@ -3,11 +3,14 @@ import { useState, ChangeEvent } from "react";
 import { useInterviewStore } from "@/utils/store";
 import { useUserStore } from "@/utils/userStore";
 import StepOneTwo from "./StepOneTwo";
-import PDFViewer from "./StepThree";
+// import PDFViewer from "./StepThree";
 import { toast } from "sonner";
 
 // const baseUrl = "https://optim-cv-judge.onrender.com";
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
+import dynamic from "next/dynamic";
+
+const PDFViewer = dynamic(() => import("./StepThree"), { ssr: false });
 
 const Page: React.FC = () => {
   const { setResumeFile, setJobDescriptionFile, resumeFile } =

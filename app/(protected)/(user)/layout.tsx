@@ -22,20 +22,12 @@ export default async function UserLayout({
     },
   });
 
-  
-  // console.log("isTalentProfileExist: ", isTalentProfileExist)
-  if (!isTalentProfileExist) {
-    redirect("/create-profile");
-  } else {
-    console.log("Talent Profile Exist with userId: ", user?.id);
-  }
   if (user?.role === "user") {
     console.log("isTalentProfileExist: ", isTalentProfileExist)
     if (!isTalentProfileExist) {
       redirect("/create-profile");
-    } else {
-      console.log("Talent Profile Exist with userId: ", user?.id);
-      redirect("/talentmatch");
+    }else{
+      console.log("Talent Profile Exist")
     }
   }
 

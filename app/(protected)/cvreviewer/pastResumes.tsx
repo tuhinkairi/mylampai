@@ -20,7 +20,10 @@ import { CircularProgressbarWithChildren } from "react-circular-progressbar";
 
 import "./highlight.css";
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+// pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
+
 
 interface PastResumeViewerProps {
   resume: string; // Base64 resume
