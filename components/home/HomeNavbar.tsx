@@ -132,13 +132,10 @@ const HomeNavbar = () => {
           </Link>
         ) : (
           <Dialog>
-            <DialogTrigger>
-              <div
-                onClick={() => setRole("user")}
-                className="flex items-center bg-primary py-1.5 text-white text-sm px-2  gap-1 rounded-lg"
-              >
-                Login / Sign Up
-              </div>
+            <DialogTrigger onClick={() => setRole("user")} className="flex items-center bg-primary py-1.5 text-white text-sm px-2  gap-1 rounded-lg"
+
+            >
+              Login / Sign Up
             </DialogTrigger>
             <DialogContent className="bg-transparent border-none max-w-3xl">
               <VisuallyHidden>
@@ -180,13 +177,9 @@ const HomeNavbar = () => {
           </Link>
         ) : (
           <Dialog>
-            <DialogTrigger>
-              <div
-                onClick={() => setRole("user")}
-                className="flex items-center bg-primary h-[35px] text-white px-4  gap-2 rounded-lg"
-              >
-                Login / Sign Up
-              </div>
+            <DialogTrigger onClick={() => setRole("user")}
+              className="flex items-center bg-primary h-[35px] text-white px-4  gap-2 rounded-lg">
+              Login / Sign Up
             </DialogTrigger>
             <DialogContent className="bg-transparent border-none max-w-3xl">
               <VisuallyHidden>

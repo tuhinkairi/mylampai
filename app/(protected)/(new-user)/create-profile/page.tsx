@@ -200,7 +200,7 @@ export default function CreateProfile() {
           toast.error(res.error);
         } else {
           if (res.data) {
-            console.log("Result from createTalentProfile:: ", res.data.id);
+            // console.log("Result from createTalentProfile:: ", res.data.id);
             newTalentProfileId = res.data.id
             setResumeUrl(res.data?.resumeUrl ?? '');
             setId(res.data.id);
@@ -231,7 +231,7 @@ export default function CreateProfile() {
         if (!uploadResponse.ok) {
           toast.error("Resume Upload Failed");
         } else {
-          console.log(uploadResponse);
+          // console.log(uploadResponse);
         }
       } catch (error) {
         console.error(error);
@@ -278,7 +278,7 @@ export default function CreateProfile() {
               // Check if structuredDataResult and structuredDataResult.message exist before accessing
 
               if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
-                console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
+                // console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
                 await processAndSaveData(
                   structuredDataResult,
                   userData?.id,
@@ -326,7 +326,7 @@ export default function CreateProfile() {
 
   const extractStructuredData = useCallback(async (text: string) => {
     try {
-      console.log("debug in extractSD")
+      // console.log("debug in extractSD")
       const response = await fetch(`${baseUrl}/extract_profile_data`, {
         method: "POST",
         headers: {
@@ -388,7 +388,7 @@ export default function CreateProfile() {
         toast.error(res.error);
       } else {
         if (res.data) {
-          console.log("Result from createTalentProfile:: ", res.data.id);
+          // console.log("Result from createTalentProfile:: ", res.data.id);
           setId(res.data.id);
           handleIncStep(step + 1);
         }
@@ -433,7 +433,7 @@ export default function CreateProfile() {
     }))
 
     // Define update functions
-    console.log("updating details for : ", talentProfileId, "userId: ", userId)
+    // console.log("updating details for : ", talentProfileId, "userId: ", userId)
     const updateUserInfo = () => updateProfile(userInfo, userId);
     const updateUserProfiles = () => addProfiles(profiles, talentProfileId);
     const updateUserSkills = () => addSkills(skills, talentProfileId);
@@ -466,7 +466,7 @@ export default function CreateProfile() {
       const allFulfilled = results.every((result) => result.status === "fulfilled")
 
       if (allFulfilled) {
-        console.log("All updates succeeded. Redirecting to /talentmatch...");
+        // console.log("All updates succeeded. Redirecting to /talentmatch...");
         router.push("/talentmatch");
       } else {
         console.error("Some updates failed. Please check the logs.");

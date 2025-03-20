@@ -193,7 +193,7 @@ export const createEmployments = async (
   talentProfileId: string
 ) => {
   try {
-    console.log("creating employment")
+    // console.log("creating employment")
     await prisma.employment.createMany({
       data: employments.map((employment) => ({
         ...employment,
@@ -344,7 +344,7 @@ export const uploadImage = async (formData: FormData, userId: string) => {
       throw new Error("Profile picture not found");
     }
 
-    console.log("Image:", image.name);
+    // console.log("Image:", image.name);
 
     const fileExtension = image.name.split(".").pop()?.toLowerCase();
 

@@ -204,7 +204,7 @@ export const revokeOfferFromTalents = async (
       },
     });
 
-    console.log("Offers revoked from talents:", deletedMatches);
+    // console.log("Offers revoked from talents:", deletedMatches);
     return { status: "success", message: "Offers revoked successfully" };
   } catch (error) {
     console.error("Error revoking offers from talents:", error);

@@ -1,5 +1,4 @@
 "use client";
-import { auth } from "@/lib/authlib";
 import {
   Lock,
   FileText,
@@ -24,6 +23,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import LoadingGlobal from "@/components/ui/loading";
+import prisma from "@/lib/index";
+import { useUserStore } from "@/utils/userStore";
 
 type ProfileData = {
   resumeUrl: string;
@@ -41,9 +42,10 @@ export default function TalentMatchPage() {
   const { id } = useProfileStore();
   const [talentPoolProfiles, setTalentPoolProfiles] = useState<ProfileData[]>();
   const [talentMatches, setTalentMatches] = useState<any[]>([])
+  const { userData } = useUserStore();
 
   useEffect(() => {
-    const getTalentProfiles = async (id:string) => {
+    const getTalentProfiles = async (id: string) => {
       const res = await getTalentPoolProfiles(id);
       const profiles = res?.map(profile => ({
         ...profile,
@@ -54,11 +56,11 @@ export default function TalentMatchPage() {
     };
 
     const getMatches = async (id: string) => {
-      console.log("match for : ", id)
+      // console.log("match for : ", id)
       const res = await getTalentMatches(id)
       if (res && Array.isArray(res)) {
         setTalentMatches(res);
-        console.log("talentmatches:: ", res)
+        // console.log("talentmatches:: ", res)
       } else {
         console.error("Failed to fetch talent matches:", res);
       }
@@ -92,7 +94,51 @@ export default function TalentMatchPage() {
 
 
   if (!id) {
-    return <LoadingGlobal text="Profile"/>; // or any other placeholder UI
+    // const { id, setId, setResumeUrl, setTitle, setBio, setRate, setSkills, setProfiles, setHours, setExperiences, setEducations, setLanguages
+    // } = useProfileStore();
+    // const isTalentProfileExist = await prisma.talentProfile.findFirst({
+    //   where: {
+    //     userId: userData?.id,
+    //   },
+    //   include: {
+    //     education: true,
+    //     employment: true,
+    //   }
+    // });
+    // console.log(
+    //   "isTalentProfileExist: ",
+    //   isTalentProfileExist
+    // )
+    // if (isTalentProfileExist) {
+    //   setId(isTalentProfileExist.id)
+    //   setResumeUrl(isTalentProfileExist.resumeUrl ?? "")
+    //   setTitle(isTalentProfileExist.title || "")
+    //   setBio(isTalentProfileExist.bio || "")
+    //   setRate(isTalentProfileExist.rate || "")
+    //   setSkills(isTalentProfileExist.skills)
+    //   setProfiles(isTalentProfileExist.profiles)
+    //   setHours(isTalentProfileExist.hours || "")
+    //   setExperiences(
+    //     (isTalentProfileExist.employment || []).map((employment) => ({
+    //       ...employment,
+    //       endDate: employment.endDate ?? undefined,
+    //       description: employment.description ?? undefined,
+    //     }))
+    //   )
+    //   setEducations(
+    //     (isTalentProfileExist.education || []).map((education) => ({
+    //       ...education,
+    //       degree: education.degree ?? "",
+    //       field: education.field ?? undefined,
+    //       grade: education.grade ?? undefined,
+    //       startDate: education.startDate ?? undefined,
+    //       endDate: education.endDate ?? undefined,
+    //       description: education.description ?? undefined, // Replace null with undefined
+    //     }))
+    //   )
+    //   setLanguages([])
+    // }// Replace with an empty array or fetch languages from a valid source
+    return <LoadingGlobal text="Profile" />; // or any other placeholder UI
   }
 
   return (

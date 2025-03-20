@@ -3,7 +3,7 @@ import { CheckCircle2, User2Icon } from 'lucide-react'
 import React from 'react'
 
 function Favourites({favouriteTalents}:any) {
-    console.log("favourites in fav:: ",favouriteTalents)
+    // console.log("favourites in fav:: ",favouriteTalents)
   return (
     <div className='p-10'>
         <h1 className='font-bold text-2xl p-3 '>Your Favourite talents</h1>

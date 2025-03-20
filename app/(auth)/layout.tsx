@@ -9,21 +9,21 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
   const searchParams = useSearchParams();
   const redirecting = searchParams.get("redirect");
   const [state, setState] = useState<boolean>(true);
-  
+
   useEffect(() => {
     // Checking if we're already on /talentmatch to prevent loops
     if (window.location.pathname === "/talentmatch") {
       setState(false);
       return;
     }
-    
-    if (userData?.id) {
+
+    if (typeof window !== "undefined" && userData?.id) {
       if (!redirecting) {
         setState(false);
         // Using router.push instead of redirect to avoid potential server redirect loops
         window.location.href = "/talentmatch";
       } else {
-        console.log(redirecting);
+        // console.log(redirecting);
         setState(false);
         window.location.href = redirecting;
       }
@@ -47,8 +47,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <Suspense fallback={<LoadingGlobal text="page" />}>
+    // <Suspense fallback={<LoadingGlobal text="page" />}>
       <AuthLayoutContent>{children}</AuthLayoutContent>
-    </Suspense>
+    // </Suspense>
   );
 }

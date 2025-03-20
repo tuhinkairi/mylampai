@@ -9,7 +9,7 @@ export const postRubricEvaluation = async (job_description: string) => {
             endpoint.concat('/get-rubric-evaluation'),
             { "job_description":job_description }
         );
-        console.log("Rubics fetch Success:", response.data);
+        // console.log("Rubics fetch Success:", response.data);
 
         return response.data; // Return the API response
     } catch (error) {
@@ -42,7 +42,7 @@ export const addRubricsToJobRound = async (
 
     // Create rubrics and associate them with the job round
 
-    console.log("this is rubrics",rubrics)
+    // console.log("this is rubrics",rubrics)
     const createdRubrics = await prisma.jobRoundRubric.createMany({
       data: rubrics.map((rubric) => ({
         ...rubric,

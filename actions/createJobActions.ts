@@ -60,7 +60,7 @@ export const addRounds = async (rounds: RoundsType) => {
         });
       })
     );
-    console.log(createdRounds)
+    // console.log(createdRounds)
     return { status: "success", data: createdRounds };
   } catch (error:any) {
     console.error("❌ Error adding rounds:", error);

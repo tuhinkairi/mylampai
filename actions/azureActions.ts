@@ -51,7 +51,7 @@ export const generateSasUrlForInterview = async () => {
       sasOptions,
       sharedKeyCredential
     ).toString();
-    console.log(sasToken);
+    // console.log(sasToken);
     return {
       sasUrl: `https://${accountName}.blob.core.windows.net/${interviewContainerName}?${sasToken}`,
       sasToken,
@@ -75,5 +75,5 @@ export const uploadLargeFile = async (file: File) => {
     concurrency: 5, // Set parallel uploads
   });
 
-  console.log("Upload successful!");
+  // console.log("Upload successful!");
 };

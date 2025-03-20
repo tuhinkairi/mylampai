@@ -314,7 +314,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
 
         const res = await response.json()
-        console.log("cvid checke: ", res)
+        // console.log("cvid checke: ", res)
         let tempId: string = ""
         if (res.status == 409) {
           tempId = res.message?.id
@@ -323,7 +323,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
         }
 
         setResumeId(tempId)
-        console.log("profile check: ", profile)
+        // console.log("profile check: ", profile)
         // if (profile) {
         // await getSummary(extractedText, tempId);
         // } else {
@@ -331,7 +331,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
         // }
         // console.log(extractedText)
         // console.log(resumeId)
-        console.log("cvid:: ", tempId)
+        // console.log("cvid:: ", tempId)
         setCvId(tempId)
         setUploading(false)
         setIsResumeUploaded(true);

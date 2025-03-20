@@ -281,7 +281,7 @@ export const fetchAnalysis = async (id: string) => {
             where: { cvId: id }
         });
         // Return response or error
-        console.log(response)
+        // console.log(response)
         if (!response) {
             return { error: "Analysis not found", status: 404 };
         }

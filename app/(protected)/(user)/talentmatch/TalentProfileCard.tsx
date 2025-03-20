@@ -86,7 +86,7 @@ const TagList = ({ title, items }: { title?: string; items: string[] }) => (
 
 export function TalentProfileCard({ talentProfileId }: { talentProfileId: string }) {
   const { userData } = useUserStore();
-  console.log("fetcing details for lalentProfileID:: ", talentProfileId)
+  // console.log("fetcing details for TalentProfileID:: ", talentProfileId)
   const [open, setOpen] = useState(false);
   const [education, setEducation] = useState<Education[] | null>(null);
   const [experience, setExperience] = useState<Employment[] | null>(null);
@@ -102,7 +102,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+    // console.log(data);
   };
 
   useEffect(() => {
@@ -110,7 +110,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
       const res = await getTalentProfile(talentProfileId)
       if (!res) return;
       if (res?.data) {
-        console.log("user profile:: ",res)
+        // console.log("user profile:: ",res)
         setTalentProfile(res.data);
       }
     }
@@ -125,7 +125,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
     try {
       const experiences = await getProfileEmployments(talentProfileId);
       setExperience(experiences);
-      console.log(experiences);
+      // console.log(experiences);
     } catch (error) {
       console.error("Error getting experiences:", error);
     }

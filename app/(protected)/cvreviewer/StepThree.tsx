@@ -32,7 +32,7 @@ import LoadingGlobal from "@/components/ui/loading";
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 // Add this temporarily to your code for debugging
-console.log(Object.keys(pdfjsLib));
+// console.log(Object.keys(pdfjsLib));
 
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 
@@ -134,9 +134,9 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
     []
   );
 
-  useEffect(() => {
-    console.log("reviewed Data:: ", reviewedData)
-  }, [reviewedData])
+  // useEffect(() => {
+  //   console.log("reviewed Data:: ", reviewedData)
+  // }, [reviewedData])
 
   const highlightSentences = useCallback(
     (
@@ -196,7 +196,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
             // First check if data exists in DB
             try {
               setLoadingStates(prev => ({ ...prev, resume_score: true }));
-              console.log("call for /resume_score")
+              // console.log("call for /resume_score")
               const dbResult = await fetchResumeAnalysis({
                 cvId: cvId,
                 section: "resume_score"
@@ -221,7 +221,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                 }));
               } else {
                 // If not in DB, make API call
-                console.log("resume_score not found in DB")
+                // console.log("resume_score not found in DB")
                 endpoint = "/resume_score";
                 data = {
                   cv_text: {
@@ -236,7 +236,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                 if (result?.message) {
                   // Handle sentence highlighting
-                  console.log("resume_score: ", result.message)
+                  // console.log("resume_score: ", result.message)
                   if (result.message["Result"]) {
                     setSentencesToHighlight(result.message["Result"]);
                     highlightSentences(
@@ -331,7 +331,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                 }));
               } else {
                 // If not in DB, make API call
-                console.log("bullentpoint length not found in DB ")
+                // console.log("bullentpoint length not found in DB ")
                 endpoint = "/bullet_point_length";
                 data = {
                   extracted_data: structuredData,
@@ -377,7 +377,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, bullet_point_length: false }));
             }
           } else {
-            console.log("found bullet point length: ", reviewedData.bullet_point_length)
+            // console.log("found bullet point length: ", reviewedData.bullet_point_length)
             setSentencesToHighlight(reviewedData.bullet_point_length.Result);
             highlightSentences(
               reviewedData.bullet_point_length,

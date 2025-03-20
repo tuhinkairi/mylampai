@@ -56,11 +56,11 @@ function LoginPageContent() {
   const [sending, setSending] = useState(false);
 
   const searchParams = useSearchParams();
-  console.log(searchParams)
+  // console.log(searchParams)
   const redirecting =searchParams.get("redirect")
-  if (redirecting) {
-    console.log(redirecting)
-  }
+  // if (redirecting) {
+  //   console.log(redirecting)
+  // }
   const role = searchParams.get("role") === "recruiter" ? "recruiter" : "user";
 
   const form = useForm<z.infer<typeof FormSchema>>({
@@ -327,8 +327,8 @@ function LoginPageContent() {
 // Main component with suspense boundary
 export default function LoginPage() {
   return (
-    <Suspense fallback={<LoadingGlobal text="login" />}>
+    // <Suspense fallback={<LoadingGlobal text="login" />}>
       <LoginPageContent />
-    </Suspense>
+    // </Suspense>
   );
 }

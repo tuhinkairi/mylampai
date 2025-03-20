@@ -19,7 +19,7 @@ export default function RubricList({ rubrics }: { rubrics: JobRoundRubric[] }) {
 
   // const [rubrics, setRubrics] = useState<JobRoundRubric[]>([]);
   const [loading, setLoading] = useState(false);
-  console.log(rubrics)
+  // console.log(rubrics)
   // useEffect(() => {
   //   if (!jobRoundId) return;
   //   // get rubrics function to fetch data of rubrics from /api/recruiter/rubrics/showrubrics endpoint

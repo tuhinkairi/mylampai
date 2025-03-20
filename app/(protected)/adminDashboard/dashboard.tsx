@@ -59,7 +59,7 @@ export default function AdminDashboard() {
       scheduleTime,
       scheduleFrequency
     );
-    console.log(res);
+    // console.log(res);
   };
 
   const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
