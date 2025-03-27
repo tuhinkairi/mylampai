@@ -47,8 +47,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    // <Suspense fallback={<LoadingGlobal text="page" />}>
+    <Suspense fallback={<LoadingGlobal text="page" />}>
       <AuthLayoutContent>{children}</AuthLayoutContent>
-    // </Suspense>
+     </Suspense>
   );
 }

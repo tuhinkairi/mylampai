@@ -327,8 +327,8 @@ function LoginPageContent() {
 // Main component with suspense boundary
 export default function LoginPage() {
   return (
-    // <Suspense fallback={<LoadingGlobal text="login" />}>
+    <Suspense fallback={<LoadingGlobal text="login" />}>
       <LoginPageContent />
-    // </Suspense>
+     </Suspense>
   );
 }

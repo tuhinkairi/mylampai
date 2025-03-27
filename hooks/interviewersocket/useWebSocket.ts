@@ -1,37 +1,52 @@
 import { useEffect, useState } from "react";
 
-// const url =
-//   "ws://wize-resume-analyser-bva7bpdpdreae7bb.centralindia-01.azurewebsites.net/ws";
-const url =
-  "ws://localhost:5000/ws"
+const interviewerServer = process.env.NEXT_PUBLIC_INTERVIEWER_API_ENDPOINT as string;
+const rubricsServer = process.env.NEXT_PUBLIC_RUBRICS_API_ENDPOINT as string;
 
 const useWebSocket = () => {
-  const [ws, setWs] = useState<WebSocket | null>(null);
+    const [interviewerWs, setInterviewerWs] = useState<WebSocket | null>(null);
+    const [rubricsWs, setRubricsWs] = useState<WebSocket | null>(null);
 
-  useEffect(() => {
-    const socket = new WebSocket(url);
+    useEffect(() => {
+        const interviewerSocket = new WebSocket(interviewerServer);
+        const rubricsSocket = new WebSocket(rubricsServer);
 
-    socket.onopen = () => {
-      ws?.send(JSON.stringify({ type: "HELLO" }));
-      console.log("WebSocket connected");
-    };
+        interviewerSocket.onopen = () => {
+            interviewerSocket.send(JSON.stringify({ type: "HELLO_INTERVIEWER" }));
+            console.log("Interviewer WebSocket connected");
+        };
 
-    socket.onerror = (error) => {
-      console.log("Error conecting socket: ", error);
-    };
+        rubricsSocket.onopen = () => {
+            rubricsSocket.send(JSON.stringify({ type: "HELLO_RUBRICS" }));
+            console.log("Rubrics WebSocket connected");
+        };
 
-    socket.onclose = () => {
-      console.log("WebSocket closed");
-    };
+        interviewerSocket.onerror = (error) => {
+            console.error("Error connecting interviewer WebSocket: ", error);
+        };
 
-    setWs(socket);
+        rubricsSocket.onerror = (error) => {
+            console.error("Error connecting rubrics WebSocket: ", error);
+        };
 
-    return () => {
-      socket.close();
-    };
-  }, []);
+        interviewerSocket.onclose = () => {
+            console.log("Interviewer WebSocket closed");
+        };
 
-  return { ws };
+        rubricsSocket.onclose = () => {
+            console.log("Rubrics WebSocket closed");
+        };
+
+        setInterviewerWs(interviewerSocket);
+        setRubricsWs(rubricsSocket);
+
+        return () => {
+            interviewerSocket.close();
+            rubricsSocket.close();
+        };
+    }, []);
+
+    return { interviewerWs, rubricsWs };
 };
 
 export default useWebSocket;

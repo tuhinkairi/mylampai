@@ -1,9 +1,11 @@
-"use client"
+"use client";
+
 import React, { createContext, useContext, ReactNode } from "react";
 import useWebSocket from "./useWebSocket";
 
 interface WebSocketContextType {
-    ws: WebSocket | null;
+    interviewerWs: WebSocket | null;
+    rubricsWs: WebSocket | null;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -21,10 +23,10 @@ interface WebSocketProviderProps {
 }
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({ children }) => {
-    const ws = useWebSocket();
+    const { interviewerWs, rubricsWs } = useWebSocket();
 
     return (
-        <WebSocketContext.Provider value={ws} >
+        <WebSocketContext.Provider value={{ interviewerWs, rubricsWs }}>
             {children}
         </WebSocketContext.Provider>
     );

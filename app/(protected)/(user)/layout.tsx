@@ -11,7 +11,7 @@ export default async function UserLayout({
   children: React.ReactNode;
 }) {
   const user = await auth();
-  if (!user || user?.role !== "user") {
+  if (!user) {
     redirect("/not-found");
   }
   // console.log("user found ", user)
@@ -31,9 +31,10 @@ export default async function UserLayout({
     if (!isTalentProfileExist) {
       redirect("/create-profile");
     } else {
-      
       console.log("Talent Profile Exist")
     }
+  }else if(user?.role==="recruiter"){
+    redirect("/recruit")
   }
 
 

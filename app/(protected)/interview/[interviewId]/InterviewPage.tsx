@@ -37,6 +37,7 @@ import { toast } from "sonner";
 
 import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
 import axios from "axios";
+import { set } from "date-fns";
 
 type ChatMessage = {
   user: string;
@@ -55,7 +56,8 @@ const InterviewPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(true);
 
-  const { ws } = useWebSocketContext();
+  const { interviewerWs } = useWebSocketContext();
+  const ws = interviewerWs;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [showCompiler, setShowCompiler] = useState(false);
@@ -80,12 +82,13 @@ const InterviewPage = () => {
 
   const [isRecording, setIsRecording] = useState(true);
   const [finalTranscript, setFinalTranscript] = useState('');
+  const [loadingAnalysis, setLoadingAnalysis] = useState(false);
 
-  // useEffect(() => {
-  //   if (feedbackSubmitted) {
-  //     redirect(`/interview/${interviewId}/analysis`)
-  //   }
-  // }, [feedbackSubmitted])
+  useEffect(() => {
+    if (feedbackSubmitted) {
+      setLoadingAnalysis(true);
+    }
+  }, [feedbackSubmitted])
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -265,7 +268,6 @@ const InterviewPage = () => {
           });
 
           if (res.status === "failed") toast.error("Message send failed");
-
           setShowFeedback(true);
           stopCamera();
           handleStop()
@@ -275,6 +277,7 @@ const InterviewPage = () => {
             }),
           );
           await handleInterviewState(interviewId, "Completed", "mockInterview");
+          
           break;
 
         case "analysis":
@@ -290,6 +293,7 @@ const InterviewPage = () => {
           ]);
           await handleInterviewState(interviewId, "Analysis_Completed", "mockInterview");
           redirect(`/interview/${interviewId}/analysis`)
+          // setLoadingAnalysis(false);
           break;
         case "greeting_from_ws":
           console.log("Greeting from ws");
@@ -299,6 +303,8 @@ const InterviewPage = () => {
       }
     };
   }, [ws, handleInterviewer, stopCamera, interviewId]);
+ 
+  
 
   // // Trigger submission on load or when `analysisData` or `interviewId` changes
   // useEffect(() => {
@@ -576,6 +582,10 @@ const InterviewPage = () => {
   //     }
   //   };
   // }, [audioURL, startAudioRecording]);
+
+  if(loadingAnalysis){
+    return <FullScreenLoader message="Analysing Interview..." />
+  }
 
   return (
     <div className="min-h-screen flex items-center flex-col relative mb-5 w-full h-full">
