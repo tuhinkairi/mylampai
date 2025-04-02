@@ -1,20 +1,17 @@
 "use client";
 import React from "react";
 import dynamic from "next/dynamic";
+import 'react-quill-new/dist/quill.snow.css';
+import ReactQuill from 'react-quill-new';
 
-const ReactQuill = dynamic(
-  async () => {
-    const { default: RQ } = await import("react-quill");
-    if (typeof window !== "undefined") {
-      await import("react-quill/dist/quill.snow.css");
-    }
-    return RQ;
-  },
-  {
-    ssr: false,
-    loading: () => <p>Loading editor...</p>,
-  }
-);
+// const ReactQuill = dynamic(
+//   () => import("react-quill")
+//   ,
+//   {
+//     ssr: false,
+//     loading: () => <p>Loading editor...</p>,
+//   }
+// );
 
 interface QuillWrapperProps {
   value: string;

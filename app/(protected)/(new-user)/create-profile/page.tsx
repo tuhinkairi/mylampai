@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { addProfiles, addSkills, createEducation, createEmployments, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
+import { addProfiles, addSkills, createEducation, createExperiences, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
 import { Check, Clock9 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JobCategoriesSelector } from "@/components/create-profile/job-specialites";
@@ -29,11 +29,26 @@ import { PersonalDetailsForm } from "@/components/create-profile/personal-detail
 import { useState, useRef, useCallback, DragEvent, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUserStore } from "@/utils/userStore";
-import { useProfileStore } from "@/utils/profileStore";
 import * as pdfjsLib from "pdfjs-dist/webpack";
 import { generateSasToken } from "@/actions/azureActions";
 import { IoCloudUploadOutline, IoDocumentAttach } from "react-icons/io5";
 import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks';
+import {
+  setId,
+  setResumeUrl,
+  setTitle,
+  setBio,
+  setRate,
+  setSkills,
+  setProfiles,
+  setHours,
+  setExperiences,
+  setEducations,
+  setLanguages,
+} from '@/lib/features/talent_profile/talentProfileSlice';
+import exp from "constants";
+
 
 
 const formSchema = z.object({
@@ -50,10 +65,11 @@ function generateFileName(originalFileName: string, filetype: string) {
   return `${timestamp}_${filetype}.${fileExtension}`;
 }
 
-interface EmploymentData {
+interface ExperiencesData {
   company: string;
   position: string;
   location?: string;
+  skills: string[];
   startDate?: Date;
   endDate?: Date;
   description: string;
@@ -65,7 +81,8 @@ interface EducationData {
   degree: string;
   field?: string;
   grade?: string;
-  startDate?: Date;
+  skills: string[];
+  startDate: Date;
   endDate?: Date;
   description?: string;
 };
@@ -84,7 +101,7 @@ interface StructuredResult {
   profiles: string[];
   skills: string[];
   jobRole: string;
-  experience: EmploymentData[];
+  experience: ExperiencesData[];
   education: EducationData[];
   bio: string;
 }
@@ -102,14 +119,16 @@ interface UserInfo {
 }
 
 export default function CreateProfile() {
-  const { id, setId, setResumeUrl } = useProfileStore();
-  const { userData} = useUserStore();
+  const { userData } = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.talentProfile);
+  const id = profile?.id
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -125,7 +144,7 @@ export default function CreateProfile() {
   // const [profiles, setProfiles] = useState<string[]>([])
   // const [skills, setSkills] = useState<string[]>([])
   // const [jobTitle, setJobTitle] = useState<string>("")
-  // const [experiences, setExperiences] = useState<EmploymentData[]>([])
+  // const [experiences, setExperiences] = useState<ExperienceData[]>([])
   // const [educations, setEducations] = useState<EducationData[]>([])
   // const [userBio, setUserBio] = useState<string>("")
   // const user = await auth();
@@ -202,8 +221,8 @@ export default function CreateProfile() {
           if (res.data) {
             // console.log("Result from createTalentProfile:: ", res.data.id);
             newTalentProfileId = res.data.id
-            setResumeUrl(res.data?.resumeUrl ?? '');
-            setId(res.data.id);
+            dispatch(setResumeUrl(res.data?.resumeUrl ?? ''));
+            dispatch(setId(res.data.id));
           }
         }
       } catch (error) {
@@ -354,8 +373,8 @@ export default function CreateProfile() {
     try {
       if (!id) return;
       const res = await addSkills(values.skills, id);
-
       if (res.status === 200) {
+        dispatch(setSkills(values.skills))
         setStep(4);
       } else {
         console.error("Error adding skills:", res.error);
@@ -389,7 +408,7 @@ export default function CreateProfile() {
       } else {
         if (res.data) {
           // console.log("Result from createTalentProfile:: ", res.data.id);
-          setId(res.data.id);
+          dispatch(setId(res.data.id));
           handleIncStep(step + 1);
         }
       }
@@ -420,7 +439,7 @@ export default function CreateProfile() {
 
 
 
-    const employmentData = experience.map((exp: EmploymentData): EmploymentData => ({
+    const experienceData = experience.map((exp: ExperiencesData): ExperiencesData => ({
       ...exp,
       startDate: exp.startDate ? new Date(exp.startDate) : undefined,
       endDate: exp.endDate ? new Date(exp.endDate) : undefined
@@ -428,7 +447,7 @@ export default function CreateProfile() {
 
     const educationData = education.map((edu: EducationData): EducationData => ({
       ...edu,
-      startDate: edu.startDate ? new Date(edu.startDate) : undefined,
+      startDate: new Date(edu.startDate),
       endDate: edu.endDate ? new Date(edu.endDate) : undefined
     }))
 
@@ -438,7 +457,7 @@ export default function CreateProfile() {
     const updateUserProfiles = () => addProfiles(profiles, talentProfileId);
     const updateUserSkills = () => addSkills(skills, talentProfileId);
     const updateUserJobTitle = () => updateTitle(jobRole, talentProfileId);
-    const updateUserExperiences = () => createEmployments(employmentData, talentProfileId);
+    const updateUserExperiences = () => createExperiences(experienceData, talentProfileId);
     const updateUserEducations = () => createEducation(educationData, talentProfileId);
     const updateUserBio = () => updateBio(bio, talentProfileId);
 
@@ -466,6 +485,20 @@ export default function CreateProfile() {
       const allFulfilled = results.every((result) => result.status === "fulfilled")
 
       if (allFulfilled) {
+        dispatch(setBio(bio))
+        dispatch(setTitle(jobRole))
+        dispatch(setEducations(educationData.map((edu: any) => ({
+          ...edu,
+          startDate: edu.startDate.toISOString(),
+          endDate: edu.endDate ? edu.endDate.toISOString() : undefined
+        }))))
+        dispatch(setExperiences(experienceData.map((exp: any) => ({
+          ...exp,
+          startDate: exp.startDate.toISOString(),
+          endDate: exp.endDate ? exp.endDate.toISOString() : undefined
+        })
+        )))
+        dispatch(setProfiles(profiles))
         // console.log("All updates succeeded. Redirecting to /talentmatch...");
         router.push("/talentmatch");
       } else {
@@ -643,7 +676,7 @@ export default function CreateProfile() {
                     </FormDescription>
                     <FormControl>
                       <ArrayInput
-                        value={field.value}
+                        value={field?.value || []}
                         onChange={field.onChange}
                         placeholder="Enter skills required"
                       />

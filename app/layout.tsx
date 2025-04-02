@@ -6,6 +6,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
 import { MicrophoneContextProvider } from "@/context/MicrophoneContextProvider";
 import { DeepgramContextProvider } from "@/context/DeepgramContextProvider";
+import StoreProvider from "./StoreProvider";
 
 const openSans = Open_Sans({ subsets: ["latin"], display: "swap" });
 
@@ -64,9 +65,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="scroll-smooth focus:scroll-auto">
       <body className={`${openSans.className}`}>
+        <StoreProvider>
         <AuthProvider><MicrophoneContextProvider>
           <DeepgramContextProvider>{children}</DeepgramContextProvider>
-        </MicrophoneContextProvider></AuthProvider>
+        </MicrophoneContextProvider></AuthProvider></StoreProvider>
         <GoogleAnalytics gaId="G-3TPKSH7MPS" />
         <Script id="clarity-script" strategy="afterInteractive">
           {`

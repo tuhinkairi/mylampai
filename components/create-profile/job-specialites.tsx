@@ -20,8 +20,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useProfileStore } from "@/utils/profileStore";
 import { toast } from "sonner";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { setProfiles } from "@/lib/features/talent_profile/talentProfileSlice";
 
 // Define job categories and their respective specialties
 const jobCategories = [
@@ -71,7 +72,9 @@ export function JobCategoriesSelector({
   setStep: (step: number) => void;
 }) {
   // Retrieve profile store data
-  const { id, setProfiles } = useProfileStore();
+  const dispatch=useAppDispatch()
+  const profile=useAppSelector((state)=>state.talentProfile)
+  const id=profile.id
   
   // State for selected category
   const [selectedCategory, setSelectedCategory] = React.useState(
@@ -99,7 +102,7 @@ export function JobCategoriesSelector({
       const res = await addProfiles(profiles, id);
 
       if (res.status === 200) {
-        setProfiles(profiles);
+        dispatch(setProfiles(profiles));
         setStep(3);
       } else {
         console.error("Error adding profiles:", res.error);

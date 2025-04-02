@@ -1,69 +1,94 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import QuillWrapper from "@/components/adminDashboard/QuillWrapper";
-import emailtemplate from "@/utils/newsletter";
-import otptemplate from "@/utils/otptemplate";
-import { sendNewsLetter, scheduleNewsLetter } from "@/utils/newlettermailing";
+// import emailtemplate from "@/utils/newsletter";
+// import otptemplate from "@/utils/otptemplate";
+// import { sendNewsLetter, scheduleNewsLetter } from "@/utils/newlettermailing";
+import { getTemplates } from "@/actions/emailfetch";
 
-const availableTemplates = [
-  { name: "Standard Template", template: emailtemplate },
-  { name: "OTP Template", template: otptemplate },
-];
+// const availableTemplates = [
+//   { name: "Standard Template", template: emailtemplate },
+//   { name: "OTP Template", template: otptemplate },
+// ];
+
+interface TemplateType {
+  id: string;
+  name: string;
+  subject: string;
+  html_body: string;
+}
 
 export default function AdminDashboard() {
-  const [value, setValue] = useState("");
-  const [emailContent, setEmailContent] = useState("");
-  const [emailTemplate, setEmailTemplate] = useState(emailtemplate);
-  const [finalHTMLTemplate, setFinalHtmlTemplate] = useState(emailTemplate);
-  const [subject, setSubject] = useState("");
-  const [emailIds, setEmailIds] = useState("");
+  const [value, setValue] = useState(""); 
+  const [emailTemplate, setEmailTemplate] = useState<TemplateType | null>(null);
+  const [finalHTMLTemplate, setFinalHtmlTemplate] = useState("");
+  const [subject, setSubject] = useState(""); 
+  const [emailIds, setEmailIds] = useState(""); 
   const [scheduleMode, setScheduleMode] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduleFrequency, setScheduleFrequency] = useState("One-Time");
-
-  const createMarkup = (html: string) => {
-    setEmailContent(html);
-    const htmlTemplate = emailTemplate.replace(
-      "{{EMAIL_CONTENT}}",
-      emailContent
-    );
-    setFinalHtmlTemplate(htmlTemplate);
-  };
+  const [availableTemplates, setAvailableTemplates] = useState<TemplateType[]>([]);
 
   useEffect(() => {
-    const htmlTemplate = emailTemplate.replace(
-      "{{EMAIL_CONTENT}}",
-      emailContent
-    );
-    setFinalHtmlTemplate(htmlTemplate);
-  }, [emailContent, emailTemplate]);
+    const fetchTemplates = async () => {
+      try {
+        const templates = await getTemplates();
+        console.log("asshedwuhd", templates)
+        if (templates.length > 0) {
+          setAvailableTemplates(templates);
+          setEmailTemplate(templates[0]); 
+          setSubject(templates[0].subject);
+          setFinalHtmlTemplate(templates[0].html_body); 
+        } else {
+          console.error("No templates found");
+        }
+      } catch (error) {
+        console.error("Error fetching templates:", error);
+      }
+    };
+
+    fetchTemplates();
+  }, []);
+
+  useEffect(() => {
+    if (emailTemplate) {
+      const updatedHtml = emailTemplate.html_body.replace("{{EMAIL_CONTENT}}", value);
+      setFinalHtmlTemplate(updatedHtml);
+    }
+  }, [value, emailTemplate]);
+
+  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedTemplate = availableTemplates[parseInt(e.target.value)];
+    setEmailTemplate(selectedTemplate);
+    setSubject(selectedTemplate.subject);
+  };
 
   const handleSendEmail = async () => {
     const recipientEmails = emailIds.split(",").map((email) => email.trim());
-    const res = await sendNewsLetter(recipientEmails, subject, finalHTMLTemplate);
-    if(res.message === "Emails sent successfully"){
-      alert("Email sent successfully!");
-    }else{
-      alert("Failed to send Emails");
-    }
-  };
 
-  const handleScheduleEmail = async () => {
-    const recipientEmails = emailIds.split(",").map((email) => email.trim());
-    const res = await scheduleNewsLetter(
-      recipientEmails,
+    console.log("Sending Email...", {
+      to: recipientEmails,
       subject,
+      template_id: emailTemplate?.id,
       finalHTMLTemplate,
-      scheduleDate,
-      scheduleTime,
-      scheduleFrequency
-    );
-    // console.log(res);
-  };
+    });
 
-  const handleTemplateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setEmailTemplate(availableTemplates[parseInt(e.target.value)].template);
+    const response = await fetch("/api/sendEmails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        to: recipientEmails,
+        sender: "Support <support@wize.co.in>",
+        subject,
+        html_body:finalHTMLTemplate
+      }),
+    });
+
+    const data = await response.json();
+    console.log("Email Send Response:", data);
   };
 
   return (
@@ -72,6 +97,7 @@ export default function AdminDashboard() {
         {scheduleMode ? "Schedule an Email" : "Send an Email"}
       </h2>
 
+      {/* Subject Input */}
       <div className="space-y-2">
         <label className="block text-lg font-medium text-gray-700">Subject</label>
         <input
@@ -83,11 +109,13 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* Email Content Editor */}
       <div className="space-y-2">
         <label className="block text-lg font-medium text-gray-700">Email Body</label>
         <QuillWrapper value={value} onChange={setValue} />
       </div>
 
+      {/* Template Selection */}
       <div>
         <label className="text-lg font-medium text-gray-700">Choose Template</label>
         <select
@@ -102,25 +130,14 @@ export default function AdminDashboard() {
         </select>
       </div>
 
-      <button
-        onClick={() => createMarkup(value)}
-        className="mt-4 px-4 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600 transition"
-      >
-        Generate Template
-      </button>
-
-      <div>
-        <label className="block text-lg font-medium text-gray-700">Preview</label>
-        <div
-          dangerouslySetInnerHTML={{ __html: finalHTMLTemplate }}
-          className="p-4 border border-gray-300 rounded-lg bg-gray-300 h-96 overflow-y-scroll"
-        />
+      <div className="p-4 bg-white shadow rounded-lg">
+        <h3 className="text-lg font-medium text-gray-700 mb-2">Live Preview</h3>
+        <div dangerouslySetInnerHTML={{ __html: finalHTMLTemplate }} className="border p-4 bg-gray-50" />
       </div>
 
+      {/* Recipient Emails Input */}
       <div className="space-y-2">
-        <label className="block text-lg font-medium text-gray-700">
-          Recipient Emails
-        </label>
+        <label className="block text-lg font-medium text-gray-700">Recipient Emails</label>
         <textarea
           value={emailIds}
           onChange={(e) => setEmailIds(e.target.value)}
@@ -130,12 +147,11 @@ export default function AdminDashboard() {
         />
       </div>
 
+      {/* Schedule Mode Inputs */}
       {scheduleMode && (
         <div className="space-y-4">
           <div>
-            <label className="block text-lg font-medium text-gray-700">
-              Schedule Date
-            </label>
+            <label className="block text-lg font-medium text-gray-700">Schedule Date</label>
             <input
               type="date"
               value={scheduleDate}
@@ -145,9 +161,7 @@ export default function AdminDashboard() {
           </div>
 
           <div>
-            <label className="block text-lg font-medium text-gray-700">
-              Schedule Time
-            </label>
+            <label className="block text-lg font-medium text-gray-700">Schedule Time</label>
             <input
               type="time"
               value={scheduleTime}
@@ -157,16 +171,13 @@ export default function AdminDashboard() {
           </div>
 
           <div>
-            <label className="block text-lg font-medium text-gray-700">
-              Frequency (Optional)
-            </label>
+            <label className="block text-lg font-medium text-gray-700">Frequency (Optional)</label>
             <select
-              defaultValue={"One-Time"}
               value={scheduleFrequency}
               onChange={(e) => setScheduleFrequency(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">One-Time</option>
+              <option value="One-Time">One-Time</option>
               <option value="day">Daily</option>
               <option value="week">Weekly</option>
               <option value="month">Monthly</option>
@@ -175,6 +186,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Action Buttons */}
       <div className="flex space-x-4">
         <button
           onClick={handleSendEmail}
@@ -188,15 +200,8 @@ export default function AdminDashboard() {
         >
           {scheduleMode ? "Switch to Send Now" : "Schedule Email"}
         </button>
-        {scheduleMode && (
-          <button
-            onClick={handleScheduleEmail}
-            className="px-6 py-2 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600 transition"
-          >
-            Schedule Email
-          </button>
-        )}
       </div>
     </div>
   );
 }
+

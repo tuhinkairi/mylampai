@@ -3,6 +3,7 @@ import { IoCloudUploadOutline, IoDocumentAttach, IoTrashOutline } from 'react-ic
 import { toast } from 'sonner';
 import * as pdfjsLib from "pdfjs-dist";
 import { useWebSocketContext } from '@/hooks/interviewersocket/webSocketContext';
+import { addNewUserResume } from '@/actions/jobs/resumeListAction';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -77,6 +78,7 @@ function GetEvaluate({ parameters }: { parameters: any }) {
         progress?: number;
         currentFile?: string;
     }>({});
+
     const {
         fileUploadStatus,
         startFileUpload,
@@ -102,9 +104,20 @@ function GetEvaluate({ parameters }: { parameters: any }) {
                     });
                 }
 
-                if(data.action === 'analysis_complete') {
+                if (data.action === 'analysis_complete') {
                     toast.success('Analysis complete');
+                    setAnalysisStatus({});
                     console.log('Analysis complete:', data.result);
+                }
+
+                if (data.action === 'analysis_error') {
+                    toast.error('Analysis error');
+                    console.error('Analysis error:', data.error);
+                }
+
+                if (data.action === 'intermediate_result') {
+                    console.log('Intermediate Result:', data.result);
+                    saveAnalysisResult(data.result);
                 }
 
             } catch (error) {
@@ -118,6 +131,16 @@ function GetEvaluate({ parameters }: { parameters: any }) {
             rubricsWs.removeEventListener('message', handleMessage);
         };
     }, [rubricsWs]);
+
+
+    const saveAnalysisResult = async (result: any) => {
+        try {
+            // await addNewUserResume(result)
+            console.log(result);
+        } catch (error) {
+            console.error(error);
+        }
+    }
 
     const handleFileChange = async (
         event: React.ChangeEvent<HTMLInputElement>

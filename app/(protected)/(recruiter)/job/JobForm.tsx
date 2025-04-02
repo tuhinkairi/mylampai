@@ -320,7 +320,7 @@ export default function JobForm() {
               <FormLabel>Skills</FormLabel>
               <FormControl>
                 <ArrayInput
-                  value={field.value}
+                  value={field?.value || []}
                   onChange={field.onChange}
                   placeholder="Enter skills required"
                 />

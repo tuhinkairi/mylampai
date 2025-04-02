@@ -114,7 +114,7 @@ export const matchTalentProfile = async (
         user: true,
         education: true,
         projects: true,
-        employment: true,
+        experience: true,
         favouritedBy: true,
         talentMatch: true,
       },

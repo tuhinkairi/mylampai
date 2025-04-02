@@ -1,3 +1,5 @@
+//All actions belongs to  /talentmatch router should be in this file
+
 "use server";
 import prisma from "@/lib";
 import { generateSasToken } from "./azureActions";
@@ -6,29 +8,29 @@ import { auth } from "@/lib/authlib";
 type TalentPoolProfileType = {
   resumeUrl: string;
   role: string;
-  skills:string[];
+  skills: string[];
   availability: string;
-  targetFor:string;
+  targetFor: string;
   interviewDate: Date;
   interviewStatus: string;
-  talentProfileId:string;
+  talentProfileId: string;
 };
 
 export const createTalentPoolProfile = async (
   talentPoolProfileData: TalentPoolProfileType
 ) => {
   try {
-    const res= await prisma.talentPoolProfile.create({
+    const res = await prisma.talentPoolProfile.create({
       data: {
         ...talentPoolProfileData,
-        interviewStatus: talentPoolProfileData.interviewStatus || ""
-      }
+        interviewStatus: talentPoolProfileData.interviewStatus || "",
+      },
     });
 
     return {
       message: "Profile created successfully",
       status: "success",
-      data:res
+      data: res,
     };
   } catch (error) {
     console.error(error);
@@ -45,12 +47,12 @@ export const getTalentMatches = async (userId: string) => {
       where: {
         talentId: userId,
       },
-      select:{
-        talentPool:true,
-        id:true,
-        isMatched:true,
-        isHired:true
-      }
+      select: {
+        talentPool: true,
+        id: true,
+        isMatched: true,
+        isHired: true,
+      },
     });
     return talentMatches;
   } catch (error) {
@@ -233,41 +235,16 @@ export const uploadResumeToAzure = async (formData: FormData) => {
   }
 };
 
-export const getProfileEmployments = async (talentProfileId: string) => {
+//Functions to handle Bio
+export const updateTalentBio = async (talentProfileId: string, bio: string) => {
   try {
-    const employments = await prisma.employment.findMany({
+    await prisma.talentProfile.update({
       where: {
-        talentProfileId,
+        id: talentProfileId,
       },
-    });
-
-    return employments;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-};
-
-type EmploymentType = {
-  company: string;
-  position: string;
-  location?: string;
-  startDate: Date;
-  endDate?: Date;
-  description?: string;
-  skills: string[];
-};
-
-export const updateEmployment = async (
-  employmentData: EmploymentType,
-  id: string
-) => {
-  try {
-    await prisma.employment.update({
-      where: {
-        id,
+      data: {
+        bio,
       },
-      data: employmentData,
     });
 
     return "success";
@@ -277,7 +254,207 @@ export const updateEmployment = async (
   }
 };
 
+// Functions to handle Education
+type EducationData = {
+  school: string;
+  degree?: string;
+  field?: string;
+  grade?: string;
+  startDate: Date;
+  endDate?: Date;
+  description?: string;
+  skills: string[];
+};
+export const getProfileEducations = async (talentProfileId: string) => {
+  try {
+    const educations = await prisma.education.findMany({
+      where: {
+        talentProfileId,
+      },
+    });
 
+    return educations;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const createTalentEducation = async (
+  educationData: EducationData,
+  talentProfileId: string
+) => {
+  try {
+    const res = await prisma.education.create({
+      data: { ...educationData, talentProfileId },
+      select: {
+        id: true,
+        school: true,
+        degree: true,
+        field: true,
+        grade: true,
+        skills: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+      },
+    });
+
+    return {
+      response: res,
+      message: "Education added successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error("Error adding education:", error);
+    return {
+      error: "Error adding education",
+      status: 500,
+    };
+  }
+};
+
+export const updateTalentEducation = async (
+  educationData: EducationData,
+  id: string
+) => {
+  try {
+    await prisma.education.update({
+      where: {
+        id,
+      },
+      data: educationData,
+    });
+
+    return "success";
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+export const deleteTalentEducation = async (id: string) => {
+  try {
+    await prisma.education.delete({
+      where: {
+        id: id,
+      },
+    });
+    return {
+      message: "Education deleted successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+//Functions to handle Experiences
+
+type ExperiencesData = {
+  company: string;
+  position: string;
+  location?: string;
+  startDate: Date;
+  endDate?: Date;
+  description?: string;
+  skills: string[];
+};
+export const getProfileExperiences = async (talentProfileId: string) => {
+  try {
+    const experiences = await prisma.experience.findMany({
+      where: {
+        talentProfileId,
+      },
+    });
+
+    return experiences;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const createTalentExperience = async (
+  experienceData: ExperiencesData,
+  talentProfileId: string
+) => {
+  try {
+    const res = await prisma.experience.create({
+      data: { ...experienceData, talentProfileId },
+      select: {
+        id: true,
+        company: true,
+        position: true,
+        location: true,
+        skills: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+      },
+    });
+
+    return {
+      response: res,
+      message: "Experience added successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error("Error adding experience:", error);
+    return {
+      error: "Error adding experience",
+      status: 500,
+    };
+  }
+};
+
+export const updateTalentExperience = async (
+  experienceData: ExperiencesData,
+  id: string
+) => {
+  try {
+    await prisma.experience.update({
+      where: {
+        id,
+      },
+      data: experienceData,
+    });
+
+    return "success";
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+export const deleteTalentExperience = async (id: string) => {
+  try {
+    await prisma.experience.delete({
+      where: {
+        id: id,
+      },
+    });
+    return {
+      message: "Experience deleted successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+// Functions to handle Projects
+type ProjectDataType = {
+  title: string;
+  description: string;
+  role?: string;
+  url?: string;
+  startDate?: Date;
+  endDate?: Date;
+  skills: string[];
+};
 export const getProfileProjects = async (talentProfileId: string) => {
   try {
     const projects = await prisma.project.findMany({
@@ -293,38 +470,38 @@ export const getProfileProjects = async (talentProfileId: string) => {
   }
 };
 
-type ProjectType = {
-  title: string;
-  description: string;
-  role?: string;
-  url?: string;
-  skills: string[];
-  talentProfileId: string;
-};
-
-export const createTalentProject = async (projectData: ProjectType) => {
+export const createTalentProject = async (
+  projectData: ProjectDataType,
+  talentProfileId: string
+) => {
   try {
-    await prisma.project.create({
-      data: projectData,
+    const res = await prisma.project.create({
+      data: { ...projectData, talentProfileId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        role: true,
+        url: true,
+        startDate: true,
+        endDate: true,
+        skills: true,
+      },
     });
 
-    return "success";
+    return {
+      response: res,
+      message: "Project added successfully",
+      status: 200,
+    };
   } catch (error) {
     console.error(error);
     return "failed";
   }
 };
 
-type ProjectUpdateType = {
-  title: string;
-  description: string;
-  role?: string;
-  url?: string;
-  skills: string[];
-};
-
 export const updateTalentProject = async (
-  projectData: ProjectUpdateType,
+  projectData: ProjectDataType,
   id: string
 ) => {
   try {
@@ -336,6 +513,23 @@ export const updateTalentProject = async (
     });
 
     return "success";
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+export const deleteTalentProject = async (id: string) => {
+  try {
+    await prisma.project.delete({
+      where: {
+        id: id,
+      },
+    });
+    return {
+      message: "Project deleted successfully",
+      status: 200,
+    };
   } catch (error) {
     console.error(error);
     return "failed";

@@ -394,7 +394,7 @@ export default function CreateTalentPoolProfileDialog({ onProfileCreate }: {
                     </FormLabel>
                     <FormControl>
                       <ArrayInput
-                        value={field.value}
+                        value={field?.value || []}
                         onChange={field.onChange}
                         placeholder="Enter your skills"
                       />

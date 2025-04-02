@@ -23,13 +23,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { ScrollArea } from "../ui/scroll-area";
-import { createTalentProject, updateTalentProject } from "@/actions/talentMatchActions";
+import { createTalentProject, deleteTalentProject, updateTalentProject } from "@/actions/talentMatchActions";
 import { ArrayInput } from "../misc/ArrayInput";
 import { ProfileSection, Project } from "@prisma/client";
-import { Pencil } from "lucide-react";
+import { CalendarIcon, Pencil, PlusSquare } from "lucide-react";
+import { useAppDispatch } from "@/lib/hooks";
+import { addProject, deleteProject, updateProject } from "@/lib/features/talent_profile/talentProfileSlice";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Calendar } from "../ui/calendar";
 
 const projectFormSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -37,7 +43,21 @@ const projectFormSchema = z.object({
   role: z.string().optional(),
   url: z.string().url("Invalid URL").optional().or(z.literal("")),
   skills: z.array(z.string()).min(1, "At least one skill is required"),
+  startDate: z.date().optional(),
+  endDate: z.date().optional()
 });
+
+type ProjectDataType = {
+  id: string;
+  title: string;
+  description: string;
+  role?: string;
+  url?: string;
+  startDate?: Date;
+  endDate?: Date;
+  skills: string[];
+};
+
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
@@ -47,6 +67,7 @@ export function CreateProject({
   talentProfileId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const dispatch = useAppDispatch()
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -60,11 +81,20 @@ export function CreateProject({
 
   async function onSubmit(data: ProjectFormValues) {
     try {
-      const result = await createTalentProject({
-        ...data,
-        talentProfileId,
-      });
-      if (result === "success") {
+      const result = await createTalentProject(
+        {
+          ...data
+        },
+        talentProfileId
+      );
+      if (result !== 'failed' && result.status === 200) {
+        dispatch(addProject({
+          ...result.response,
+          role: result.response.role || undefined,
+          url: result.response.url || undefined,
+          startDate: result.response.startDate ? new Date(result.response.startDate).toISOString() : undefined,
+          endDate: result.response.endDate ? new Date(result.response.endDate).toISOString() : undefined,
+        }))
         setOpen(false);
         form.reset();
       } else {
@@ -79,13 +109,13 @@ export function CreateProject({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost">Add Project</Button>
+        <Button variant="outline"><PlusSquare /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px]">
+        <DialogHeader className="mb-4 px-4">
+          <DialogTitle>Add new project</DialogTitle>
+        </DialogHeader>
         <ScrollArea className="h-[75vh]">
-          <DialogHeader className="mb-4 px-4">
-            <DialogTitle>Add new project</DialogTitle>
-          </DialogHeader>
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -171,7 +201,7 @@ export function CreateProject({
                     </FormDescription>
                     <FormControl>
                       <ArrayInput
-                        value={field.value}
+                        value={field?.value || []}
                         onChange={field.onChange}
                         placeholder="Enter your skills"
                       />
@@ -180,6 +210,96 @@ export function CreateProject({
                   </FormItem>
                 )}
               />
+
+              <div className="grid grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date (Optional)</FormLabel>
+                      <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-[240px] pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() ||
+                              date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>End Date (Optional)</FormLabel>
+                      <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-[240px] pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() ||
+                              date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Leave blank if you&apos;re currently working on the project
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <Button type="submit">Submit Project</Button>
             </form>
@@ -190,8 +310,9 @@ export function CreateProject({
   );
 }
 
-export function UpdateProject({ project }: { project: Project }) {
+export function UpdateProject({ project }: { project: ProjectDataType }) {
   const [open, setOpen] = useState(false);
+  const dispatch = useAppDispatch()
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -202,32 +323,69 @@ export function UpdateProject({ project }: { project: Project }) {
       skills: project.skills,
     },
   });
+  useEffect(() => {
+    if (project) {
+      form.reset({
+        title: project.title,
+        description: project.description,
+        role: project.role || "",
+        url: project.url || "",
+        skills: project.skills,
+      });
+    }
+  }, [project, form, open]);
 
   async function onSubmit(data: ProjectFormValues) {
     try {
       const result = await updateTalentProject(data, project.id);
       if (result === "success") {
+        dispatch(updateProject({
+          ...data,
+          id: project.id,
+          startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
+          endDate: data.endDate ? new Date(data.endDate).toISOString() : undefined,
+        }))
+        toast.success("Project updated successfully");
         setOpen(false);
         form.reset();
       } else {
-        toast.error("Failed to create project");
+        toast.error("Failed to update project");
       }
     } catch (error) {
       console.error(error);
-      toast.error("Failed to create project");
+      toast.error("Failed to update project");
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!project?.id) {
+      toast.error("Project ID is missing");
+      return;
+    }
+    try {
+      const result = await deleteTalentProject(project.id)
+      if (result !== "failed" && result.status === 200) {
+        dispatch(deleteProject(project.id))
+        setOpen(false);
+      } else {
+        toast.error("failed to delete project")
+      }
+    } catch (error) {
+      console.log(error)
+      toast.error("failed to delete project")
     }
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Pencil className="cursor-pointer w-8 h-8 p-1 " />
+        <Button variant="outline"><Pencil className="cursor-pointer w-4 h-4 p-0 " /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px]">
-        <ScrollArea className="h-[75vh]">
-          <DialogHeader className="mb-4 px-4">
-            <DialogTitle>Update project</DialogTitle>
-          </DialogHeader>
+        <DialogHeader className="mb-4 px-4">
+          <DialogTitle>Update Project Details</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="h-[75vh] p-2">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -313,7 +471,7 @@ export function UpdateProject({ project }: { project: Project }) {
                     </FormDescription>
                     <FormControl>
                       <ArrayInput
-                        value={field.value}
+                        value={field?.value || []}
                         onChange={field.onChange}
                         placeholder="Enter your skills"
                       />
@@ -323,7 +481,99 @@ export function UpdateProject({ project }: { project: Project }) {
                 )}
               />
 
-              <Button type="submit">Submit Project</Button>
+              <div className="grid grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date (Optional)</FormLabel>
+                      <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-[240px] pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() ||
+                              date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>End Date (Optional)</FormLabel>
+                      <Popover modal={true}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-[240px] pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() ||
+                              date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormDescription>
+                        Leave blank if you&apos;re currently working on the project
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="flex justify-between w-full items-center">
+                <Button variant="destructive" type="button" onClick={handleDelete}>Delete Project</Button>
+                <Button type="submit">Update</Button>
+              </div>
             </form>
           </Form>
         </ScrollArea>

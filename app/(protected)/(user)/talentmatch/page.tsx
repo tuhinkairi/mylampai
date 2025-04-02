@@ -16,15 +16,18 @@ import CreateTalentPoolProfileDialog from "./CreateTalentPoolProfile";
 import { acceptTalentMatch, getTalentMatches, getTalentPoolProfiles } from "@/actions/talentMatchActions";
 import { Badge } from "@/components/ui/badge";
 import PdfToImage from "@/components/misc/pdftoimg";
-import { useProfileStore } from "@/utils/profileStore";
 import { useEffect, useState } from "react";
 import { TalentProfileCard } from "./TalentProfileCard";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import LoadingGlobal from "@/components/ui/loading";
-import prisma from "@/lib/index";
 import { useUserStore } from "@/utils/userStore";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import ClientStoreProvider from "./ClientStoreProvider";
+import { setId, setResumeUrl } from "@/lib/features/talent_profile/talentProfileSlice";
+import { getTalentProfile } from "@/actions/setupProfileActions";
+
 
 type ProfileData = {
   resumeUrl: string;
@@ -36,10 +39,21 @@ type ProfileData = {
   interviewStatus: string;
   interviewDate: Date;
 };
-
 export default function TalentMatchPage() {
+  return (
+    // <ClientStoreProvider>
+    <TalentMatchContent />
+    // </ClientStoreProvider>
+  );
+}
+
+// The actual page content
+function TalentMatchContent() {
   // const user = await auth();
-  const { id } = useProfileStore();
+  const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile)
+  const id = profile.id
+
   const [talentPoolProfiles, setTalentPoolProfiles] = useState<ProfileData[]>();
   const [talentMatches, setTalentMatches] = useState<any[]>([])
   const { userData } = useUserStore();
@@ -69,6 +83,19 @@ export default function TalentMatchPage() {
     if (id) {
       getTalentProfiles(id);
       getMatches(id);
+    } else {
+      if (!userData) {
+        toast.error("User data not found");
+        return;
+      }
+      const checkTalentProfile = async () => {
+        const isTalentProfileExist = await getTalentProfile(userData?.id);
+        if (isTalentProfileExist && isTalentProfileExist?.status === 200 && isTalentProfileExist?.data) {
+          dispatch(setId(isTalentProfileExist?.data.id))
+          dispatch(setResumeUrl(isTalentProfileExist?.data.resumeUrl ?? ""))
+        }
+        checkTalentProfile();
+      }
     }
   }, [id]);
 
@@ -94,50 +121,6 @@ export default function TalentMatchPage() {
 
 
   if (!id) {
-    // const { id, setId, setResumeUrl, setTitle, setBio, setRate, setSkills, setProfiles, setHours, setExperiences, setEducations, setLanguages
-    // } = useProfileStore();
-    // const isTalentProfileExist = await prisma.talentProfile.findFirst({
-    //   where: {
-    //     userId: userData?.id,
-    //   },
-    //   include: {
-    //     education: true,
-    //     employment: true,
-    //   }
-    // });
-    // console.log(
-    //   "isTalentProfileExist: ",
-    //   isTalentProfileExist
-    // )
-    // if (isTalentProfileExist) {
-    //   setId(isTalentProfileExist.id)
-    //   setResumeUrl(isTalentProfileExist.resumeUrl ?? "")
-    //   setTitle(isTalentProfileExist.title || "")
-    //   setBio(isTalentProfileExist.bio || "")
-    //   setRate(isTalentProfileExist.rate || "")
-    //   setSkills(isTalentProfileExist.skills)
-    //   setProfiles(isTalentProfileExist.profiles)
-    //   setHours(isTalentProfileExist.hours || "")
-    //   setExperiences(
-    //     (isTalentProfileExist.employment || []).map((employment) => ({
-    //       ...employment,
-    //       endDate: employment.endDate ?? undefined,
-    //       description: employment.description ?? undefined,
-    //     }))
-    //   )
-    //   setEducations(
-    //     (isTalentProfileExist.education || []).map((education) => ({
-    //       ...education,
-    //       degree: education.degree ?? "",
-    //       field: education.field ?? undefined,
-    //       grade: education.grade ?? undefined,
-    //       startDate: education.startDate ?? undefined,
-    //       endDate: education.endDate ?? undefined,
-    //       description: education.description ?? undefined, // Replace null with undefined
-    //     }))
-    //   )
-    //   setLanguages([])
-    // }// Replace with an empty array or fetch languages from a valid source
     return <LoadingGlobal text="Profile" />; // or any other placeholder UI
   }
 

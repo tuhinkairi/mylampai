@@ -60,6 +60,9 @@ export const addRubricsToJobRound = async (
     throw new Error("Failed to add rubrics");
   }
 };
+
+
+
 export const getRubricsList = async (RoundId: string) => {
   try {
     const response = await fetch("/api/recruiter/rubrics/updaterubrics", {

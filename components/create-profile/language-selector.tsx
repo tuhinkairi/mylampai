@@ -25,8 +25,9 @@ import {
 import { X } from "lucide-react";
 import { createLanguages } from "@/actions/setupProfileActions";
 import { toast } from "sonner";
-import { useProfileStore } from "@/utils/profileStore";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { useUserStore } from "@/utils/userStore";
+import { setLanguages } from "@/lib/features/talent_profile/talentProfileSlice";
 
 const languageSchema = z.object({
   language: z.string().min(1, "Language name is required"),
@@ -47,7 +48,9 @@ export function LanguageSelector({
   setStep: (step: number) => void;
 }) {
   const { userData } = useUserStore();
-  const { setLanguages } = useProfileStore();
+  const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile)
+  const id = profile.id
 
   const form = useForm<LanguageForm>({
     resolver: zodResolver(formSchema),
@@ -66,12 +69,12 @@ export function LanguageSelector({
       if (!userData || !userData.id) {
         return;
       }
-      console.log("updating at id: ",userData.id)
+      console.log("updating at id: ", userData.id)
       const res = await createLanguages(data.languages, userData.id);
 
-      if (res.status === 200) {
+      if (res.status === 200 && Array.isArray(res.response)) {
+        dispatch(setLanguages(res.response));
         setStep(8);
-        setLanguages(data.languages);
         toast.success(res.message);
       } else {
         toast.error(res.error);

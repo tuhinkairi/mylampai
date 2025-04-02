@@ -3,9 +3,9 @@ import { useRef } from 'react'
 import { Provider } from 'react-redux'
 import { PersistGate } from 'redux-persist/integration/react'
 import { persistStore } from 'redux-persist'
-import { makeStore, AppStore } from '../lib/store'
+import { makeStore, AppStore } from '@/lib/store'
 
-export default function StoreProvider({
+export default function ClientStoreProvider({
   children
 }: {
   children: React.ReactNode

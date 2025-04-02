@@ -30,7 +30,7 @@ export const generateSasToken = async (blobName: string) => {
       sasOptions,
       sharedKeyCredential
     ).toString();
-
+    console.log(sasToken);
     return `https://${accountName}.blob.core.windows.net/${containerName}/${blobName}?${sasToken}`;
   } catch (error) {
     console.error("Error generating SAS token:", error);

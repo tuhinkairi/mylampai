@@ -2,8 +2,6 @@
 import prisma from "@/lib/index";
 import { auth } from "@/lib/authlib";
 import { redirect } from "next/navigation";
-import { useUserStore } from "@/utils/userStore";
-import { useProfileStore } from "@/utils/profileStore";
 
 export default async function UserLayout({
   children,
@@ -19,10 +17,6 @@ export default async function UserLayout({
   const isTalentProfileExist = await prisma.talentProfile.findFirst({
     where: {
       userId: user?.id,
-    },
-    include: {
-      education: true,
-      employment: true,
     }
   });
 
@@ -33,7 +27,7 @@ export default async function UserLayout({
     } else {
       console.log("Talent Profile Exist")
     }
-  }else if(user?.role==="recruiter"){
+  } else if (user?.role === "recruiter") {
     redirect("/recruit")
   }
 

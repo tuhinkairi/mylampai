@@ -97,7 +97,7 @@ model Education {
   degree          String?
   field           String?
   grade           String?
-  startDate       DateTime?
+  startDate       DateTime
   endDate         DateTime?
   description     String?
   skills          String[]
@@ -174,7 +174,7 @@ model TalentProfile {
   languages          Language[]
   education          Education[]
   projects           Project[]
-  employment         Employment[]
+  experience         Experience[]
   candidates         JobCandidate[]
   moreSections       MoreSections[]
   favouritedBy       TalentPoolFavourite[]
@@ -218,13 +218,15 @@ model Project {
   role            String?
   url             String?
   skills          String[]
+  startDate       DateTime?
+  endDate         DateTime?
   talentProfileId String        @db.ObjectId
   talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
 
-model Employment {
+model Experience {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
   company         String
   position        String
@@ -274,6 +276,22 @@ model JobProfile {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   JobCandidate         JobCandidate[]
+  ResumeList           ResumeList[]
+}
+
+model ResumeList {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  personal_info Json?
+  description   String[]
+  skills        String[]
+  education     String[]
+  sections      String[]
+  resume_score  String
+  resume_result  Json?
+  jobProfileId  String     @db.ObjectId
+  jobProfile    JobProfile @relation(fields: [jobProfileId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 enum Availability {
@@ -425,39 +443,39 @@ model MockInterview {
 }
 
 model InterviewMessage {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  type            String
-  sender          String
-  response        String
-  code            String?
-  interview       Interview?      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewId     String         @db.ObjectId
-  MockInterview   MockInterview? @relation(fields: [interviewId], references: [id],onDelete:Cascade)
-  createdAt       DateTime       @default(now())
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  type          String
+  sender        String
+  response      String
+  code          String?
+  interview     Interview?     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId   String         @db.ObjectId
+  MockInterview MockInterview? @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
 }
 
 model InterviewFeedback {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  feedback        String
-  rating          Int
-  interview       Interview?      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewId     String         @db.ObjectId
-  MockInterview   MockInterview? @relation(fields: [interviewId], references: [id],onDelete:Cascade)
-  createdAt       DateTime       @default(now())
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  feedback      String
+  rating        Int
+  interview     Interview?     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId   String         @db.ObjectId
+  MockInterview MockInterview? @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
 }
 
 model Analysis {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
-  Introduction    Json
-  Project         Json
-  Coding          Json
-  Technical       Json
-  Outro           Json
-  interview       Interview?      @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewId     String         @db.ObjectId
-  MockInterview   MockInterview? @relation(fields: [interviewId], references: [id],onDelete:Cascade)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  Introduction  Json
+  Project       Json
+  Coding        Json
+  Technical     Json
+  Outro         Json
+  interview     Interview?     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId   String         @db.ObjectId
+  MockInterview MockInterview? @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Email {
