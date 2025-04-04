@@ -1,9 +1,11 @@
 "use client";
 import JoblistingRight from "@/components/dashboard/JoblistingRight";
 import TemplateRIght from "../../../../components/dashboard/TemplateRIght";
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import AddJobsMini from "@/components/Jobs/add-jobs-mini";
+import { BarChart, LucideVerified } from "lucide-react";
+import { RiLiveLine } from "react-icons/ri";
+import { ExclamationCircle } from "react-bootstrap-icons";
 
 export default function Dashboard() {
   const [state, SetState] = useState<boolean>(false)
@@ -13,20 +15,47 @@ export default function Dashboard() {
 
   return (
     <>
-      <section className="grid md:grid-cols-3 items-start justify-center gap-x-5 h-screen overflow-hidden">
-        {/* left section */}
-        <div className="hidden md:grid border-x">
-          <AddJobsMini classnames="min-w-full" />
-          <TemplateRIght />
+      <section className="pb-3 grid md:grid-cols-3 md:grid-rows-5 items-start justify-center  gap-5 gap-x-3 h-screen overflow-hidden text-gray-700">
+        <div className="col-span-3 grid grid-cols-3 ">
+          {/* left section */}
+          <div className="col-span-1 overflow-hidden grid">
+            <AddJobsMini classnames="min-w-full px-2 pt-4 mx-0 h-full " />
+          </div>
+          <div className="col-span-2 ">
+            <div className="pr-5 pl-1 mr-4 ">
+              <AddJobsMini classnames="float-right mt-3 " />
+            </div>
+            <div className="flex items-center justify-between w-full pr-10 pl-1 ">
+              <input
+                type="text"
+                className="border p-2 text-sm rounded-md shadow-sm w-full md:w-1/2"
+                placeholder="Search..."
+                value={""}
 
+              // onChange={(e) => setSearchTerm(e.target.value)}
+              />
+              <div className="flex items-center gap-3 text-gray-500">
+                <button className="flex gap-2 items-center text-sm font-semibold ">
+                  <BarChart className="-rotate-90" width={20} height={20} />
+                  <span className="">All</span>
+                </button>
+                <button className="flex gap-2 items-center text-sm font-semibold ">
+                  <LucideVerified width={20} height={20} />
+                  <span className="">Live</span>
+                </button>
+                <button className="flex gap-2 items-center text-sm font-semibold ">
+                  <ExclamationCircle width={16} height={16} />
+                  <span className="">Incomplete</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="col-span-2">
-          <div className='btn-secton p-5 flex justify-end'>
-            <AddJobsMini classnames="min-w-full" />
-          </div>
-          <div className=" max-h-screen overflow-y-auto w-full pb-24">
-            <JoblistingRight />
-          </div>
+        <div className="hidden md:grid border rounded-md pb-4 row-span-4 h-full mb-3">
+          <TemplateRIght />
+        </div>
+        <div className="col-span-2 max-h-screen overflow-y-auto w-full row-span-4 ">
+          <JoblistingRight />
         </div>
       </section>
     </>
