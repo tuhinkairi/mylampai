@@ -11,11 +11,11 @@ import { Button } from '../ui/button'
 import JobForm from '@/app/(protected)/(recruiter)/job/JobForm'
 
 
-export default function AddJobsMini() {
+export default function AddJobsMini(props:{classnames?:string}) {
     return (
         <Sheet>
-            <div className='pt-5 pl-4'>
-                <SheetTrigger><Button className='hover:bg-primary-dark inline-block text-sm '>Add Job</Button></SheetTrigger>
+            <div className='pt-5 px-4'>
+                <SheetTrigger className={`${props.classnames?props.classnames:""}`}><Button className={`hover:bg-primary-dark inline-block text-sm ${props.classnames?props.classnames:""}`}>Add Job</Button></SheetTrigger>
             </div>
             <SheetContent className='min-w-[70vw] overflow-y-auto'>
                 <SheetHeader >
