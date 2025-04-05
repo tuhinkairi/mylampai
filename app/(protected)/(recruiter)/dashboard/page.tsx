@@ -16,8 +16,8 @@ export default function Dashboard() {
   return (
     <>
       <section className="pb-3 grid md:grid-cols-3 md:grid-rows-5 items-start justify-center  gap-5 gap-x-3 h-screen overflow-hidden text-gray-700">
+        {/* top section */}
         <div className="col-span-3 grid grid-cols-3 ">
-          {/* left section */}
           <div className="col-span-1 overflow-hidden grid">
             <AddJobsMini classnames="min-w-full px-2 pt-4 mx-0 h-full " />
           </div>
@@ -51,9 +51,13 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+        {/* end topsection */}
+
+        {/* left section */}
         <div className="hidden md:grid border rounded-md pb-4 row-span-4 h-full mb-3">
           <TemplateRIght />
         </div>
+        {/* right section */}
         <div className="col-span-2 max-h-screen overflow-y-auto w-full row-span-4 ">
           <JoblistingRight />
         </div>
