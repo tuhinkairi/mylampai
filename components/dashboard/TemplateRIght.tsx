@@ -12,7 +12,6 @@ function TemplateRIght() {
           <h1 className='text-xl font-semibold pb-2'>Guaidance</h1>
           Lorem, ipsum dolor sit amet consectetur adipisicing elit. Fuga, inventore ducimus minus exercitationem eum quo omnis tenetur aliquam quam aut nobis ea distinctio error a, minima blanditiis maiores nesciunt est.
         </div>
-
       </div>
     </div>
 
