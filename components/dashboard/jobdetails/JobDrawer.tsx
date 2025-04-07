@@ -24,7 +24,7 @@ function JobDrawer({ children, job_id }: { children: React.ReactNode, job_id?: s
         <div>
             <Sheet modal={true}>
                 <SheetTrigger>{children}</SheetTrigger>
-                <SheetContent className="min-w-full md:min-w-[80%]">
+                <SheetContent className="min-w-full md:min-w-[80%] overflow-y-auto">
                     <SheetHeader>
                         {/* navigation */}
                         {/* <DialogTitle className="text-center">Job Title</DialogTitle> */}
