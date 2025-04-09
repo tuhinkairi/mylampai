@@ -1,5 +1,6 @@
-import { CalendarIcon, X } from "lucide-react";
+import { CalendarIcon, ImageIcon, X } from "lucide-react";
 import React, { useState } from "react";
+import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
 import { RiEjectFill } from "react-icons/ri";
 
 type FormData = {
@@ -29,7 +30,7 @@ const BasicDetails = () => {
         expectedStartDate: "",
     });
     // handel the btn toggle in salary section
-    const [btntoggle, setButtonToggle] =useState<boolean>(false)
+    const [btntoggle, setButtonToggle] = useState<boolean>(false)
     const handleChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
@@ -188,7 +189,7 @@ const BasicDetails = () => {
 
                         <div className="flex flex-wrap gap-4 items-center">
                             <p className="text-sm font-semibold w-full">Salary Type</p>
-                            {["Fixed", "Range", "Fixed + Incentive"].map((type:string) => (
+                            {["Fixed", "Range", "Fixed + Incentive"].map((type: string) => (
                                 <button
                                     key={type}
                                     onClick={() => setFormData((prev) => ({ ...prev, salaryType: type }))}
@@ -204,8 +205,8 @@ const BasicDetails = () => {
                         <div className="flex flex-wrap gap-4 items-start justify-end h-full">
                             <p className="text-sm font-semibold text-end">Hide Salary from candidates</p>
                             <label className="relative inline-flex items-center cursor-pointer justify-center">
-                                <input type="checkbox" className="sr-only peer" onClick={()=>setButtonToggle(!btntoggle)}/>
-                                <div className={`w-9 h-[20px] bg-primary-dark rounded-full flex items-center px-1 transition-all ${btntoggle?"justify-end":"justify-start"}`}>
+                                <input type="checkbox" className="sr-only peer" onClick={() => setButtonToggle(!btntoggle)} />
+                                <div className={`w-9 h-[20px] bg-primary-dark rounded-full flex items-center px-1 transition-all ${btntoggle ? "justify-end" : "justify-start"}`}>
                                     <span className="w-3 h-3 bg-primary-foreground inline-block rounded-full "></span>
                                 </div>
                             </label>
@@ -231,16 +232,59 @@ const BasicDetails = () => {
 
 
                 {/* Job Description */}
-                {/* <label className="block">
-                    Job Description:
-                    <textarea
-                        name="jobDescription"
-                        value={formData.jobDescription}
-                        onChange={handleChange}
-                        className="w-full p-2 mt-1 border rounded-md"
-                        rows={4}
-                    ></textarea>
-                </label> */}
+                <section className="_part3 grid gap-4 border rounded-lg px-4 py-3">
+                    {/* Header */}
+                    <div className="flex justify-between items-center">
+                        <p className="text-sm font-semibold">Job Description* <span className="text-gray-400">(0/2500)</span></p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap gap-4">
+                        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
+                            🌐 Generate with AI
+                        </button>
+                        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
+                            📄 Upload PDF
+                        </button>
+                        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
+                            🔗 Link with existing JD
+                        </button>
+                    </div>
+
+                    {/* Rich Text Editor */}
+                    <div className="border rounded-lg p-2 ">
+                        {/* Toolbar */}
+                        <div className="flex gap-3 border-b pb-2">
+                            <button className=" font-semibold hover:text-gray-300">B</button>
+                            <button className=" font-semibold hover:text-gray-300 italic">I</button>
+                            <button className=" font-semibold hover:text-gray-300 underline">U</button>
+                            <button className=" font-semibold hover:text-gray-300"><TextLeft/></button>
+                            <button className=" font-semibold hover:text-gray-300"><TextCenter/></button>
+                            <button className=" font-semibold hover:text-gray-300"><TextRight/></button>
+                            <button className=" font-semibold hover:text-gray-300"><ImageIcon className="w-4"/></button>
+                        </div>
+
+                        {/* Text Editor */}
+                        <textarea
+                            className="w-full h-64  p-3 focus:outline-none resize-none"
+                            placeholder="Enter job description..."
+                        />
+                    </div>
+                </section>
+
+                {/* <section className="_part3 grid gap-4 border rounded-lg px-4 py-3">
+                            
+                    <label className="block">
+                        Job Description (0/250)
+                        <textarea
+                            name="jobDescription"
+                            value={formData.jobDescription}
+                            onChange={handleChange}
+                            className="w-full p-2 mt-1 border rounded-md"
+                            rows={4}
+                        ></textarea>
+                    </label>
+                </section> */}
 
                 {/* Action Buttons */}
                 <div className="flex justify-between">
