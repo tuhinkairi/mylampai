@@ -3,46 +3,23 @@ import {
   useState,
   DragEvent,
   ChangeEvent,
-  useCallback,
 } from "react";
 import { IoDocumentAttach, IoCloudUploadOutline } from "react-icons/io5";
 import Image from "next/image";
-import { useInterviewStore } from "@/utils/store";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
 import { useUserStore } from "@/utils/userStore";
-import {
-  BlobServiceClient,
-  ContainerSASPermissions,
-  generateBlobSASQueryParameters,
-  StorageSharedKeyCredential,
-} from "@azure/storage-blob";
-import { generateSasToken } from "@/actions/azureActions";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { setExtractedText, setJobProfile, setManualJobDescription, setResumeBase64, setResumeId, setResumeName, setStructuredData } from "@/lib/features/cv_reviewer/cvReviewerSlice";
 
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
-// console.log(baseUrl)
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 interface StepOneTwoProps {
   step: number;
-  handleResumeUpload: (event: ChangeEvent<HTMLInputElement>) => Promise<void>;
-  triggerFileInput: (inputId: string) => void;
   handleNextClick: () => void;
   handleBackClick: () => void;
-  handleJobDescriptionUpload: (
-    event: ChangeEvent<HTMLInputElement>
-  ) => Promise<void>;
-  handleManualEntryToggle: () => void;
-  handleUploadJDToggle: () => void;
-  handleManualJDUpload: () => void;
-  isManualEntry: boolean;
-  manualJobDescription: string;
-  setManualJobDescription: React.Dispatch<React.SetStateAction<string>>;
-  profile: string | null;
-  setProfile: React.Dispatch<React.SetStateAction<string | null>>;
-  cvId: string;
-  setCvId: React.Dispatch<React.SetStateAction<string>>; // Updated type
 }
 
 
@@ -57,296 +34,124 @@ function generateFileName(
 
 const StepOneTwo: React.FC<StepOneTwoProps> = ({
   step,
-  triggerFileInput,
   handleNextClick,
   handleBackClick,
-  setProfile,
-  profile,
-  manualJobDescription,
-  setManualJobDescription,
-  setCvId
 }) => {
-  const {
-    setResumeFile,
-    setExtractedText,
-    setStructuredData,
-    structuredData,
-    setResumeId,
-    resumeId
-  } = useInterviewStore();
-
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [otherProfile, setOtherProfile] = useState("");
-  const [next, Setnext] = useState<boolean>(false)
-
+  const dispatch = useAppDispatch();
   const { token } = useUserStore();
+  const cvReviewerStorage = useAppSelector((state) => state.cvReviewer);
+  const { manualJobDescription, jobProfile, resumeId } = cvReviewerStorage
 
-  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-  };
-
-
-  const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
-    event.preventDefault();
-    const file = event.dataTransfer.files[0];
-
-    setUploading(true);
-
-    if (file && file.type === "application/pdf") {
-      if (file.size > 1 * 1024 * 1024) {
-        toast.error("File size should be less than 1MB");
-        setUploading(false);
-        return;
-      }
-      const blobName = generateFileName(file.name, "cv");
-      const sasUrl = await generateSasToken(blobName);
-      if (!sasUrl) {
-        toast.error("Error uploading resume");
-        return;
-      }
-
-      try {
-        const uploadResponse = await fetch(sasUrl, {
-          method: "PUT",
-          headers: {
-            "x-ms-blob-type": "BlockBlob",
-          },
-          body: file,
-        });
-
-        if (!uploadResponse.ok) {
-          toast.error("Resume Upload Failed");
-        } else {
-          // console.log(uploadResponse);
-
-        }
-      } catch (error) {
-        console.error(error);
-      }
-
-      setResumeFile(file);
-
-      const fileReader = new FileReader();
-      let extractedText = "";
-
-      fileReader.onload = async function () {
-        const typedArray = new Uint8Array(this.result as ArrayBuffer);
-
-        // Load the PDF document
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-
-        // Loop through each page
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-          const page = await pdf.getPage(pageNumber);
-          const textContent = await page.getTextContent();
-
-          // Extract text
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(" ");
-          extractedText += pageText + "\n";
-        }
-
-        // Convert the file to base64
-        const base64Reader = new FileReader();
-        base64Reader.onloadend = async () => {
-          const base64String = base64Reader.result?.toString().split(",")[1];
-
-          if (base64String && extractedText) {
-            try {
-              setExtractedText(extractedText);
-              const structuredDataResult = await extractStructuredData(
-                extractedText
-              );
-
-              // Check if structuredDataResult and structuredDataResult.message exist before accessing
-              if (structuredDataResult && structuredDataResult.message) {
-                setStructuredData(structuredDataResult.message);
-                // toast.success("extracted structured data");
-              } else {
-                toast.error("Failed to extract structured data");
-              }
-
-              // Trigger the upload of CV and Job Description with base64 string and extracted text
-              await uploadCVAndJobDescription(base64String, extractedText);
-            } catch (err) {
-              toast.error("Failed to process the PDF");
-              console.error("Error:", err);
-            }
-          } else {
-            toast.error("Error converting file to base64 or extracting text");
-          }
-        };
-
-        base64Reader.readAsDataURL(file); // Start reading the file as a data URL
-      };
-
-      fileReader.readAsArrayBuffer(file);
-    } else {
-      toast.error("Please upload a PDF file");
-      setUploading(false);
-    }
-  };
-
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    event.preventDefault();
-    const file = event.target.files?.[0];
-
+  // Single unified function to handle resume file processing
+  const processResumeFile = async (file: File) => {
     setUploading(true);
     setIsResumeUploaded(false);
 
-    if (file && file.type === "application/pdf") {
-      if (file.size > 1 * 1024 * 1024) {
-        toast.error("File size should be less than 1MB");
+    if (!file || file.type !== "application/pdf") {
+      toast.error("Please upload a PDF file");
+      setUploading(false);
+      return;
+    }
+
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error("File size should be less than 1MB");
+      setUploading(false);
+      return;
+    }
+
+    try {
+
+      // 2. Save file to Redux
+      const resumeBase64 = await fileToBase64(file);
+      const resumeName = file.name
+      if (resumeBase64) {
+        dispatch(setResumeBase64(resumeBase64));
+        dispatch(setResumeName(resumeName));
+      }
+      // 3. Extract text from PDF
+      const extractedText = await extractTextFromPdf(file);
+      if (!extractedText) {
+        toast.error("Failed to extract text from PDF");
         setUploading(false);
         return;
       }
-      const blobName = generateFileName(file.name, "cv");
-      const sasUrl = await generateSasToken(blobName);
 
-      if (!sasUrl) {
-        toast.error("Error uploading resume");
+      dispatch(setExtractedText(extractedText));
+
+      // 4. Convert file to base64 for API
+      const base64String = await fileToBase64(file);
+      if (!base64String) {
+        toast.error("Failed to convert file to base64");
+        setUploading(false);
         return;
       }
 
-      try {
-        const uploadResponse = await fetch(sasUrl, {
-          method: "PUT",
-          headers: {
-            "x-ms-blob-type": "BlockBlob",
-          },
-          body: file,
-        });
-
-        if (!uploadResponse.ok) {
-          toast.error("Resume Upload Failed");
-        } else {
-          // console.log(uploadResponse);
-        }
-      } catch (error) {
-        console.error(error);
+      // 5. Extract structured data
+      const structuredDataResult = await extractStructuredData(extractedText);
+      if (structuredDataResult && structuredDataResult.message) {
+        dispatch(setStructuredData(structuredDataResult.message));
+      } else {
+        toast.error("Failed to extract structured data");
       }
 
-      setResumeFile(file);
+      // 6. Upload CV and job description to API
+      await uploadCVAndJobDescription(file, extractedText);
 
-      const fileReader = new FileReader();
-      let extractedText = "";
-
-      fileReader.onload = async function () {
-        const typedArray = new Uint8Array(this.result as ArrayBuffer);
-
-        // Load the PDF document
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-
-        // Loop through each page
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-          const page = await pdf.getPage(pageNumber);
-          const textContent = await page.getTextContent();
-
-          // Extract text
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(" ");
-          extractedText += pageText + "\n";
-        }
-
-        // Convert the file to base64
-        const base64Reader = new FileReader();
-        base64Reader.onloadend = async () => {
-          const base64String = base64Reader.result?.toString().split(",")[1];
-
-          if (base64String && extractedText) {
-            try {
-              setExtractedText(extractedText);
-              const structuredDataResult = await extractStructuredData(
-                extractedText
-              );
-
-              // Check if structuredDataResult and structuredDataResult.message exist before accessing
-              if (structuredDataResult && structuredDataResult.message) {
-                setStructuredData(structuredDataResult.message);
-                // toast.success("extracted structured data");
-              } else {
-                toast.error("Failed to extract structured data");
-              }
-
-              // Trigger the upload of CV and Job Description with base64 string and extracted text
-              await uploadCVAndJobDescription(base64String, extractedText);
-            } catch (err) {
-              toast.error("Failed to process the PDF");
-              console.error("Error:", err);
-            }
-          } else {
-            toast.error("Error converting file to base64 or extracting text");
-          }
-        };
-        base64Reader.readAsDataURL(file); // Start reading the file as a data URL
-      };
-
-      fileReader.readAsArrayBuffer(file);
-    } else {
-      toast.error("Please upload a PDF file");
+    } catch (error) {
+      console.error("Error processing resume:", error);
+      toast.error("Failed to process the resume");
       setUploading(false);
     }
   };
 
-  const uploadCVAndJobDescription = useCallback(
-    async (base64String: string, extractedText: string) => {
-      try {
-        if (!token) {
-          return;
+  // Helper functions
+  const extractTextFromPdf = async (file: File): Promise<string | null> => {
+    return new Promise((resolve, reject) => {
+      const fileReader = new FileReader();
+      let extractedText = "";
+
+      fileReader.onload = async function () {
+        try {
+          const typedArray = new Uint8Array(this.result as ArrayBuffer);
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+
+          for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+            const page = await pdf.getPage(pageNumber);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(" ");
+            extractedText += pageText + "\n";
+          }
+
+          resolve(extractedText);
+        } catch (error) {
+          console.error("Error extracting text from PDF:", error);
+          reject(error);
         }
-        const response = await fetch("/api/interviewer/post_cv", {
+      };
 
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            Resume: base64String, // Sending base64 string of the PDF
-            JobDescription: extractedText || manualJobDescription, // Depending on whether it's a file or manual entry
-          }),
-        });
+      fileReader.onerror = reject;
+      fileReader.readAsArrayBuffer(file);
+    });
+  };
 
+  const fileToBase64 = (file: File): Promise<string | null> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64String = reader.result?.toString().split(",")[1] || null;
+        resolve(base64String);
+      };
+      reader.onerror = () => reject(null);
+      reader.readAsDataURL(file);
+    });
+  };
 
-        const res = await response.json()
-        // console.log("cvid checke: ", res)
-        let tempId: string = ""
-        if (res.status == 409) {
-          tempId = res.message?.id
-        } else {
-          tempId = res?.cv?.id
-        }
-
-        setResumeId(tempId)
-        // console.log("profile check: ", profile)
-        // if (profile) {
-        // await getSummary(extractedText, tempId);
-        // } else {
-        //   console.log("Profile is required");
-        // }
-        // console.log(extractedText)
-        // console.log(resumeId)
-        // console.log("cvid:: ", tempId)
-        setCvId(tempId)
-        setUploading(false)
-        setIsResumeUploaded(true);
-        Setnext(true)
-      } catch (error) {
-        console.error("Error:", error);
-        toast.error("summary analysis failed")
-        setUploading(false);
-
-      }
-    },
-    [manualJobDescription, setCvId, token,profile,setResumeId]
-  );
-
-  const extractStructuredData = useCallback(async (text: string) => {
+  const extractStructuredData = async (text: string) => {
     try {
       const response = await fetch(`${baseUrl}/extract_structured_data`, {
         method: "POST",
@@ -358,48 +163,78 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
 
       const result = await response.json();
       if (response.ok) {
-
-        toast.success("Resume uploaded successfully");
-        // console.log(summary )
-
         return result;
       }
-      toast.error("Error extracting structured data from resume");
       return null;
     } catch (error) {
-      toast.error("Error extracting structured data from resume");
-      setUploading(false);
+      console.error("Error extracting structured data:", error);
       return null;
     }
-  }, []);
+  };
 
-  // const getSummary = useCallback(async (text: string, ResumeId: string) => {
-  //   try {
-  //     const response = await fetch("/api/interviewer/resumeAnalysis", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: JSON.stringify({ cv_text: text, id: ResumeId, structuredData: structuredData, profile: profile }),
-  //     });
+  const uploadCVAndJobDescription = async (file: File, extractedText: string) => {
+    try {
+      if (!token) {
+        toast.error("Authorization required");
+        setUploading(false);
+        return;
+      }
+      const formData = new FormData();
+      formData.append("resumeFile", file);
+      formData.append("resumeFileText", extractedText);
+      const response = await fetch("/api/resume/add_new", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: (formData),
+      });
 
-  //     if (!response.ok) {
-  //       toast.error("Error in getSummary")
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
+      const res = await response.json();
 
-  //     const result = await response.json();
-  //     console.log("Response received:", result);
+      // Handle resume ID based on response status
+      let tempId: string = "";
+      if (res.status == 409 || res.status == 200) {
+        tempId = res.resume?.id;
+        dispatch(setResumeId(tempId));
+        setUploading(false);
+        setIsResumeUploaded(true);
+        toast.success("Resume uploaded successfully");
+      } else if(res.error){
+           toast.error("Error Uploading Resume,Try after a while")
+      }
 
-  //     // Return result if needed
-  //     Setnext(true)
-  //     toast.success("Summary uploaded successfully")
-  //     return result;
-  //   } catch (error) {
-  //     console.error("Error in getSummary:", error);
-  //   }
-  // }, []);
+    } catch (error) {
+      console.error("Error uploading CV:", error);
+      toast.error("Resume upload failed");
+      setUploading(false);
+    }
+  };
+
+  // Event handlers
+  const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const file = event.dataTransfer.files[0];
+    await processResumeFile(file);
+  };
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      await processResumeFile(file);
+    }
+  };
+
+  const triggerFileInput = () => {
+    const inputElement = document.getElementById("resume-upload") as HTMLInputElement;
+    if (inputElement) {
+      inputElement.click();
+    }
+  };
 
   return (
     <div className="md:h-screen bg-primary-foreground min-h-screen p-4 flex items-center md:justify-center justify-top w-full border-[#eeeeee] overflow-hidden">
@@ -454,10 +289,10 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
             </div>
             <div className="relative">
               <div
-                className={`w-5 h-5 ${profile ? "bg-primary" : "bg-slate-500"
+                className={`w-5 h-5 ${jobProfile ? "bg-primary" : "bg-slate-500"
                   } rounded-full flex items-center justify-center`}
               >
-                {profile && (
+                {jobProfile && (
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-4 w-4 text-white"
@@ -478,7 +313,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
           <div className="text-center mb-4 mt-3 w-full text-2xl font-bold text-gray-800">
             {step === 1
               ? "Upload your latest CV/Resume"
-              : "Select your Interview profile"}
+              : "Select your Interview jobProfile"}
           </div>
 
           {step === 1 ? (
@@ -494,7 +329,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               >
                 <div className="text-gray-500 mt-2 text-sm">Drag & Drop or</div>
                 <label
-                  htmlFor="resumeUpload"
+                  htmlFor="resume-upload"
                   className="text-gray-500 cursor-pointer text-sm"
                 >
                   Click to{" "}
@@ -503,7 +338,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
                   </span>
                 </label>
                 <input
-                  id="resumeUpload"
+                  id="resume-upload"
                   type="file"
                   accept=".doc,.docx,.pdf"
                   className="hidden"
@@ -522,7 +357,10 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               <div className="flex justify-center mt-4">
                 <button
                   className="bg-primary text-base px-10 relative text-white font-semibold py-[6px] rounded-xl hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
-                  onClick={() => triggerFileInput("resumeUpload")}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerFileInput();
+                  }}
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -549,15 +387,15 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               className={`p-8 gap-4 flex flex-col items-center justify-start bg-white rounded-3xl w-full md:max-w-[350px] lg:max-w-[400px] shadow-lg text-center md:min-h-[250px]`}
             >
               <select
-                className={`w-full p-4 py-2 font-medium outline-none rounded-lg text-md text-center bg-white border-2 ${profile === "other" || profile === null || profile === ""
+                className={`w-full p-4 py-2 font-medium outline-none rounded-lg text-md text-center bg-white border-2 ${jobProfile === "other" || jobProfile === null || jobProfile === ""
                   ? "border-slate-500"
                   : "border-primary ring-primary ring-1"
                   }  `}
-                value={manualJobDescription}
+                value={manualJobDescription || ""}
                 onChange={(e) => {
-                  setManualJobDescription(e.target.value);
-                  if (e.target.value !== "other") setProfile(e.target.value);
-                  else setProfile(null);
+                  dispatch(setManualJobDescription(e.target.value));
+                  if (e.target.value !== "other") dispatch(setJobProfile(e.target.value));
+                  else dispatch(setJobProfile(null));
                 }}
               >
                 <option value="" disabled>
@@ -574,14 +412,14 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
               {manualJobDescription === "other" && (
                 <input
                   type="text"
-                  className={`w-full p-4 py-2 font-medium outline-none rounded-lg text-md text-center bg-white border-2 ${profile === "other" || profile === null
+                  className={`w-full p-4 py-2 font-medium outline-none rounded-lg text-md text-center bg-white border-2 ${jobProfile === "other" || jobProfile === null
                     ? "border-slate-500"
                     : "border-primary ring-primary ring-1"
                     }  `}
-                  placeholder="Please specify your profile"
+                  placeholder="Please specify your jobProfile"
                   value={otherProfile}
                   onChange={(e) => {
-                    setProfile(e.target.value);
+                    setJobProfile(e.target.value);
                     setOtherProfile(e.target.value);
                   }}
                 />
@@ -595,7 +433,7 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
                   ? "bg-gray-600 hover:bg-gray-800 text-white"
                   : "bg-slate-500 text-gray-800 cursor-not-allowed"
                   }`}
-                disabled={!next}
+                disabled={!isResumeUploaded}
                 onClick={handleNextClick}
               >
                 Next
@@ -603,11 +441,11 @@ const StepOneTwo: React.FC<StepOneTwoProps> = ({
             ) : (
               <>
                 <button
-                  className={`w-[40vw] xl:w-[32vw] md:max-w-[700px] h-full text-lg font-bold py-4 rounded-lg focus:ring-4 focus:ring-gray-200 transition ${profile
+                  className={`w-[40vw] xl:w-[32vw] md:max-w-[700px] h-full text-lg font-bold py-4 rounded-lg focus:ring-4 focus:ring-gray-200 transition ${jobProfile
                     ? "bg-gray-600 hover:bg-gray-800 text-white"
                     : "bg-slate-500 text-gray-800 cursor-not-allowed"
                     }`}
-                  disabled={!profile}
+                  disabled={!jobProfile}
                   onClick={handleNextClick}
                 >
                   Next

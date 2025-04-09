@@ -10,6 +10,12 @@ export const getMockInterviews = async (talentProfileId: string) => {
       where: { talentProfileId },
       select: {
         id: true,
+        interviewState: true,
+        interviewFeedback: true,
+        analysis: true,
+        messages: true,
+        createdAt: true,
+        updatedAt: true,
       },
     });
 
@@ -130,18 +136,18 @@ export const handleInterviewState = async (
       };
     }
 
-    if (interviewType === "interview") {
+    if (interviewType === "talent") {
       await prisma.interview.update({
         where: { id: interviewId },
         data: {
-          state: state,
+          interviewState: state,
         },
       });
     } else {
       await prisma.mockInterview.update({
         where: { id: interviewId },
         data: {
-          state: state,
+          interviewState: state,
         },
       });
     }
@@ -160,14 +166,14 @@ export const handleInterviewState = async (
 };
 
 export const handleCVUpload = async ({
-  cvText,
+  resumeText,
   interviewId,
 }: {
-  cvText: string;
+  resumeText: string;
   interviewId: string;
 }) => {
   try {
-    if (!interviewId || !cvText) {
+    if (!interviewId || !resumeText) {
       return {
         status: "failed",
         message: "CV or User not found",
@@ -177,7 +183,7 @@ export const handleCVUpload = async ({
     const interview = await prisma.mockInterview.update({
       where: { id: interviewId },
       data: {
-        cvText,
+        resumeText,
       },
     });
 
@@ -271,7 +277,7 @@ export const verifyInterview = async ({
   interviewId,
   talentProfileId,
   talentPoolProfileId,
-  interviewType
+  interviewType,
 }: {
   interviewId: string;
   talentProfileId?: string;
@@ -289,7 +295,7 @@ export const verifyInterview = async ({
 
     let interview;
 
-    if (interviewType === "interview") {
+    if (interviewType === "talent") {
       interview = await prisma.interview.findUnique({
         where: {
           id: interviewId,
@@ -338,7 +344,6 @@ type MessageData = {
 
 export const handleMessageUpload = async (messageData: MessageData) => {
   try {
-
     if (!messageData.interviewId) {
       return {
         status: "failed",
@@ -420,7 +425,7 @@ export const submitanalysis = async (req: NextRequest) => {
         { status: 400 }
       );
     }
-    const response = await prisma.analysis.create({
+    const response = await prisma.interviewAnalysis.create({
       data: {
         Introduction,
         Project,
@@ -447,7 +452,7 @@ export const getanalysis = async (interviewId: string) => {
   try {
     if (!interviewId) return [];
 
-    const interviews = await prisma.analysis.findMany({
+    const interviews = await prisma.interviewAnalysis.findMany({
       where: { interviewId },
     });
 
@@ -456,4 +461,89 @@ export const getanalysis = async (interviewId: string) => {
     console.log("Error: ", error);
   }
   return [];
+};
+
+export const getInterviewVideo = async (
+  interviewId: string,
+  interviewType: string
+) => {
+  try {
+    if (!interviewId)return {
+      status: "failed",
+      message: "Interview Id is required",
+    };;
+
+    if (!interviewType) return {
+      status: "failed",
+      message: "Interview Type is required",
+    };
+
+    let interview;
+    if (interviewType === "talent") {
+      interview = await prisma.interview.findUnique({
+        where: { id:interviewId },
+        select: {
+          videoUrl: true,
+          createdAt: true,
+        },
+      });
+    } else {
+      interview = await prisma.mockInterview.findUnique({
+        where: { id:interviewId },
+        select: {
+          videoUrl: true,
+          createdAt: true,
+        },
+      });
+    }
+    if (!interview) {
+      return {
+        status: "failed",
+        message: "Interview not found",
+      };
+    }
+    return {
+      status: 200,
+      data: interview,
+      message: "Interview found",
+    };
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+  return [];
+};
+
+export const updateInterviewVideo = async (
+  interviewId: string,
+  videoUrl: string,
+  interviewType: string
+) => {
+  try {
+    if (!interviewId) return [];
+
+    if (!interviewType) return [];
+
+    if (interviewType === "talent") {
+      await prisma.interview.update({
+        where: { id: interviewId },
+        data: {
+          videoUrl,
+        },
+      });
+    } else {
+      await prisma.mockInterview.update({
+        where: { id: interviewId },
+        data: {
+          videoUrl,
+        },
+      });
+    }
+
+    return {
+      status: 200,
+      message: "Interview video updated",
+    };
+  } catch (error) {
+    console.log("Error: ", error);
+  }
 };

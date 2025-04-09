@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 export const GET = async (req: NextRequest): Promise<NextResponse> => {
   try {
     const interviewId = req.nextUrl.pathname.split("/").pop();
-console.log("logs in get_review/id api:: ",interviewId);
+    // console.log("logs in get_review/id api:: ",interviewId);
     if (!interviewId) {
       return NextResponse.json(
         { message: "Missing interviewId in URL path" },
@@ -23,11 +23,13 @@ console.log("logs in get_review/id api:: ",interviewId);
       { message: "Success", data: result },
       { status: 200 }
     );
-
   } catch (error: any) {
     console.error("Error in GET handler:", error);
     return NextResponse.json(
-      { message: "Internal Server Error", error: error.message || "Unknown error" },
+      {
+        message: "Internal Server Error",
+        error: error.message || "Unknown error",
+      },
       { status: 500 }
     );
   }

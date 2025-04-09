@@ -1,40 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  MapPinIcon,
-  ClockIcon,
-  DollarSignIcon,
-  BriefcaseIcon,
-  AwardIcon,
-  CirclePlus,
-  Pencil,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
 import { useUserStore } from "@/utils/userStore";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Project, TalentProfile } from "@prisma/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCallback, useEffect, useState } from "react";
-import { getUserEducations } from "@/actions/profileActions";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -173,7 +143,6 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   // }, [talentProfileId]);
 
   useEffect(() => {
-    console.log(profile.experiences)
     setExperience(profile.experiences.map(exp => ({
       ...exp,
       startDate: new Date(exp.startDate),
@@ -209,7 +178,8 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
           ...p,
           role: p.role ?? undefined,
           url: p.url ?? undefined,
-
+          startDate: p.startDate ? new Date(p.startDate).toISOString() : undefined,
+          endDate: p.endDate ? new Date(p.endDate).toISOString() : undefined,
         }));
         dispatch(setProjects(mappedProjects))
       } else {
@@ -236,6 +206,16 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
+
+  const [shouldShowToggle, setShouldShowToggle] = useState(false);
+
+  useEffect(() => {
+    if (profile?.bio && profile.bio.length > 250) {
+      setShouldShowToggle(true);
+    } else {
+      setShouldShowToggle(false);
+    }
+  }, [profile?.bio]);
 
   if (!userData) return null;
 
@@ -265,18 +245,23 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
             <UpdateBio />
           </div>
 
-          <div className="mt-2">
-            <p className={`text-gray-600 text-sm ${isExpanded ? '' : 'line-clamp-3'}`}>
-              {profile.bio}
+          {shouldShowToggle ? (
+            <>
+              <p className={`text-muted-foreground text-sm ${!isExpanded ? 'line-clamp-3' : ''}`}>
+                {profile.bio}
+              </p>
+              <button
+                onClick={toggleExpand}
+                className="text-blue-500 hover:text-blue-700 text-sm focus:outline-none"
+              >
+                {isExpanded ? 'Read less' : 'Read more'}
+              </button>
+            </>
+          ) : (
+            <p className="text-muted-foreground text-sm">
+              {profile?.bio || "No bio available"}
             </p>
-
-            <button
-              onClick={toggleExpand}
-              className="text-blue-500 text-sm mt-1 hover:underline focus:outline-none"
-            >
-              {isExpanded ? 'Read less' : 'Read more'}
-            </button>
-          </div>
+          )}
         </div>
 
         {

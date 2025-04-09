@@ -6,13 +6,12 @@ import { generateSasToken } from "./azureActions";
 import { auth } from "@/lib/authlib";
 
 type TalentPoolProfileType = {
-  resumeUrl: string;
+  resumeId: string;
   role: string;
   skills: string[];
   availability: string;
   targetFor: string;
   interviewDate: Date;
-  interviewStatus: string;
   talentProfileId: string;
 };
 
@@ -23,14 +22,25 @@ export const createTalentPoolProfile = async (
     const res = await prisma.talentPoolProfile.create({
       data: {
         ...talentPoolProfileData,
-        interviewStatus: talentPoolProfileData.interviewStatus || "",
+      },
+      include:{
+        resume:true
+      }
+    });
+
+
+    const interview = await prisma.interview.create({
+      data: {
+        talentPoolProfileId: res.id,
+        interviewDate: talentPoolProfileData.interviewDate,
+        interviewState: "Scheduled",
       },
     });
 
     return {
       message: "Profile created successfully",
       status: "success",
-      data: res,
+      data: {...res,interviewId: interview.id},
     };
   } catch (error) {
     console.error(error);
@@ -93,8 +103,8 @@ type ProfileData = {
   profiles: string[];
   certifications: string[];
   expectedSalary: string;
-  locationPref: "onsite" | "remote" | "hybrid";
-  availability: "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT";
+  locationPref: "Onsite" | "Remote" | "Hybrid";
+  availability: "FULL_TIME" | "PART_TIME" | "FREELANCE";
   experienceYears: string;
   userName: string;
 };
@@ -130,9 +140,25 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
       where: {
         talentProfileId,
       },
+      select: {
+        id: true,
+        resumeId: true,
+        role: true,
+        targetFor: true,
+        skills: true,
+        availability: true,
+        locationPref: true,
+        interviewDate: true,
+        interviewState: true,
+        resume:true,
+        interview: true,
+      }
     });
 
-    return talentProfile;
+    return {
+      status: 200,
+      data: talentProfile,
+    };
   } catch (error) {
     console.error(error);
     null;
@@ -141,7 +167,7 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
 
 // export const getResumeAndInterviewIds = async (userId: string) => {
 //   try {
-//     const cvIds = await prisma.cV.findMany({
+//     const resumeIds = await prisma.resume.findMany({
 //       where: {
 //         userId,
 //       },
@@ -161,14 +187,14 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
 
 //     return {
 //       status: "success",
-//       cvIds,
+//       resumeIds,
 //       interviewIds,
 //     };
 //   } catch (error) {
 //     console.error(error);
 //     return {
 //       status: "failed",
-//       cvIds: [],
+//       resumeIds: [],
 //       interviewIds: [],
 //     };
 //   }
@@ -219,6 +245,7 @@ export const uploadResumeToAzure = async (formData: FormData) => {
       data: {
         userId: user.id,
         resumeUrl,
+        resumeName: file.name,
       },
     });
 

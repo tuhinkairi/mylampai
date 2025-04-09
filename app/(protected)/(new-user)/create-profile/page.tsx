@@ -119,7 +119,7 @@ interface UserInfo {
 }
 
 export default function CreateProfile() {
-  const { userData } = useUserStore();
+  const { userData, token } = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
@@ -208,12 +208,27 @@ export default function CreateProfile() {
       }
       setUploading(true);
 
-      // Calling createTalentProfile
-      const data = new FormData();
-      data.append("resume", file);
       let newTalentProfileId = null
       try {
-        const res = await createTalentProfile(data, userData.id);
+
+        const formData = new FormData();
+        formData.append("resumeFile", file);
+        const response = await fetch("/api/resume/add_new", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: (formData),
+        });
+
+        const result = await response.json();
+
+        if (result.status === 409 || result.status === 200) {
+          dispatch(setResumeUrl(result.resume.resumeUrl))
+          dispatch(setId(result.resume.id))
+        }
+
+        const res = await createTalentProfile(result.resume.resumeUrl, userData.id);
 
         if (res.status !== 200) {
           toast.error(res.error);
@@ -287,6 +302,8 @@ export default function CreateProfile() {
         const base64Reader = new FileReader();
         base64Reader.onloadend = async () => {
           const base64String = base64Reader.result?.toString().split(",")[1];
+
+
 
           if (base64String && extractedText) {
             try {
@@ -614,7 +631,7 @@ export default function CreateProfile() {
                 </div>
               </div>
             </div>
-            <div>
+            {/* <div>
               OR
             </div>
             <div className="items-center justify-center">
@@ -626,7 +643,7 @@ export default function CreateProfile() {
               >
                 Manually enter details
               </Button>
-            </div>
+            </div> */}
           </div>
         </section>
 

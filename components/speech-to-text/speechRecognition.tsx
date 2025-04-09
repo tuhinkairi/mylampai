@@ -79,10 +79,10 @@ const SpeechRecognition = ({
       
       voiceActivityCheckInterval.current = setInterval(() => {
         const timeSinceLastVoice = Date.now() - lastVoiceActivity.current;
-        console.log("⏲️ Time since last voice activity:", Math.round(timeSinceLastVoice / 1000), "seconds");
-        console.log("finalTranscript len:: ",finalTranscript.length)
+        // console.log("⏲️ Time since last voice activity:", Math.round(timeSinceLastVoice / 1000), "seconds");
+        // console.log("finalTranscript len:: ",finalTranscript.length)
         if (finalTranscript.length > 0 && timeSinceLastVoice > 5000) {
-          console.log("🔇 No voice activity detected for 5 seconds and has existing transcription");
+          // console.log("🔇 No voice activity detected for 5 seconds and has existing transcription");
           onTranscriptionComplete(finalTranscript);
         }
       }, 1000);
@@ -121,27 +121,27 @@ const SpeechRecognition = ({
     const onTranscript = (data: LiveTranscriptionEvent) => {
       const { is_final: isFinal } = data;
       let thisTranscript = data.channel.alternatives[0].transcript;
-      console.log("thisCaption: ",thisTranscript)
+      // console.log("thisCaption: ",thisTranscript)
       if (thisTranscript.trim() !== "") {
         lastVoiceActivity.current = Date.now();
         console.log("🗣️ Voice activity detected");
 
         if (isFinal) {
-          console.log("✅ Final Transcript:", thisTranscript);
+          // console.log("✅ Final Transcript:", thisTranscript);
           onTranscriptionChange(thisTranscript);
         }
       }
     };
 
     if (connectionState === LiveConnectionState.OPEN && isRecording) {
-      console.log("🔌 Connection Open - Starting Transcription");
+      // console.log("🔌 Connection Open - Starting Transcription");
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
       startMicrophone();
     }
 
     return () => {
-      console.log("🔇 Cleaning up transcription listeners");
+      // console.log("🔇 Cleaning up transcription listeners");
       connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
       microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
     };

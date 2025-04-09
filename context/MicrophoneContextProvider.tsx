@@ -88,7 +88,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({
 
     if (microphone?.state === "paused") {
       microphone.resume();
-    } else {
+    } else if (microphone?.state !== "recording") {
       microphone?.start(250);
     }
 

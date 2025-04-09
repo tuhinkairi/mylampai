@@ -3,23 +3,10 @@ import prisma from "@/lib/index";
 import { uploadFileToAzure } from "./uploadActions";
 
 export const createTalentProfile = async (
-  formData: FormData,
+  resumeUrl: string,
   userId: string
 ) => {
   try {
-    const resume = formData.get("resume") as File;
-
-    if (!resume || resume.type !== "application/pdf") {
-      return {
-        error: "Invalid resume file",
-        status: 400,
-      };
-    }
-
-    const resumeUrl = await uploadFileToAzure(
-      resume,
-      `cv_${new Date().toISOString()}_${userId}.pdf`
-    );
 
     if (!resumeUrl) {
       return {
@@ -27,14 +14,12 @@ export const createTalentProfile = async (
         status: 500,
       };
     }
-
-    await prisma.resume.create({
-      data: {
-        userId,
-        resumeUrl,
-      },
-    });
-
+    if (!userId) {
+      return {
+        error: "User not found",
+        status: 500,
+      };
+    }
     const profile = await prisma.talentProfile.create({
       data: {
         userId,

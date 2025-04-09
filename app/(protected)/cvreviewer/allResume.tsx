@@ -18,7 +18,7 @@ const ResumePage: React.FC = () => {
     const fetchResumes = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch("/api/interviewer/get_all_cv", {
+        const response = await fetch("/api/resume/get_all", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -56,11 +56,10 @@ const ResumePage: React.FC = () => {
           resumes.map((resume, index) => (
             <div
               key={resume.id}
-              className={`p-2 mb-2 rounded cursor-pointer ${
-                selectedResume?.id === resume.id
+              className={`p-2 mb-2 rounded cursor-pointer ${selectedResume?.id === resume.id
                   ? "bg-blue-500 text-white"
                   : "bg-white"
-              }`}
+                }`}
               onClick={() => setSelectedResume(resume)}
             >
               <h4 className="font-medium">Resume {index + 1}</h4>

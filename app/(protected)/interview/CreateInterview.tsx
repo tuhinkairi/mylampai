@@ -7,11 +7,13 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { useProfileStore } from "@/utils/profileStore";
+import { useAppSelector } from "@/lib/hooks";
 
 export default function CreateInterview() {
-  const { id } = useProfileStore();
   const router = useRouter();
   const [Loading, setLoading] = useState(false);
+  const profile = useAppSelector((state) => state.talentProfile);
+  const { id } = profile;
 
   const handleInterview = useCallback(
     async (talentProfileId: string) => {

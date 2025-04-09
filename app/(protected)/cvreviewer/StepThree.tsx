@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useInterviewStore } from "@/utils/store";
 import * as pdfjsLib from "pdfjs-dist";
 import { TextLayer } from "pdfjs-dist";
 import Image from "next/image";
@@ -26,36 +25,50 @@ import { fetchResumeAnalysis, updateResumeAnalysis } from "@/actions/resumeAnaly
 import { Spinner } from '@/components/ui/spinner';
 import { cn } from "@/lib/utils";
 import LoadingGlobal from "@/components/ui/loading";
-
-// pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+import { useAppSelector } from "@/lib/hooks";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
-// Add this temporarily to your code for debugging
-// console.log(Object.keys(pdfjsLib));
 
 const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
 
 interface PDFViewerProps {
-  profile: string | null;
+  jobProfile: string | null;
   structuredData: any;
   localResume: any;
-  cvId: string;
+  resumeId: string;
 }
 
-const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
+function base64ToFile(base64: string, filename: string, mimeType = "application/pdf"): File {
+  const byteString = atob(base64); // decode base64
+  const byteArray = new Uint8Array(byteString.length);
+
+  for (let i = 0; i < byteString.length; i++) {
+    byteArray[i] = byteString.charCodeAt(i);
+  }
+
+  return new File([byteArray], filename, { type: mimeType });
+}
+
+const PDFViewer = () => {
   const { userData } = useUserStore();
-  const { extractedText, structuredData, resumeFile, resumeId } = useInterviewStore();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const textLayerRef = useRef<HTMLDivElement>(null);
   const [reviewedData, setReviewedData] = useState<any>({}); //reviewedData state
   const [isRendered, setIsRendered] = useState(false); // Define isRendered state
   const [isTextLayerReady, setIsTextLayerReady] = useState(false);
   const [loading, setLoading] = useState(false)
+  const cvReviewerStorage = useAppSelector((state) => state.cvReviewer);
+  const { extractedText, structuredData, jobProfile, resumeBase64, resumeName, resumeId } = cvReviewerStorage;
+
+  //convert base64 to file
+  const resumeFile = resumeBase64 ? base64ToFile(resumeBase64, resumeName || "resume.pdf") : null;
+
 
   const [sentencesToHighlight, setSentencesToHighlight] = useState<string[]>(
     []
   );
+
   // const { token } = useUserStore();
   const [experience, setExperience] = useState<string>("FRESHER")
   const [loadingStates, setLoadingStates] = useState({
@@ -75,39 +88,8 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
     spelling: false
   });
 
-  // fetch resume analysis data via id from db and then update the reviewedData state 
-  // console.log("\ncvId: ", cvId, "\nprofile:: ", profile)
-
-  // const fetchResumeAnalysis2 = async (resumeId: string) => {
-  //   try {
-  //     const response = await fetch(`/api/interviewer/fetchAnalysis`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: JSON.stringify({ id: resumeId }),
-  //     });
-  //     const result = await response.json();
-  //     console.log("result in 3rd step:: ", result)
-  //     if (response.ok) {
-  //       setReviewedData((data: any) => ({ ...data, ...result }));
-  //       console.log("reviewedData:: ", reviewedData);
-  //     } else {
-  //       console.error("Failed to fetch resume analysis:", result);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching resume analysis:", error);
-  //   }
-  // };
-
-  // const runAnalysis = (data: string) => {
-  //   console.log(data)
-  // }
   const analyzeResume = useCallback(
     async (endpoint: string, data: any, query: string) => {
-      // setLoading(true)
-      // console.log("data here", data)
       try {
         const response = await fetch(`${baseUrl}${endpoint}${query}`, {
           method: "POST",
@@ -117,26 +99,17 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
           body: JSON.stringify(data),
         });
         const result = await response.json();
-        // console.log("result here", result)
         if (response.ok) {
-
-          // setLoading(false)
           return result;
         }
-        // setLoading(false)
         return null;
       } catch (error) {
-        // setLoading(false)
         console.error("Error:", error);
         return null;
       }
     },
     []
   );
-
-  // useEffect(() => {
-  //   console.log("reviewed Data:: ", reviewedData)
-  // }, [reviewedData])
 
   const highlightSentences = useCallback(
     (
@@ -198,7 +171,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, resume_score: true }));
               // console.log("call for /resume_score")
               const dbResult = await fetchResumeAnalysis({
-                cvId: cvId,
+                resumeId: resumeId,
                 section: "resume_score"
               });
 
@@ -228,7 +201,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                     cv_text: extractedText,
                   },
                   job_text: {
-                    job_text: profile,
+                    job_text: jobProfile,
                   },
                 };
 
@@ -254,7 +227,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId: cvId,
+                    resumeId: resumeId,
                     section: "resume_score",
                     data: result.message
                   });
@@ -308,7 +281,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
             try {
               setLoadingStates(prev => ({ ...prev, bullet_point_length: true }));
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "bullet_point_length"
               });
 
@@ -358,7 +331,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "bullet_point_length",
                     data: result.message
                   });
@@ -392,7 +365,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
             try {
               setLoadingStates(prev => ({ ...prev, bullet_points_improver: true }));
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "bullet_point_improver"
               });
 
@@ -445,7 +418,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "bullet_point_improver",
                     data: result.message
                   });
@@ -484,7 +457,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, total_bullet_points: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "total_bullet_points"
               });
 
@@ -513,7 +486,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "total_bullet_points",
                     data: result.message
                   });
@@ -542,7 +515,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, personal_info: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "personal_info"
               });
 
@@ -571,7 +544,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "personal_info",
                     data: result.message
                   });
@@ -599,7 +572,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, responsibility: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "responsibility"
               });
 
@@ -636,7 +609,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "responsibility",
                     data: result.message["mistakes"]
                   });
@@ -684,7 +657,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
             try {
               console.log("call for /summary")
               const dbResult = await fetchResumeAnalysis({
-                cvId: cvId,
+                resumeId: resumeId,
                 section: ["summary", "score"]
               });
 
@@ -711,13 +684,13 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                   }));
 
                   await updateResumeAnalysis({
-                    cvId: cvId,
+                    resumeId: resumeId,
                     section: "summary",
                     data: result.message["Summary"]
                   });
 
                   await updateResumeAnalysis({
-                    cvId: cvId,
+                    resumeId: resumeId,
                     section: "score",
                     data: result.message["Score"]
                   });
@@ -741,7 +714,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, quantification: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId: cvId,
+                resumeId: resumeId,
                 section: "quantification"
               });
 
@@ -791,7 +764,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId: cvId,
+                    resumeId: resumeId,
                     section: "quantification",
                     data: JSON.parse(result.message)
                   });
@@ -824,7 +797,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
             try {
               setLoadingStates(prev => ({ ...prev, verb_tense: true }));
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "verbtense"
               });
 
@@ -862,7 +835,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "verbtense",
                     data: result.message["mistakes"]
                   });
@@ -911,7 +884,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, weak_verb: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "verbstrength"
               });
 
@@ -950,7 +923,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "verbstrength",
                     data: result.message
                   });
@@ -997,7 +970,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, section_checker: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "sectionanalysis"
               });
 
@@ -1024,7 +997,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "sectionanalysis",
                     data: result.message
                   });
@@ -1053,7 +1026,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, skill_checker: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "skillsassessment"
               });
 
@@ -1082,7 +1055,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                 endpoint = "/skill_checker";
                 data = {
                   extracted_data: structuredData,
-                  profile: profile
+                  profile: jobProfile
                 };
                 query = '';
                 result = await analyzeResume(endpoint, data, query);
@@ -1096,7 +1069,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "skillsassessment",
                     data: result.message
                   });
@@ -1148,7 +1121,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, repetition: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "repetition"
               });
 
@@ -1186,7 +1159,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "repetition",
                     data: result.message
                   });
@@ -1233,7 +1206,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
               setLoadingStates(prev => ({ ...prev, spelling: true }));
 
               const dbResult = await fetchResumeAnalysis({
-                cvId,
+                resumeId,
                 section: "spellingerrors"
               });
 
@@ -1273,7 +1246,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
 
                   // Store in DB for future use
                   await updateResumeAnalysis({
-                    cvId,
+                    resumeId,
                     section: "spellingerrors",
                     data: result.message
                   });
@@ -1303,7 +1276,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
       setIsTextLayerReady(true);
       // console.log("lorem", reviewedData)
     },
-    [structuredData, extractedText, profile, reviewedData, analyzeResume, cvId, experience, highlightSentences]
+    [structuredData, extractedText, jobProfile, reviewedData, analyzeResume, resumeId, experience, highlightSentences]
   );
 
 
@@ -1327,12 +1300,12 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
   }, []);
 
   const renderPDF = useCallback(async () => {
-    if (!resumeFile || !canvasRef.current) {
+    if (!resumeBase64 || !canvasRef.current) {
       console.error("Canvas reference is null or resumeFile is not set.");
       return;
     }
     try {
-      const pdfData = base64ToUint8Array(resumeFile);
+      const pdfData = base64ToUint8Array(resumeBase64);
       const loadingTask = pdfjsLib.getDocument({ data: pdfData });
       const pdf = await loadingTask.promise;
       const page = await pdf.getPage(1);
@@ -1397,7 +1370,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
     // setLoading(true)
     if (resumeId) {
       (async () => {
-        await fetchResumeAnalysis(resumeId);
+        await fetchResumeAnalysis({ resumeId });
         // setLoading(false)
       })()
     }
@@ -1459,7 +1432,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
             {loadingStates.summary ? (
               <div className="flex items-center justify-center space-x-2 h-[60px]">
                 <div className="w-4 h-4 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-gray-500">Loading summary...</span>
+                <span className="text-sm text-gray-500">Loading Scroe...</span>
               </div>) : (
               <div
                 className={`w-full p-8 text-[1.6rem] font-semibold ${getColorClass(
@@ -1595,7 +1568,7 @@ const PDFViewer: React.FC<PDFViewerProps> = ({ profile, cvId }) => {
                   <DialogHeader>
                     <DialogTitle>Summary</DialogTitle>
                     <DialogDescription className="text-sm">
-                      {reviewedData?.summary || "No summary available"}
+                      {reviewedData?.summary || "No summary available"} 
                     </DialogDescription>
                   </DialogHeader>
                 </DialogContent>

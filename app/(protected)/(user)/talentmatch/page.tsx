@@ -4,19 +4,24 @@ import {
   FileText,
   TvMinimal,
   BriefcaseBusiness,
-  Eye,
   CalendarCheck2,
   DollarSignIcon,
   MapPinIcon,
   CalendarIcon,
+  SquareUser,
+  BookUser,
+  BriefcaseIcon,
+  User2,
+  Clock,
+  CalendarCheck,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TalentMatchCSS from "./Talent.module.css";
-import CreateTalentPoolProfileDialog from "./CreateTalentPoolProfile";
+import CreateTalentPoolProfileDialog from "../../../../components/talentmatch/CreateTalentPoolProfile";
 import { acceptTalentMatch, getTalentMatches, getTalentPoolProfiles } from "@/actions/talentMatchActions";
 import { Badge } from "@/components/ui/badge";
 import PdfToImage from "@/components/misc/pdftoimg";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import { TalentProfileCard } from "./TalentProfileCard";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -24,21 +29,32 @@ import { Button } from "@/components/ui/button";
 import LoadingGlobal from "@/components/ui/loading";
 import { useUserStore } from "@/utils/userStore";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import ClientStoreProvider from "./ClientStoreProvider";
 import { setId, setResumeUrl } from "@/lib/features/talent_profile/talentProfileSlice";
 import { getTalentProfile } from "@/actions/setupProfileActions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/ui/empty-state";
+import { setCareerProfiles } from "@/lib/features/talent_pool_profile/talentPoolProfileSlice";
+import { CareerProfileSkeleton } from "@/skeletons/talentmatch/careerProfileSkeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useRouter } from "next/navigation";
 
 
 type ProfileData = {
-  resumeUrl: string;
+  resumeId: string;
+  resumeUrl?: string;
+  resumeFileText?: string;
   role: string;
   skills: string[];
   targetFor: string;
-  locationPref?: "onsite" | "remote" | "hybrid" | null;
-  availability: "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT" | null;
-  interviewStatus: string;
+  locationPref?: "Onsite" | "Remote" | "Hybrid" | null;
+  availability: "FULL_TIME" | "PART_TIME" | "FREELANCE" | null;
+  interviewState: "pending" | "completed" | "cancelled";
   interviewDate: Date;
+  interviewId: string;
 };
+
+
+
 export default function TalentMatchPage() {
   return (
     // <ClientStoreProvider>
@@ -50,23 +66,52 @@ export default function TalentMatchPage() {
 // The actual page content
 function TalentMatchContent() {
   // const user = await auth();
+  const router = useRouter();
   const dispatch = useAppDispatch()
   const profile = useAppSelector((state) => state.talentProfile)
+  const careerProfiles = useAppSelector((state) => state.talentPoolProfile.talentPoolProfiles)
   const id = profile.id
 
   const [talentPoolProfiles, setTalentPoolProfiles] = useState<ProfileData[]>();
   const [talentMatches, setTalentMatches] = useState<any[]>([])
   const { userData } = useUserStore();
+  const [isLoadingCareerProfiles, setIsLoadingCareerProfiles] = useState(false);
+
+  useEffect(() => {
+    if (careerProfiles && careerProfiles.length > 0) {
+      const formattedProfiles = careerProfiles.map(profile => ({
+        ...profile,
+        interviewDate: profile.interviewDate ? new Date(profile.interviewDate) : new Date(),
+        interviewState: profile.interviewState || 'pending'
+      }));
+      setTalentPoolProfiles(formattedProfiles)
+    }
+    setIsLoadingCareerProfiles(false)
+  }, [careerProfiles])
 
   useEffect(() => {
     const getTalentProfiles = async (id: string) => {
       const res = await getTalentPoolProfiles(id);
-      const profiles = res?.map(profile => ({
-        ...profile,
-        locationPref: profile.locationPref as 'onsite' | 'remote' | 'hybrid' | null,
-        availability: profile.availability as 'FULL_TIME' | 'PART_TIME' | 'INTERN' | 'CONTRACT' | null,
-      }));
-      setTalentPoolProfiles(profiles);
+      console.log("res: ", res?.data)
+      if (res?.status === 200 && res?.data) {
+        const profiles = res?.data?.map(profile => ({
+          id: profile.id,
+          resumeId: profile.resumeId,
+          role: profile.role,
+          targetFor: profile.targetFor,
+          skills: profile.skills,
+          locationPref: profile.locationPref as 'Onsite' | 'Remote' | 'Hybrid' | null,
+          availability: profile.availability as 'FULL_TIME' | 'PART_TIME' | 'FREELANCE' | null,
+          interviewState: profile.interviewState as 'pending' | 'completed' | 'cancelled',
+          interviewDate: profile.interviewDate.toISOString(),
+          resumeUrl: profile.resume.resumeUrl || "",
+          interviewId: profile.interview.id,
+          resumeFileText: profile.resume.resumeFileText || ""
+        }));
+        // console.log("talent pool profiles: ", profiles)
+        dispatch(setCareerProfiles(profiles))
+        // console.log("talent pool profiles: ", profiles)
+      }
     };
 
     const getMatches = async (id: string) => {
@@ -81,6 +126,7 @@ function TalentMatchContent() {
     }
 
     if (id) {
+      setIsLoadingCareerProfiles(true)
       getTalentProfiles(id);
       getMatches(id);
     } else {
@@ -114,10 +160,46 @@ function TalentMatchContent() {
     }
   };
 
-  // Callback to add a new profile
-  const addNewProfile = (newProfile: ProfileData) => {
-    setTalentPoolProfiles((prevProfiles) => [...(prevProfiles || []), newProfile]);
-  };
+  const [isCTPPDialogOpen, setIsCTPPDialogOpen] = useState(false);
+
+  function EmptyStateDefault() {
+    return (
+      <EmptyState
+        title="No Career Profiles Found"
+        description="Create a new career profile to get started."
+        icons={[FileText, SquareUser, BookUser]}
+        action={{
+          label: "Create Profile",
+          onClick: () => setIsCTPPDialogOpen(true),
+        }}
+      />
+    )
+  }
+
+  const handleStartNow = async (interviewId: string, resumeFileText: string, jobRole: string) => {
+    try {
+      console.log("interviewId: ", interviewId)
+      console.log("resumeFileText: ", resumeFileText)
+
+      // const res = await acceptTalentMatch(interviewId);
+      // if (res === "success") {
+      //   toast.success("Interview started successfully");
+      // } else {
+      //   toast.error("Failed to start interview");
+      // }
+      sessionStorage.setItem('interviewData', JSON.stringify({
+        pdf_text: resumeFileText,
+        job_description: jobRole,
+        interview_id: interviewId
+      }));
+
+      router.push(`/interview/${interviewId}?type=talent`)
+    }
+    catch (error) {
+      console.error(error);
+      toast.error("Failed to start interview");
+    }
+  }
 
 
   if (!id) {
@@ -135,7 +217,7 @@ function TalentMatchContent() {
           </div>
 
           <div className="w-full flex flex-col justify-center py-1 overflow-y-auto">
-            <ScrollArea className="h-52 overflow-auto" >
+            <ScrollArea className="h-50 overflow-auto" >
               {
                 talentMatches.length > 0 && talentMatches.map((pool, index) => (
                   <Card className="overflow-hidden m-2" key={index}>
@@ -206,97 +288,191 @@ function TalentMatchContent() {
             </ScrollArea>
           </div>
         </div>
-        <div className="flex flex-col border my-4 w-full  rounded-lg h-[calc(100vh-2rem)]">
-          <div className="border-b py-3 px-5 flex relative text-sm gap-4 ">
-            {talentPoolProfiles && talentPoolProfiles.length < 3 && (
-              <CreateTalentPoolProfileDialog onProfileCreate={addNewProfile} />
-            )}
-            <div className="font-medium cursor-pointer">Career Profile</div>
-            <div className="text-muted-foreground">Work Preference</div>
-          </div>
-          <ScrollArea className="h-[calc(100vh-80px)]">
-            <div className="flex flex-col gap-2 p-2">
-              {talentPoolProfiles?.map((profile, index) => (
-                <div
-                  key={index}
-                  className="border p-4 flex flex-col gap-4 rounded-lg shadow-sm cursor-pointer"
-                >
-                  <div className="flex items-center gap-4">
-                    <BriefcaseBusiness className="w-12 h-12 bg-primary text-white rounded-lg p-3 " />
-                    <h2 className="text-xl font-semibold uppercase">
-                      {profile.role}
-                    </h2>
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-2">Experts in</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {profile.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex gap-2 justify-between items-start">
-                    <div className="w-full">
-                      <h3 className="font-medium mb-2">Looking for</h3>
-                      {profile.targetFor && (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="capitalize"
-                        >
-                          {profile.targetFor.toLowerCase()}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="w-full">
-                      <h3 className="font-medium mb-2">Availability</h3>
-                      {profile.targetFor && (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="capitalize"
-                        >
-                          {profile.availability?.toLowerCase().replace("_", " ")}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="border w-full bg-muted-foreground"></div>
-                  <div className="flex justify-between flex-col md:flex-row gap-8 sm:gap-4 items-start mb-4">
-                    <div className="flex items-center gap-2 text-muted-foreground w-full ">
-                      <div className="flex gap-2 justify-center items-center bg-accent text-accent-foreground relative h-8 rounded-lg w-full sm:w-[150px] text-center text-sm">
-                        <div className="absolute bottom-0 translate-y-full text-xs italic font-light left-16 w-full">
-                          resume uploaded
+        <div className="flex flex-col  w-full mt-2  rounded-lg h-[calc(100vh-2rem)]">
+          <Tabs defaultValue="career_profile" className="w-full px-2 ">
+            <TabsList className="w-full justify-start p-2 mb-2 gap-2 h-auto">
+              <TabsTrigger
+                value="career_profile"
+                className="text-muted-foreground text-sm font-medium h-auto"
+              >
+                Career Profile
+              </TabsTrigger>
+              {/* <TabsTrigger
+                value="work_preference"
+                className="text-muted-foreground text-sm font-medium h-auto"
+              >
+                Work Preference
+              </TabsTrigger> */}
+            </TabsList>
+
+            <TabsContent value="career_profile" className="flex-1 flex flex-col overflow-hidden m-0 h-full">
+              <div className="flex justify-between items-center shrink-0 ">
+                <h1 className='p-4 text-xl font-bold'>Career Profiles</h1>
+                {/* {talentPoolProfiles && talentPoolProfiles.length < 3 && ( */}
+                <CreateTalentPoolProfileDialog
+                  isCTPPDialogOpen={isCTPPDialogOpen}
+                  setIsCTPPDialogOpen={setIsCTPPDialogOpen}
+                />
+                {/* )}  */}
+              </div>
+              <ScrollArea className="h-[calc(100vh-80px)]">
+                {
+                  isLoadingCareerProfiles && (<CareerProfileSkeleton />)
+                }
+                {(!isLoadingCareerProfiles && (!talentPoolProfiles || talentPoolProfiles.length === 0)) ? (
+                  <EmptyStateDefault />
+                ) : (
+                  <div className="flex flex-col gap-4 p-4">
+                    {talentPoolProfiles?.map((profile, index) => (
+                      <div
+                        key={index}
+                        className="border border-gray-200 p-6 flex flex-col gap-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                      >
+                        {/* Header - Role Title */}
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary p-3 rounded-lg">
+                            <BriefcaseIcon className="w-3 h-3 text-white" />
+                          </div>
+                          <h2 className="text-md font-semibold tracking-tight uppercase">
+                            {profile.role}
+                          </h2>
                         </div>
-                        <FileText className="w-4 h-4" /> Resume
-                      </div>
-                      <div className="bg-primary text-white rounded-lg">
-                        <PdfToImage pdfUrl={profile.resumeUrl} />
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground w-full">
-                      <div className="flex gap-2 justify-center items-center bg-accent text-accent-foreground relative h-8 rounded-lg w-full sm:w-[150px] text-center text-sm">
-                        <div className="absolute bottom-0 translate-y-full text-xs italic font-light left-12 w-[250px]">
-                          scheduled on{" "}
-                          {profile.interviewDate &&
-                            new Date(profile.interviewDate).toLocaleString(
-                              "en-IN",
-                              { timeZone: "Asia/Kolkata" }
+
+                        {/* Skills Section */}
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium text-gray-700">Experts in</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {profile.skills.map((skill, index) => (
+                              <Badge key={index} variant="secondary" className="px-3 py-1">
+                                {skill}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Position Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                              <User2 className="w-4 h-4 text-muted-foreground" /> Looking for
+                            </h3>
+                            {profile.targetFor && (
+                              <Badge variant="outline" className="capitalize px-3 py-1">
+                                {profile.targetFor.toLowerCase()}
+                              </Badge>
                             )}
+                          </div>
+                          <div className="space-y-2">
+                            <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-muted-foreground" /> Availability
+                            </h3>
+                            {profile.availability && (
+                              <Badge variant="outline" className="capitalize px-3 py-1">
+                                {profile.availability?.toLowerCase().replace("_", " ")}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <TvMinimal className="w-4 h-4" /> Interview
+
+                        <div className="h-px w-full bg-gray-200"></div>
+
+                        {/* Resume and Interview Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-lg">
+                                <FileText className="w-4 h-4" />
+                                <span className="text-sm font-medium">Resume</span>
+                              </div>
+                              <div className="bg-primary text-white p-2 rounded-lg">
+                                <PdfToImage pdfUrl={profile?.resumeUrl} />
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground italic pl-1">resume uploaded</p>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2 bg-accent text-accent-foreground px-4 py-2 rounded-lg">
+                                <CalendarCheck className="w-4 h-4" />
+                                <span className="text-sm font-medium">Interview</span>
+                              </div>
+                              <div className="bg-primary text-white p-2 rounded-lg">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <CalendarCheck className="w-4 h-4" />
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle className="text-lg font-semibold">Interview Details</DialogTitle>
+                                    </DialogHeader>
+
+                                    {/* for interview rescheduling and start now functionality */}
+                                    <div className="flex flex-col gap-4">
+                                      <div className="flex items-center gap-2">
+                                        <CalendarCheck2 className="w-4 h-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">Status</span>
+                                      </div>
+                                      <p className="text-sm text-gray-700">
+                                        {profile.interviewState === "pending"
+                                          ? "Pending"
+                                          : profile.interviewState === "completed"
+                                            ? "Completed"
+                                            : "Cancelled"}
+                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">Scheduled On</span>
+                                      </div>
+                                      <p className="text-sm text-gray-700">
+                                        {profile.interviewDate &&
+                                          new Date(profile.interviewDate).toLocaleString("en-IN", {
+                                            timeZone: "Asia/Kolkata",
+                                          })}
+                                      </p>
+
+                                      {/* <div className="flex items-center gap-2">
+                                        <Clock className="w-4 h-4 text-muted-foreground" />
+                                        <span className="text-sm font-medium">Reschedule</span>
+                                      </div> */}
+
+                                      <Button onClick={() => handleStartNow(profile?.interviewId, profile?.resumeFileText, profile?.role)} >
+                                        Start Now
+                                      </Button>
+                                    </div>
+                                  </DialogContent>
+
+                                </Dialog>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground italic pl-1">
+                              scheduled on{" "}
+                              {profile.interviewDate &&
+                                new Date(profile.interviewDate).toLocaleString("en-IN", {
+                                  timeZone: "Asia/Kolkata",
+                                })}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <div className="bg-primary text-white p-2 rounded-lg">
-                        <CalendarCheck2 className="w-4 h-4" />
-                      </div>
-                    </div>
+                    ))}
                   </div>
+                )}
+
+
+
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="work_preference">
+              <ScrollArea className="h-[calc(100vh-80px)]">
+                <div className="flex flex-col gap-2 p-2 items-center justify-center h-full">
+                  Comming soon
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
+              </ScrollArea>
+            </TabsContent>
+
+          </Tabs>
         </div>
       </ScrollArea>
       <ScrollArea className="h-screen w-[57.5%]">

@@ -54,7 +54,7 @@ const PdfToImage = ({ pdfUrl }: { pdfUrl: string }) => {
 
   return (
     <Dialog>
-      <DialogTrigger className="p-2">
+      <DialogTrigger className="p-1">
         <Eye className="w-4 h-4" />
       </DialogTrigger>
       <DialogContent>

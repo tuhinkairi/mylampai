@@ -12,6 +12,7 @@ export const getUserResumesList = async (userId: string) => {
         id: true,
         resumeUrl: true,
         resumeName: true,
+        resumeFileText: true,
       },
     });
 
@@ -22,40 +23,62 @@ export const getUserResumesList = async (userId: string) => {
   }
 };
 
-export const addUsersResume = async (formData: FormData, userId: string) => {
-  try {
-    const resume = formData.get("file") as File;
+// const fileToBase64 = (file: File): Promise<string | null> => {
+//   return new Promise((resolve, reject) => {
+//     const reader = new FileReader();
+//     reader.onload = () => {
+//       const base64String = reader.result?.toString().split(",")[1] || null;
+//       resolve(base64String);
+//     };
+//     reader.onerror = () => reject(null);
+//     reader.readAsDataURL(file);
+//   });
+// };
 
-    if (!resume || !userId) {
-      return { status: "failed", message: "Invalid data" };
-    }
+// interface ResumeRequestBody {
+//   resumeFile: File;
+// }
 
-    const resumeName =
-      "resume_" + new Date().toISOString() + "_" + userId + ".pdf";
+// export const addUsersResume = async (
+//   { body }: { body: ResumeRequestBody },
+//   userId: string
+// ) => {
+//   try {
+//     const resume = body.resumeFile;
 
-    const resumeUrl = await uploadFileToAzure(resume, resumeName);
+//     if (!resume || !userId) {
+//       return { status: "failed", message: "Invalid data" };
+//     }
 
-    if (!resumeUrl) {
-      return { status: "failed", message: "Invalid data" };
-    }
+//     const resumeName =
+//       "resume_" + new Date().toISOString() + "_" + userId + ".pdf";
 
-    await prisma.resume.create({
-      data: {
-        resumeName: resume.name,
-        resumeUrl,
-        userId,
-      },
-    });
+//     const resumeUrl = await uploadFileToAzure(resume, resumeName);
 
-    return {
-      status: "success",
-      resumeUrl: resumeUrl,
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      status: "failed",
-      message: "Failed to upload resume",
-    };
-  }
-};
+//     const resumeBase64 = await fileToBase64(resume);
+
+//     if (!resumeUrl) {
+//       return { status: "failed", message: "Invalid data" };
+//     }
+
+//     await prisma.resume.create({
+//       data: {
+//         resumeName: resume.name,
+//         resumeUrl,
+//         userId,
+//         resumeBase64,
+//       },
+//     });
+
+//     return {
+//       status: "success",
+//       resumeUrl: resumeUrl,
+//     };
+//   } catch (error) {
+//     console.error(error);
+//     return {
+//       status: "failed",
+//       message: "Failed to upload resume",
+//     };
+//   }
+// };

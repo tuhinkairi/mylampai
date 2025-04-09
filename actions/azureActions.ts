@@ -51,7 +51,7 @@ export const generateSasUrlForInterview = async () => {
       sasOptions,
       sharedKeyCredential
     ).toString();
-    // console.log(sasToken);
+    console.log("debug for sas token : ",sasToken);
     return {
       sasUrl: `https://${accountName}.blob.core.windows.net/${interviewContainerName}?${sasToken}`,
       sasToken,

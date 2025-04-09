@@ -7,6 +7,7 @@ import {
   handleInterviewState,
   handleMessageUpload,
   submitFeedback,
+  updateInterviewVideo,
 } from "@/actions/interviewActions";
 
 import {
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { generateSasUrlForInterview } from "@/actions/azureActions";
-import { redirect, useParams } from "next/navigation";
+import { redirect, useParams, useSearchParams } from "next/navigation";
 import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { MessageSquare } from "lucide-react";
 import { Mic, MicOff, Video, VideoOff, PhoneOff, User } from "lucide-react";
@@ -37,7 +38,6 @@ import { toast } from "sonner";
 
 import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
 import axios from "axios";
-import { set } from "date-fns";
 
 type ChatMessage = {
   user: string;
@@ -47,6 +47,8 @@ type ChatMessage = {
 const InterviewPage = () => {
   const params = useParams();
   const interviewId = params.interviewId as string;
+  const searchParams = useSearchParams()
+  const interviewType = searchParams.get("type") || "mockInterview";
 
   const [feedback, setFeedback] = useState("");
 
@@ -54,9 +56,9 @@ const InterviewPage = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(true);
+  const [fullscreenDialogOpen, setFullscreenDialogOpen] = useState(false);
 
-  const { interviewerWs } = useWebSocketContext();
+  const { interviewerWs, connectInterviewer, disconnectInterviewer } = useWebSocketContext();
   const ws = interviewerWs;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -79,16 +81,142 @@ const InterviewPage = () => {
   const videoBlobClient = useRef<BlockBlobClient | null>(null);
   const audioBlobClient = useRef<BlockBlobClient | null>(null);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+
 
   const [isRecording, setIsRecording] = useState(true);
   const [finalTranscript, setFinalTranscript] = useState('');
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
+  const [interviewStarted, setInterviewStarted] = useState(false);
+  const [interviewStage, setInterviewStage] = useState("initializing"); // initializing -> setup -> inProgress -> ending -> completed
+
+  const recordedChunks = useRef<BlobPart[]>([]);
 
   useEffect(() => {
     if (feedbackSubmitted) {
       setLoadingAnalysis(true);
     }
   }, [feedbackSubmitted])
+
+  useEffect(() => {
+    // Show fullscreen dialog after a short delay for better UX
+    const timer = setTimeout(() => {
+      if (!isFullscreen) {
+        setFullscreenDialogOpen(true);
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const fullscreenChangeHandler = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+      // Only show dialog when exiting fullscreen during active interview
+      if (!document.fullscreenElement && interviewStage === "inProgress") {
+        setFullscreenDialogOpen(true);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", fullscreenChangeHandler);
+    return () => document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
+  }, [interviewStage]);
+
+  const setupBlobStorage = async (interviewId: string) => {
+    const sasUrl = await generateSasUrlForInterview();
+
+    if (!sasUrl?.sasUrl) {
+      return;
+    }
+
+    const blobServiceClient = new BlobServiceClient(sasUrl.sasUrl);
+    const containerClient =
+      blobServiceClient.getContainerClient("interviews");
+
+    const timestamp = Date.now();
+
+    videoBlobClient.current = containerClient.getBlockBlobClient(
+      `${interviewId}_${timestamp}.webm`,
+    );
+  };
+
+  useEffect(() => {
+    const initializeInterview = async () => {
+      try {
+        setInterviewStage("initializing");
+
+        // 1. Connect WebSocket if not connected
+        if (!interviewerWs) {
+          connectInterviewer();
+          return; // Wait for next effect cycle after connection
+        }
+
+        // 2. Get interview data from sessionStorage
+        const storedData = sessionStorage.getItem('interviewData');
+        if (!storedData) {
+          toast.error("Interview data not found. Please restart setup.");
+          return;
+        }
+
+        const { pdf_text, job_description, interview_id } = JSON.parse(storedData);
+
+        // 3. Verify this is the correct interview
+        if (interview_id !== interviewId) {
+          toast.error("Interview ID mismatch. Please restart setup.");
+          return;
+        }
+
+        setInterviewStage("setup");
+
+        // 4. Set up media stream
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: true,
+          });
+
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            await videoRef.current.play();
+          }
+
+          // 5. Start the interview via WebSocket only once
+          if (!interviewStarted) {
+            interviewerWs.send(
+              JSON.stringify({
+                type: "start_interview",
+                cv_text: pdf_text,
+                job_description: job_description,
+                interview_id: interview_id
+              })
+            );
+
+            // Initialize blob storage for recording
+            await setupBlobStorage(interviewId);
+
+            setInterviewStarted(true);
+
+            setIsChatOpen(true);
+
+            setInterviewStage("inProgress");
+
+            // 6. Update interview state in database
+            await handleInterviewState(interviewId, "In_Progress", interviewType);
+          }
+        } catch (err) {
+          console.error("Media setup error:", err);
+          toast.error("Failed to access camera or microphone. Please check permissions.");
+        }
+      } catch (error) {
+        console.error("Interview initialization error:", error);
+        toast.error("Failed to initialize interview");
+      }
+    };
+
+    initializeInterview();
+  }, [interviewerWs, connectInterviewer, interviewId, interviewType, interviewStarted]);
+
+
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -128,7 +256,8 @@ const InterviewPage = () => {
       const audioBuffer = new Uint8Array(audioResponse.data);
       const audioBlob = new Blob([audioBuffer], { type: "audio/mp3" });
       const audioUrl = URL.createObjectURL(audioBlob);
-
+      console.log("currently here.......")
+      // if (loading) setLoading(false);
       setAudioURL(audioUrl);
     } catch (error) {
       console.error("Error synthesising speech: ", error);
@@ -140,61 +269,25 @@ const InterviewPage = () => {
     if (videoElement && videoElement.srcObject) {
       const stream = videoElement.srcObject as MediaStream;
       const tracks = stream.getTracks();
+      console.log("Stopping camera and audio tracks...");
       tracks.forEach((track) => track.stop());
       videoElement.srcObject = null;
     }
   }, []);
 
-  const submitAnalysis = async (analysisData:any) => {
+  const submitAnalysis = async (analysisData: any) => {
     if (!analysisData || !Array.isArray(analysisData)) {
       console.error("Invalid analysis data:", analysisData);
       return;
     }
-    // const introductiondata = analysisData[0]?.analysis;
-    // const secondintro = analysisData[1]?.analysis;
-    // const thirdintro = analysisData[2]?.analysis;
-    // const fourthintro = analysisData[3]?.analysis;
-    // const fiveintro = analysisData[4]?.analysis;
-    // const first = analysisData[0]?.answer;
-    // const second = analysisData[1]?.analysis;
-    // const third = analysisData[2]?.analysis;
-    // const fourth = analysisData[3]?.analysis;
-    // const five = analysisData[4]?.analysis;
-    // const body = {
-    //   interviewId,
-    //   Introduction: {
-    //     first,
-    //     ...introductiondata.line_analysis,
-    //     ...introductiondata.overall_assessment,
-    //   },
-    //   Project: {
-    //     second,
-    //     ...secondintro.line_analysis,
-    //     ...secondintro.overall_assessment,
-    //   },
-    //   Coding: {
-    //     third,
-    //     ...thirdintro.line_analysis,
-    //     ...thirdintro.overall_assessment,
-    //   },
-    //   Technical: {
-    //     fourth,
-    //     ...fourthintro.line_analysis,
-    //     ...fourthintro.overall_assessment,
-    //   },
-    //   Outro: {
-    //     five,
-    //     ...fiveintro.line_analysis,
-    //     ...fiveintro.overall_assessment,
-    //   },
-    // };
+
     const body = {
       interviewId,
       ...["Introduction", "Project", "Coding", "Technical", "Outro"].reduce(
         (acc: any, section, index) => {
           const data = analysisData[index]?.analysis || {};
           acc[section] = {
-            question:analysisData[index]?.question || "",
+            question: analysisData[index]?.question || "",
             answer: analysisData[index]?.answer || "",
             analysis: data
           };
@@ -213,7 +306,7 @@ const InterviewPage = () => {
       console.error("Error submitting analysis:", error);
     }
   };
-  
+
 
   useEffect(() => {
     if (!ws) return;
@@ -223,6 +316,10 @@ const InterviewPage = () => {
 
       switch (data.type) {
         case "interview_question":
+          console.log("Interview question received from AI:", data.question);
+          if (interviewStage !== "inProgress") {
+            setInterviewStage("inProgress");
+          }
           setChatMessages((prevMessages) => [
             ...prevMessages,
             { user: "Interviewer", message: data.question },
@@ -236,7 +333,7 @@ const InterviewPage = () => {
           });
 
           if (res.status === "failed") toast.error("Message send failed");
-          if (setLoading) setLoading(false);
+          // if (setLoading) setLoading(false);
 
           break;
 
@@ -268,33 +365,30 @@ const InterviewPage = () => {
           });
 
           if (res.status === "failed") toast.error("Message send failed");
+          if (mediaRecorder.current && mediaRecorder.current.state !== 'inactive') {
+            mediaRecorder.current.stop();
+          }
           setShowFeedback(true);
           stopCamera();
           handleStop()
-          ws?.send(
-            JSON.stringify({
-              type: "get_analysis",
-            }),
-          );
+          disableFullscreen()
+
           await handleInterviewState(interviewId, "Completed", "mockInterview");
-          
+
           break;
 
         case "analysis":
-          console.log("Analysis data received form ai :", data.result);
-          // setAnalysisData(data.result);
+          // console.log("Analysis data received form ai :", data.result);
           if (data.result && Array.isArray(data.result)) {
-            // console.log("debug1234 analysisData: ", data.result)
-            await submitAnalysis(data.result); // Automatically submit when the data is available
+            await submitAnalysis(data.result);
           }
           setChatMessages((prevMessages) => [
             ...prevMessages,
             { user: "Analysis", message: JSON.stringify(data.result) },
           ]);
+          disconnectInterviewer()
           await handleInterviewState(interviewId, "Analysis_Completed", "mockInterview");
           redirect(`/interview/${interviewId}/analysis`)
-          // setLoadingAnalysis(false);
-          break;
         case "greeting_from_ws":
           console.log("Greeting from ws");
           break;
@@ -303,84 +397,6 @@ const InterviewPage = () => {
       }
     };
   }, [ws, handleInterviewer, stopCamera, interviewId]);
- 
-  
-
-  // // Trigger submission on load or when `analysisData` or `interviewId` changes
-  // useEffect(() => {
-  //   const submitAnalysis = async () => {
-  //     if (!analysisData || !Array.isArray(analysisData)) {
-  //       console.error("Invalid analysis data:", analysisData);
-  //       return;
-  //     }
-  //     // const introductiondata = analysisData[0]?.analysis;
-  //     // const secondintro = analysisData[1]?.analysis;
-  //     // const thirdintro = analysisData[2]?.analysis;
-  //     // const fourthintro = analysisData[3]?.analysis;
-  //     // const fiveintro = analysisData[4]?.analysis;
-  //     // const first = analysisData[0]?.answer;
-  //     // const second = analysisData[1]?.analysis;
-  //     // const third = analysisData[2]?.analysis;
-  //     // const fourth = analysisData[3]?.analysis;
-  //     // const five = analysisData[4]?.analysis;
-  //     // const body = {
-  //     //   interviewId,
-  //     //   Introduction: {
-  //     //     first,
-  //     //     ...introductiondata.line_analysis,
-  //     //     ...introductiondata.overall_assessment,
-  //     //   },
-  //     //   Project: {
-  //     //     second,
-  //     //     ...secondintro.line_analysis,
-  //     //     ...secondintro.overall_assessment,
-  //     //   },
-  //     //   Coding: {
-  //     //     third,
-  //     //     ...thirdintro.line_analysis,
-  //     //     ...thirdintro.overall_assessment,
-  //     //   },
-  //     //   Technical: {
-  //     //     fourth,
-  //     //     ...fourthintro.line_analysis,
-  //     //     ...fourthintro.overall_assessment,
-  //     //   },
-  //     //   Outro: {
-  //     //     five,
-  //     //     ...fiveintro.line_analysis,
-  //     //     ...fiveintro.overall_assessment,
-  //     //   },
-  //     // };
-  //     const body = {
-  //       interviewId,
-  //       ...["Introduction", "Project", "Coding", "Technical", "Outro"].reduce(
-  //         (acc: any, section, index) => {
-  //           const data = analysisData[index]?.analysis || {};
-  //           acc[section] = {
-  //             answer: analysisData[index]?.answer || "",
-  //             ...data.line_analysis,
-  //             ...data.overall_assessment,
-  //           };
-  //           return acc;
-  //         },
-  //         {}
-  //       ),
-  //     };
-
-  //     console.log("Final Body:", body);
-
-  //     try {
-  //       const response = await axios.post("/api/interviewer/post_review", body);
-  //       console.log("Analysis submitted successfully:", response.data);
-  //     } catch (error) {
-  //       console.error("Error submitting analysis:", error);
-  //     }
-  //   };
-  //   if (analysisData && Array.isArray(analysisData) && interviewId) {
-  //     console.log("debug1234 analysisData: ", analysisData)
-  //     submitAnalysis(); // Automatically submit when the data is available
-  //   }
-  // }, [analysisData, interviewId]);
 
   const handleInterviewEnd = () => {
     ws?.send(
@@ -388,20 +404,8 @@ const InterviewPage = () => {
         type: "end_interview",
       }),
     );
+
   };
-
-  // const stopAudioRecording = useCallback(() => {
-  //   if (intervalRef.current) {
-  //     clearInterval(intervalRef.current);
-  //     intervalRef.current = null;
-  //     mediaRecorder.current?.stop();
-  //     mediaRecorder.current = null;
-  //   }
-  //   emptyTranscribeCnt.current = 0;
-  //   handleSendMessage(resTranscript.current);
-  //   resTranscript.current = "";
-  // }, [handleSendMessage]);
-
 
   const handleStart = () => {
     try {
@@ -421,14 +425,14 @@ const InterviewPage = () => {
   const handleTranscriptionChange = (newTranscript: string) => {
     setFinalTranscript(prev => {
       const updatedTranscript = prev ? `${prev} ${newTranscript}` : newTranscript;
-      console.log("📜 Updated Final Transcript:", updatedTranscript);
+      // console.log("📜 Updated Final Transcript:", updatedTranscript);
       return updatedTranscript;
     });
   };
 
   useEffect(() => {
     if (finalTranscript.length > 0) {
-      console.log("finaltrans: ", finalTranscript)
+      // console.log("finaltrans: ", finalTranscript)
       resTranscript.current = finalTranscript
     }
   }, [finalTranscript])
@@ -442,62 +446,74 @@ const InterviewPage = () => {
 
   const toggleVideo = () => setIsVideoOff(!isVideoOff);
 
-  // const uploadChunk = async (
-  //   client: BlockBlobClient | null,
-  //   chunk: Blob,
-  //   blockIndex: number,
-  // ) => {
-  //   try {
-  //     if (client) {
-  //       const blockId = btoa(String(blockIndex).padStart(6, "0")); // Padded, consistent ID
-  //       await client.stageBlock(blockId, chunk, chunk.size);
-  //       console.log(`Uploaded block: ${blockId}`);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error uploading chunk:", error);
-  //   }
-  // };
 
   const startVideoStream = useCallback(async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        // audio: true,
+        audio: true,
       });
-      if (videoRef.current) videoRef.current.srcObject = stream;
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+
+        // Initialize media recorder
+        mediaRecorder.current = new MediaRecorder(stream, {
+          mimeType: 'video/webm;codecs=vp9',
+        });
+
+        mediaRecorder.current.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            recordedChunks.current.push(event.data);
+          }
+        };
+
+        mediaRecorder.current.onstop = () => {
+          const blob = new Blob(recordedChunks.current, { type: 'video/webm' });
+          setVideoBlob(blob);
+
+          // Upload the video blob to Azure
+          if (videoBlobClient.current) {
+            console.log("debug 111", blob)
+            uploadVideoToStorage(blob);
+            recordedChunks.current = []; // Clear the chunks after upload
+          }
+        };
+        mediaRecorder.current.start();
+      }
     } catch (error) {
       console.error("Error starting recording:", error);
     }
   }, []);
 
-  useEffect(() => {
-    startVideoStream();
-  }, [startVideoStream]);
-
-  useEffect(() => {
-    const startVideoAudioRecording = async (interviewId: string) => {
-      const sasUrl = await generateSasUrlForInterview();
-
-      if (!sasUrl?.sasUrl) {
+  const uploadVideoToStorage = async (blob: Blob) => {
+    try {
+      if (!videoBlobClient.current) {
+        console.error("Video blob client not initialized");
         return;
       }
 
-      const blobServiceClient = new BlobServiceClient(sasUrl.sasUrl);
-      const containerClient =
-        blobServiceClient.getContainerClient("mylampai-av");
+      // Upload the video blob
+      await videoBlobClient.current.uploadData(blob);
+      console.log("Video uploaded successfully to:", videoBlobClient.current.url);
 
-      const timestamp = Date.now();
-
-      videoBlobClient.current = containerClient.getBlockBlobClient(
-        `${interviewId}_${timestamp}_v.webm`,
+      // Store the video URL in the database
+      await updateInterviewVideo(
+        interviewId, videoBlobClient.current.url, interviewType
       );
-      audioBlobClient.current = containerClient.getBlockBlobClient(
-        `${interviewId}_${timestamp}_a.webm`,
-      );
-    };
 
-    startVideoAudioRecording(interviewId);
-  }, [interviewId]);
+      // Store in session storage for the analysis page
+      sessionStorage.setItem('interviewVideoUrl', videoBlobClient.current.url);
+
+    } catch (error) {
+      console.error("Error uploading video:", error);
+      toast.error("Failed to upload interview video");
+    }
+  };
+
+  useEffect(() => {
+    startVideoStream();
+  }, [startVideoStream]);
 
   const handleButtonClick = (index: number) => {
     setClickedIndex(index);
@@ -517,26 +533,28 @@ const InterviewPage = () => {
     [handleSendMessage],
   );
 
-  useEffect(() => {
-    const fullscreenChangeHandler = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-
-      if (!!document.fullscreenElement === false) {
-        setDialogOpen(true);
-      }
-    };
-
-    document.addEventListener("fullscreenchange", fullscreenChangeHandler);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", fullscreenChangeHandler);
-    };
-  }, []);
-
   const enableFullscreen = () => {
-    if (!isFullscreen) {
-      document.documentElement.requestFullscreen();
-      setDialogOpen(false);
+    document.documentElement.requestFullscreen()
+      .then(() => {
+        setFullscreenDialogOpen(false);
+        setIsFullscreen(true);
+      })
+      .catch(err => {
+        console.error("Error enabling fullscreen:", err);
+        toast.error("Failed to enable fullscreen mode");
+      });
+  };
+
+  const disableFullscreen = () => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+        .then(() => {
+          setIsFullscreen(false);
+        })
+        .catch(err => {
+          console.error("Error disabling fullscreen:", err);
+          toast.error("Failed to exit fullscreen mode");
+        });
     }
   };
 
@@ -552,6 +570,11 @@ const InterviewPage = () => {
         toast.success("Feedback submitted successfully");
         setShowFeedback(false);
         setFeedbackSubmitted(true);
+        ws?.send(
+          JSON.stringify({
+            type: "get_analysis",
+          }),
+        );
       } else {
         toast.error("Error submitting feedback");
       }
@@ -560,38 +583,42 @@ const InterviewPage = () => {
     }
   };
 
+
   useEffect(() => {
     if (audioURL && audioRef.current) {
       audioRef.current.src = audioURL;
-      audioRef.current
-        .play()
-        .catch((error) => console.error("Error playing audio:", error));
+      if (loading) setLoading(false);
+      audioRef.current.play()
+        .catch(error => {
+          console.error("Error playing audio:", error);
+          // Try to play on user interaction instead
+          const playOnInteraction = () => {
+            audioRef.current?.play();
+            document.removeEventListener('click', playOnInteraction);
+          };
+          document.addEventListener('click', playOnInteraction);
+        });
     }
   }, [audioURL]);
 
-  // useEffect(() => {
-  //   const audioElement = audioRef.current;
 
-  //   if (audioElement) {
-  //     audioElement.addEventListener("ended", startAudioRecording);
-  //   }
-
-  //   return () => {
-  //     if (audioElement) {
-  //       audioElement.removeEventListener("ended", startAudioRecording);
-  //     }
-  //   };
-  // }, [audioURL, startAudioRecording]);
-
-  if(loadingAnalysis){
+  if (loadingAnalysis) {
     return <FullScreenLoader message="Analysing Interview..." />
   }
+  const getLoadingMessage = () => {
+    switch (interviewStage) {
+      case "initializing": return "Setting up your interview...";
+      case "setup": return "Preparing your interview environment...";
+      default: return "Loading...";
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center flex-col relative mb-5 w-full h-full">
-      {loading && <FullScreenLoader />}
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {(interviewStage !== "inProgress" && interviewStage !== "ending" && interviewStage !== "completed" && loading) && (
+        <FullScreenLoader message={getLoadingMessage()} />
+      )}
+      <Dialog open={fullscreenDialogOpen} onOpenChange={setFullscreenDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Enable Fullscreen Mode</DialogTitle>

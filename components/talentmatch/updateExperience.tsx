@@ -104,7 +104,7 @@ export function CreateExperience({ talentProfileId }: { talentProfileId: string 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline"><PlusSquare /></Button>
+        <Button variant="outline" size={"icon"} ><PlusSquare /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
@@ -372,7 +372,7 @@ export function UpdateWorkExperiences({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline"><Pencil className="cursor-pointer w-4 h-4 p-0 " /></Button>
+        <Button variant="outline" size={"icon"}><Pencil className="cursor-pointer w-4 h-4 p-0 " /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>
