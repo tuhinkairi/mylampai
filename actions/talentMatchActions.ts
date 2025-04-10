@@ -23,11 +23,10 @@ export const createTalentPoolProfile = async (
       data: {
         ...talentPoolProfileData,
       },
-      include:{
-        resume:true
-      }
+      include: {
+        resume: true,
+      },
     });
-
 
     const interview = await prisma.interview.create({
       data: {
@@ -40,7 +39,7 @@ export const createTalentPoolProfile = async (
     return {
       message: "Profile created successfully",
       status: "success",
-      data: {...res,interviewId: interview.id},
+      data: { ...res, interviewId: interview.id },
     };
   } catch (error) {
     console.error(error);
@@ -150,9 +149,9 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
         locationPref: true,
         interviewDate: true,
         interviewState: true,
-        resume:true,
+        resume: true,
         interview: true,
-      }
+      },
     });
 
     return {
@@ -200,67 +199,67 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
 //   }
 // };
 
-export const uploadResumeToAzure = async (formData: FormData) => {
-  try {
-    const user = await auth();
+// export const uploadResumeToAzure = async (formData: FormData) => {
+//   try {
+//     const user = await auth();
 
-    if (!user) {
-      return {
-        status: "failed",
-        message: "User not authenticated",
-      };
-    }
+//     if (!user) {
+//       return {
+//         status: "failed",
+//         message: "User not authenticated",
+//       };
+//     }
 
-    const date = new Date().toISOString();
-    const fileName = `cv-${date}-${user.id}.pdf`;
+//     const date = new Date().toISOString();
+//     const fileName = `cv-${date}-${user.id}.pdf`;
 
-    const sasUrl = await generateSasToken(fileName);
+//     const sasUrl = await generateSasToken(fileName);
 
-    if (!sasUrl) {
-      return {
-        status: "failed",
-        message: "Failed to upload Resume",
-      };
-    }
+//     if (!sasUrl) {
+//       return {
+//         status: "failed",
+//         message: "Failed to upload Resume",
+//       };
+//     }
 
-    const file = formData.get("file") as File;
-    const response = await fetch(sasUrl, {
-      method: "PUT",
-      headers: {
-        "x-ms-blob-type": "BlockBlob",
-      },
-      body: file,
-    });
+//     const file = formData.get("file") as File;
+//     const response = await fetch(sasUrl, {
+//       method: "PUT",
+//       headers: {
+//         "x-ms-blob-type": "BlockBlob",
+//       },
+//       body: file,
+//     });
 
-    if (!response.ok) {
-      return {
-        status: "failed",
-        message: "Failed to upload CV",
-      };
-    }
+//     if (!response.ok) {
+//       return {
+//         status: "failed",
+//         message: "Failed to upload CV",
+//       };
+//     }
 
-    const resumeUrl = sasUrl.split("?")[0];
+//     const resumeUrl = sasUrl.split("?")[0];
 
-    await prisma.resume.create({
-      data: {
-        userId: user.id,
-        resumeUrl,
-        resumeName: file.name,
-      },
-    });
+//     await prisma.resume.create({
+//       data: {
+//         userId: user.id,
+//         resumeUrl,
+//         resumeName: file.name,
+//       },
+//     });
 
-    return {
-      status: "success",
-      message: "CV uploaded successfully",
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      status: "failed",
-      message: "Error uploading CV",
-    };
-  }
-};
+//     return {
+//       status: "success",
+//       message: "CV uploaded successfully",
+//     };
+//   } catch (error) {
+//     console.error(error);
+//     return {
+//       status: "failed",
+//       message: "Error uploading CV",
+//     };
+//   }
+// };
 
 //Functions to handle Bio
 export const updateTalentBio = async (talentProfileId: string, bio: string) => {

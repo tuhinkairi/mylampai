@@ -253,7 +253,8 @@ export default function OnlineCompiler({
   setShowCompiler,
   interviewId,
 }: OnlineCompilerProp) {
-  const { ws } = useWebSocketContext();
+  const { interviewerWs } = useWebSocketContext();
+  const ws = interviewerWs;
   const [language, setLanguage] = useState<LanguageKey>("cpp");
   const [code, setCode] = useState(LANGUAGES.cpp.initialCode);
   const [output, setOutput] = useState("");

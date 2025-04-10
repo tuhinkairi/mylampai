@@ -14,6 +14,11 @@ import { getCreditBalance, handleCreditUpdate } from "@/actions/creditsAction";
 import { useAppSelector } from "@/lib/hooks";
 import { Calendar, Clock, FileCheck, FileSearch, FilePlus2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
+import InterviewTemplates from "./InterviewTemplates";
+import { Dialog } from "@radix-ui/react-dialog";
+import { DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import CreateInterviewComponent from "./CreateInterview";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Interview = {
   id: string;
@@ -36,7 +41,7 @@ export default function InterviewsPage() {
     try {
       setLoading(true);
       const res = await getMockInterviews(talentProfileId);
-      console.log("interviews:: ", res, " for:: ", talentProfileId);
+      // console.log("interviews:: ", res, " for:: ", talentProfileId);
 
       // Add mock dates if they don't exist for demonstration
       const interviewsWithDates = res.map((interview: Interview, index: number) => ({
@@ -182,14 +187,48 @@ export default function InterviewsPage() {
             </Button>
           )}
 
-          <Button
+
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="bg-primary hover:bg-primary/90 flex items-center gap-2">
+                <FileSearch className="h-4 w-4" />
+                Start New Interview
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="max-h-[95vh] max-w-[60vw] bg-primary-foreground">
+              <DialogHeader>
+                <DialogTitle>
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileSearch className="h-6 w-6" />
+                    <h3 className="text-lg font-semibold">Create a New Interview</h3>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Start a new interview session and practice your skills.
+                  </p>
+                </DialogTitle>
+
+              </DialogHeader>
+              <ScrollArea className=" w-full">
+                <CreateInterviewComponent jobDescription="" />
+              </ScrollArea>
+            </DialogContent>
+
+          </Dialog>
+
+
+          {/* <Button
             onClick={handleCreateInterview}
             className="bg-primary hover:bg-primary/90 flex items-center gap-2"
           >
             <FileSearch className="h-4 w-4" />
             Start New Interview
-          </Button>
+          </Button> */}
         </div>
+      </div>
+
+      <div>
+        <InterviewTemplates />
       </div>
 
       <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>

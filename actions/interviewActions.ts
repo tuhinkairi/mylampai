@@ -88,11 +88,11 @@ export const createInterview = async (
         },
       });
     } else if (talentPoolProfileId) {
-      interview = await prisma.interview.create({
-        data: {
-          talentPoolProfileId: talentPoolProfileId,
-        },
-      });
+      // interview = await prisma.interview.create({
+      //   data: {
+      //     talentPoolProfileId: talentPoolProfileId,
+      //   },
+      // });
     } else {
       return {
         status: "failed",
@@ -109,6 +109,13 @@ export const createInterview = async (
     //     credits: credits - 100,
     //   },
     // });
+
+    if (!interview) {
+      return {
+        status: "failed",
+        message: "Interview not created",
+      };
+    }
 
     return {
       status: "success",
@@ -468,20 +475,22 @@ export const getInterviewVideo = async (
   interviewType: string
 ) => {
   try {
-    if (!interviewId)return {
-      status: "failed",
-      message: "Interview Id is required",
-    };;
+    if (!interviewId)
+      return {
+        status: "failed",
+        message: "Interview Id is required",
+      };
 
-    if (!interviewType) return {
-      status: "failed",
-      message: "Interview Type is required",
-    };
+    if (!interviewType)
+      return {
+        status: "failed",
+        message: "Interview Type is required",
+      };
 
     let interview;
     if (interviewType === "talent") {
       interview = await prisma.interview.findUnique({
-        where: { id:interviewId },
+        where: { id: interviewId },
         select: {
           videoUrl: true,
           createdAt: true,
@@ -489,7 +498,7 @@ export const getInterviewVideo = async (
       });
     } else {
       interview = await prisma.mockInterview.findUnique({
-        where: { id:interviewId },
+        where: { id: interviewId },
         select: {
           videoUrl: true,
           createdAt: true,

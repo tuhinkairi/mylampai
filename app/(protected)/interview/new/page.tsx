@@ -93,91 +93,12 @@ const InterviewComponent = () => {
         handleJDSubmit(data.jobProfile);
     });
 
-    // useEffect(() => {
-    //     if (ws) {
-    //         ws.onopen = () => {
-    //             console.log("WebSocket connection established");
-    //         };
 
-    //         ws.onclose = () => {
-    //             console.log("WebSocket connection closed");
-    //         };
-    //     } else {
-    //         connectInterviewer();
-    //     }
-    // }, [ws, connectInterviewer]);
-
-    // useEffect(() => {
-    //     if (ws) {
-    //         ws.onmessage = async (event) => {
-    //             const data = JSON.parse(event.data);
-
-    //             switch (data.type) {
-    //                 case "cv_uploaded":
-    //                     setResumeText(data.cv_text);
-    //                     toast.success("Resume analysed successfully");
-    //                     setStep(2);
-    //                     break;
-
-    //                 case "jd_analyzed":
-    //                     setJD(data.job_description);
-    //                     toast.success("Job Description analysed successfully");
-    //                     setStep(3);
-    //                     break;
-    //                 // case "interview_started":
-    //                 //     console.log("Interview started", interviewType);
-    //                 //     try {
-    //                 //         const res = await handleInterviewState(interviewId, "In_Progress", interviewType);
-    //                 //         if (res.status === "success") {
-    //                 //             router.push(`/interview/${interviewId}?type=${interviewType}`);
-    //                 //         } else {
-    //                 //             toast.error("Failed to start interview");
-    //                 //         }
-    //                 //     } catch (error) {
-    //                 //         toast.error("Internal Server Error");
-    //                 //         console.error(error);
-    //                 //     }
-    //                 //     break;
-
-    //                 default:
-    //                     break;
-    //             }
-    //         };
-    //     }
-    // }, [ws, interviewId]);
 
     const handleResumeAnalysis = useCallback(
         async (file: File) => {
             setIsUploading(true);
             setResumeFile(file);
-
-            // const reader = new FileReader();
-
-            // reader.onload = async (e) => {
-            //     const binaryData = e.target?.result as ArrayBuffer;
-
-            //     if (binaryData && ws) {
-            //         try {
-            //             ws?.send(
-            //                 JSON.stringify({
-            //                     type: "upload_cv",
-            //                     cv_data: Array.from(new Uint8Array(binaryData)),
-            //                 })
-            //             );
-            //         } catch (error) {
-            //             setResumeFile(null);
-            //             console.log("Socket is not initialised");
-            //             if (fileInputRef.current) fileInputRef.current.value = "";
-            //         } finally {
-            //             setIsUploading(false);
-            //         }
-            //     } else {
-            //         console.log("websocket is not initialised or no extracted text");
-            //         setIsUploading(false);
-            //     }
-            // };
-
-            // reader.readAsArrayBuffer(file);
 
             const resumeText = await extractTextFromPDF(file);
             if (!resumeText) {
@@ -362,13 +283,6 @@ const InterviewComponent = () => {
         setJD(profile);
         toast.success("Job Description analysed successfully");
         setStep(3);
-
-        // ws?.send(
-        //     JSON.stringify({
-        //         type: "analyze_jd",
-        //         job_description: profile,
-        //     })
-        // );
     };
 
     const handleJDSubmit = (jobProfile: string) => {

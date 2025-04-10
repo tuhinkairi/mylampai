@@ -131,7 +131,7 @@ const Analysis: React.FC = () => {
         } else {
           // If not in session, fetch from API
           const res = await getInterviewVideo(interviewId, interviewType);
-          if (res && res?.status === 200 && res?.data) {
+          if (res && !Array.isArray(res) && 'status' in res && res.status === 200 && res.data && res.data.videoUrl) {
             const url = res.data.videoUrl.split("?")[0];
             setVideoUrl(url);
             sessionStorage.setItem('interviewVideoUrl', url);

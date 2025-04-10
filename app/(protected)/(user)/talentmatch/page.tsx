@@ -105,7 +105,7 @@ function TalentMatchContent() {
           interviewState: profile.interviewState as 'pending' | 'completed' | 'cancelled',
           interviewDate: profile.interviewDate.toISOString(),
           resumeUrl: profile.resume.resumeUrl || "",
-          interviewId: profile.interview.id,
+          interviewId: profile.interview && profile.interview.id || "",
           resumeFileText: profile.resume.resumeFileText || ""
         }));
         // console.log("talent pool profiles: ", profiles)
@@ -209,7 +209,7 @@ function TalentMatchContent() {
   return (
     <div className="flex sm:flex-row flex-col px-2 py-2 sm:py-0 sm:pr-2">
       <ScrollArea className="h-screen w-full sm:w-5/12 sm:p-4">
-        <div className="h-52 sm:h-[calc(100vh-20rem)] flex items-center border rounded-lg ">
+        <div className=" sm:h-[calc(100vh-30rem)] flex items-center border rounded-lg ">
           <div
             className={`${TalentMatchCSS.verticalText} h-full text-white rounded-r-lg px-2 text-center bg-primary`}
           >
@@ -385,7 +385,7 @@ function TalentMatchContent() {
                                 <span className="text-sm font-medium">Resume</span>
                               </div>
                               <div className="bg-primary text-white p-2 rounded-lg">
-                                <PdfToImage pdfUrl={profile?.resumeUrl} />
+                                <PdfToImage pdfUrl={profile?.resumeUrl || ""} />
                               </div>
                             </div>
                             <p className="text-xs text-muted-foreground italic pl-1">resume uploaded</p>
@@ -436,7 +436,12 @@ function TalentMatchContent() {
                                         <span className="text-sm font-medium">Reschedule</span>
                                       </div> */}
 
-                                      <Button onClick={() => handleStartNow(profile?.interviewId, profile?.resumeFileText, profile?.role)} >
+                                      <Button
+                                        onClick={() => profile.interviewId && profile.resumeFileText && profile.role &&
+                                          handleStartNow(profile.interviewId, profile.resumeFileText, profile.role)
+                                        }
+                                        disabled={!profile.interviewId || !profile.resumeFileText || !profile.role}
+                                      >
                                         Start Now
                                       </Button>
                                     </div>

@@ -38,10 +38,18 @@ import { toast } from "sonner";
 
 import SpeechRecognition from "@/components/speech-to-text/speechRecognition";
 import axios from "axios";
+import { generateInterviewRubrics } from "@/actions/interviewTemplates/createTemplateActions";
 
 type ChatMessage = {
   user: string;
   message: string;
+};
+
+type TemplateRubric = {
+  id?: string;
+  parameter: string;
+  description: string;
+  weightage: number;
 };
 
 const InterviewPage = () => {
@@ -91,6 +99,8 @@ const InterviewPage = () => {
   const [interviewStage, setInterviewStage] = useState("initializing"); // initializing -> setup -> inProgress -> ending -> completed
 
   const recordedChunks = useRef<BlobPart[]>([]);
+
+  const [rubrics, setRubrics] = useState<TemplateRubric[]>([]);
 
   useEffect(() => {
     if (feedbackSubmitted) {
@@ -168,6 +178,14 @@ const InterviewPage = () => {
 
         setInterviewStage("setup");
 
+        const response = await generateInterviewRubrics(job_description)
+
+        if (response.status !== 200) {
+          toast.error("Failed to generate rubrics.");
+          return;
+        }
+        const data = response.result;
+        setRubrics(data.evaluation_criteria);
         // 4. Set up media stream
         try {
           const stream = await navigator.mediaDevices.getUserMedia({
