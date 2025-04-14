@@ -2,8 +2,8 @@
 
 "use server";
 import prisma from "@/lib";
-import { generateSasToken } from "./azureActions";
 import { auth } from "@/lib/authlib";
+
 
 type Rubrics = {
   parameter: string;
@@ -168,11 +168,11 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
           select: {
             id: true,
             rubrics: {
-              select:{
-                parameter:true,
-                description:true,
-                weightage:true
-              }
+              select: {
+                parameter: true,
+                description: true,
+                weightage: true,
+              },
             },
             interviewState: true,
           },
@@ -186,7 +186,7 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
     };
   } catch (error) {
     console.error(error);
-    null;
+    true;
   }
 };
 

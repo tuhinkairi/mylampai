@@ -117,20 +117,20 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
     // console.log(data);
   };
 
-  useEffect(() => {
-    const getTP = async () => {
-      const res = await getTalentProfile(userData?.id as string)
-      if (!res) return;
-      if (res?.data) {
-        setTalentProfile(res.data);
-      }
-    }
-    try {
-      getTP();
-    } catch (error) {
-      console.error("Error fetching talent profile:", error);
-    }
-  }, [talentProfileId,userData?.id])
+  // useEffect(() => {
+  //   const getTP = async () => {
+  //     const res = await getTalentProfile(userData?.id as string)
+  //     if (!res) return;
+  //     if (res?.data) {
+  //       setTalentProfile(res.data);
+  //     }
+  //   }
+  //   try {
+  //     getTP();
+  //   } catch (error) {
+  //     console.error("Error fetching talent profile:", error);
+  //   }
+  // }, [talentProfileId,userData?.id])
 
   // const getExperiences = useCallback(async () => {
   //   try {
@@ -141,6 +141,8 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   //     console.error("Error getting experiences:", error);
   //   }
   // }, [talentProfileId]);
+
+
 
   useEffect(() => {
     setExperience(profile.experiences.map(exp => ({
@@ -183,7 +185,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
         }));
         dispatch(setProjects(mappedProjects))
       } else {
-        setProject(profile.projects.map((proj:any) => ({
+        setProject(profile.projects.map((proj: any) => ({
           ...proj,
           startDate: proj.startDate ? new Date(proj.startDate) : undefined,
           endDate: proj.endDate ? new Date(proj.endDate) : undefined,
@@ -192,7 +194,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
     } catch (error) {
       console.error("Error getting projects:", error);
     }
-  }, [talentProfileId,dispatch,profile?.projects]);
+  }, [talentProfileId, dispatch, profile?.projects]);
 
   // const getEducations = useCallback(async () => {
   //   // if (!userData || !userData.id) return;
@@ -203,6 +205,8 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   //     console.error("Error getting educations:", error);
   //   }
   // }, [talentProfileId]);
+
+
   const toggleExpand = () => {
     setIsExpanded(!isExpanded);
   };
@@ -221,24 +225,30 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
 
   return (
     <div className="mx-auto">
-      <div className="flex items-center gap-4 h-32 relative bg-gray-100">
-        <Avatar className="h-24 w-24 rounded-lg absolute -bottom-8 left-2 shadow-lg ">
+
+      <div className="flex items-center gap-4 h-32 bg-[url(/images/background.jpg)] relative bg-opacity-5">
+      </div>
+      <div className="flex flex-row items-top gap-3 pt-2">
+        <Avatar className="h-24 w-24 rounded-lg relative  left-2 shadow-lg ">
           <AvatarImage src={userData?.image} alt={userData?.name} />
           <AvatarFallback className="rounded-lg cursor-default">
             {userData?.name ? userData?.name : "User"}
           </AvatarFallback>
         </Avatar>
+        <div className="p-2">
+          <h2 className="text-md font-semibold text-gray-700">{userData.name}</h2>
+          <div>
+            <span className="text-gray-500 text-sm">{profile?.title}</span>
+          </div>
+        </div>
       </div>
-      <div className="flex-col items-center gap-2 mt-12 px-4">
-        <h2 className="text-md font-semibold text-gray-700">{userData.name}</h2>
+      <div className="flex-col items-center gap-2 mt-2 px-4">
         {/* {testData.verified && (
           <span className="flex items-center justify-center w-4 h-4 bg-violet-500 rounded-full">
             <Check className="w-2 h-2 text-white" />
           </span>
         )} */}
-        <div>
-          <span className="text-gray-500 text-sm">{profile?.title}</span>
-        </div>
+
         <div className="p-2 border-b-2 rounded-md shadow-sm">
           <div className="flex justify-between items-center mt-2">
             <h3 className="font-medium text-lg">Bio</h3>

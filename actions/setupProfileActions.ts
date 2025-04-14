@@ -7,7 +7,6 @@ export const createTalentProfile = async (
   userId: string
 ) => {
   try {
-
     if (!resumeUrl) {
       return {
         error: "Error uploading resume",
@@ -48,6 +47,20 @@ export const getTalentProfile = async (userId: string) => {
   try {
     const res = await prisma.talentProfile.findFirst({
       where: { userId: userId },
+      select: {
+        id: true,
+        resumeUrl: true,
+        title: true,
+        bio: true,
+        rate: true,
+        skills: true,
+        profiles: true,
+        hours: true,
+        experience: true,
+        education: true,
+        languages: true,
+        projects: true,
+      },
     });
     return {
       status: 200,

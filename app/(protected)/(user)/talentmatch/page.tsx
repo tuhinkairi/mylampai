@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 import LoadingGlobal from "@/components/ui/loading";
 import { useUserStore } from "@/utils/userStore";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
-import { setId, setResumeUrl } from "@/lib/features/talent_profile/talentProfileSlice";
+import { setBio, setEducations, setExperiences, setId, setProfiles, setProjects, setResumeUrl, setSkills, setTitle } from "@/lib/features/talent_profile/talentProfileSlice";
 import { getTalentProfile } from "@/actions/setupProfileActions";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -138,20 +138,62 @@ function TalentMatchContent() {
       getTalentProfiles(id);
       getMatches(id);
     } else {
+      console.log("debug12")
       if (!userData) {
         toast.error("User data not found");
         return;
       }
       const checkTalentProfile = async () => {
         const isTalentProfileExist = await getTalentProfile(userData?.id);
+        console.log("debug13", isTalentProfileExist)
         if (isTalentProfileExist && isTalentProfileExist?.status === 200 && isTalentProfileExist?.data) {
-          dispatch(setId(isTalentProfileExist?.data.id))
-          dispatch(setResumeUrl(isTalentProfileExist?.data.resumeUrl ?? ""))
+          console.log("debug14")
+          const res = isTalentProfileExist?.data
+          dispatch(setId(res.id))
+          dispatch(setResumeUrl(res.resumeUrl ?? ""))
+          dispatch(setBio(res.bio ?? ""))
+          dispatch(setSkills(res?.skills))
+          dispatch(setProfiles(res?.profiles))
+          dispatch(setExperiences(res.experience.map(exp => ({
+            id: exp.id,
+            skills: exp.skills,
+            company: exp.company,
+            position: exp.position,
+            location: exp.location || "",
+            description: exp.description || "",
+            startDate: exp.startDate.toISOString(),
+            endDate: exp.endDate ? exp.endDate.toISOString() : undefined
+          }))))
+
+          dispatch(setEducations(res.education.map(edu => ({
+            id: edu.id || "",
+            school: edu.school || "",
+            skills: edu.skills,
+            degree: edu.degree || undefined,
+            field: edu.field || undefined,
+            grade: edu.grade || undefined,
+            description: edu.description || undefined,
+            startDate: edu.startDate ? edu.startDate.toISOString() : "",
+            endDate: edu.endDate ? edu.endDate.toISOString() : undefined
+          }))))
+
+          dispatch(setProjects(res.projects.map(project => ({
+            id: project.id,
+            title: project.title,
+            skills: project.skills,
+            role: project.role || undefined,
+            startDate: project.startDate?.toISOString(),
+            endDate: project.endDate?.toISOString(),
+            url: project.url || undefined,
+            description: project.description
+          }))))
+
+          dispatch(setTitle(res.title ?? ""))
         }
-        checkTalentProfile();
       }
+      checkTalentProfile();
     }
-  }, [id,dispatch,userData]);
+  }, [id, userData]);
 
   const handleConfirmMatch = async (matchId: string) => {
     try {
@@ -209,6 +251,15 @@ function TalentMatchContent() {
       toast.error("Failed to start interview");
     }
   }
+
+  // useEffect(()=>{
+  //   const getProfile=async()=>{
+  //       const res= await getTalentProfile
+  //   }
+  //    if(!id){
+
+  //    }
+  // },[id])
 
 
   if (!id) {
