@@ -130,7 +130,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
     } catch (error) {
       console.error("Error fetching talent profile:", error);
     }
-  }, [talentProfileId])
+  }, [talentProfileId,userData?.id])
 
   // const getExperiences = useCallback(async () => {
   //   try {
@@ -192,7 +192,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
     } catch (error) {
       console.error("Error getting projects:", error);
     }
-  }, [talentProfileId]);
+  }, [talentProfileId,dispatch,profile?.projects]);
 
   // const getEducations = useCallback(async () => {
   //   // if (!userData || !userData.id) return;

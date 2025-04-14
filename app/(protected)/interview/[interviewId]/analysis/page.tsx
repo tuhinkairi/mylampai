@@ -727,7 +727,7 @@ const Analysis: React.FC = () => {
                               {selectedLineIndices[index] !== undefined && selectedLineIndices[index] !== null && (
                                 <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
                                   <p className="font-medium mb-4 pb-3 border-b border-gray-300">
-                                    "{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].line}"
+                                    {analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].line}
                                   </p>
 
                                   {/* Chart */}

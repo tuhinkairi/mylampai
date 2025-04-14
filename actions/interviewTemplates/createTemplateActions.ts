@@ -4,7 +4,8 @@ import axios from "axios";
 
 // import { InterviewTemplate } from "@prisma/client";
 
-const endpoint = "http://127.0.0.1:5000";
+const endpoint =
+  "https://ai-interview-dzawedctafcceya3.centralindia-01.azurewebsites.net";
 
 export const generateInterviewRubrics = async (jobDescriotion: string) => {
   try {

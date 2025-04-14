@@ -109,7 +109,7 @@ function TalentMatchContent() {
           skills: profile.skills,
           locationPref: profile.locationPref as 'Onsite' | 'Remote' | 'Hybrid' | null,
           availability: profile.availability as 'FULL_TIME' | 'PART_TIME' | 'FREELANCE' | null,
-          interviewState: profile.interview && profile.interview.interviewState as 'pending' | 'completed' | 'cancelled' | string,
+          interviewState: (profile.interview?.interviewState as 'pending' | 'completed' | 'cancelled') || 'pending',
           interviewDate: profile.interviewDate.toISOString(),
           resumeUrl: profile.resume.resumeUrl || "",
           interviewId: profile.interview && profile.interview.id || "",
@@ -151,7 +151,7 @@ function TalentMatchContent() {
         checkTalentProfile();
       }
     }
-  }, [id]);
+  }, [id,dispatch,userData]);
 
   const handleConfirmMatch = async (matchId: string) => {
     try {

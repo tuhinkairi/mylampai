@@ -1346,7 +1346,7 @@ const PDFViewer = () => {
     } catch (error) {
       console.error("Error rendering PDF:", error);
     }
-  }, [resumeFile, base64ToUint8Array]);
+  }, [resumeFile, base64ToUint8Array,resumeBase64]);
 
   const getColor = useCallback(
     (score: number | undefined) => {
