@@ -183,7 +183,7 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
         }));
         dispatch(setProjects(mappedProjects))
       } else {
-        setProject(profile.projects.map(proj => ({
+        setProject(profile.projects.map((proj:any) => ({
           ...proj,
           startDate: proj.startDate ? new Date(proj.startDate) : undefined,
           endDate: proj.endDate ? new Date(proj.endDate) : undefined,

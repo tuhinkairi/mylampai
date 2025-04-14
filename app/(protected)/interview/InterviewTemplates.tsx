@@ -7,17 +7,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from '@/components/ui/button'
 import CreateInterviewComponent from './CreateInterview'
 
-function InterviewTemplates() {
-    interface InterviewTemplate {
-        id: string;
-        category?: string;
-        companyName?: string;
-        roleTitle?: string;
-        expectedDuration?: number;
-        difficulty?: string;
-        jobDescription?: string;
-    }
 
+
+interface InterviewTemplate {
+    id: string;
+    category?: string | null;
+    companyName?: string | null;
+    roleTitle?: string | null;
+    expectedDuration?: number | null;
+    difficulty?: string | null;
+    jobDescription?: string | null;
+    rubrics?: Rubric[];
+}
+
+interface Rubric {
+    parameter: string;
+    description: string;
+    weightage: number;
+}
+
+function InterviewTemplates() {
     const [interviewTemplates, setInterviewTemplates] = useState<InterviewTemplate[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
@@ -42,8 +51,10 @@ function InterviewTemplates() {
                     throw new Error('Failed to fetch interview templates')
                 }
                 const data = response.result
-                console.log('Fetched interview templates:', data)
-                setInterviewTemplates(data)
+                // console.log('Fetched interview templates:', data)
+                if (data && data !== undefined) {
+                    setInterviewTemplates(data)
+                }
             } catch (error: any) {
                 setError(error.message)
             } finally {
@@ -210,7 +221,7 @@ function InterviewTemplates() {
                                                             </DialogTitle>
 
                                                         </DialogHeader>
-                                                        <CreateInterviewComponent jobDescription={template.jobDescription} />
+                                                        <CreateInterviewComponent jobDescription={template.jobDescription} category={category.value} rubrics={template.rubrics} />
                                                     </DialogContent>
 
                                                 </Dialog>

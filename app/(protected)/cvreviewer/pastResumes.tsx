@@ -57,7 +57,7 @@ const PastResumeViewer: React.FC<PastResumeViewerProps> = ({
       const options_general = {
         ignorePunctuation: ":;.,-–—‒_(){}[]!'\"+=".split(""),
         separateWordSearch: false,
-        accuracy:"partially" as Mark.MarkAccuracy,
+        accuracy: "partially" as Mark.MarkAccuracy,
         className: class_name,
         acrossElements: true,
       };

@@ -57,8 +57,8 @@ const ResumePage: React.FC = () => {
             <div
               key={resume.id}
               className={`p-2 mb-2 rounded cursor-pointer ${selectedResume?.id === resume.id
-                  ? "bg-blue-500 text-white"
-                  : "bg-white"
+                ? "bg-blue-500 text-white"
+                : "bg-white"
                 }`}
               onClick={() => setSelectedResume(resume)}
             >

@@ -556,3 +556,29 @@ export const updateInterviewVideo = async (
     console.log("Error: ", error);
   }
 };
+
+export const getConversation = async (interviewId: string) => {
+  try {
+    if (!interviewId) return [];
+
+    const interviews = await prisma.interviewMessage.findMany({
+      where: { interviewId },
+      select: {
+        id: true,
+        type: true,
+        sender: true,
+        response: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      status: 200,
+      data: interviews,
+      message: "Conversation found",
+    };
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+  return [];
+};

@@ -85,7 +85,7 @@ export const POST = async (req: NextRequest) => {
         resumeFileText: resumeFileText || null,
       },
     });
-    return NextResponse.json({ resume: newCV,status: 200 });
+    return NextResponse.json({ resume: newCV, status: 200 });
   } catch (error) {
     console.error("Error creating CV:", error);
     return NextResponse.json(

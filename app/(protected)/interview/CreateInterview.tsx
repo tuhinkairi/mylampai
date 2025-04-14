@@ -36,6 +36,8 @@ import FullScreenLoader from "@/components/global/FullScreenLoader";
 import { useAppSelector } from "@/lib/hooks";
 import { useUserStore } from "@/utils/userStore";
 import { getUserResumesList } from "@/actions/resumeActions";
+import { generateInterviewRubrics } from "@/actions/interviewTemplates/createTemplateActions";
+import { Circles } from "react-loader-spinner";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -58,7 +60,15 @@ type ResumeList = {
   resumeUrl: string | null;
 }[];
 
-const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }) => {
+
+type Rubric = {
+  parameter: string;
+  description: string;
+  weightage: number;
+}
+
+
+const CreateInterviewComponent = ({ jobDescription, category, rubrics }: { jobDescription: string, category: string, rubrics: Rubric[] }) => {
   const form = useForm<{ jobProfile: string }>({
     defaultValues: {
       jobProfile: "",
@@ -81,11 +91,13 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
 
   const [loading, setLoading] = useState(false);
 
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [isUploadingJD, setIsUploadingJD] = useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const profile = useAppSelector((state) => state.talentProfile);
   const talentProfileId = profile.id as string;
+  const [rubricsList, setRubricsList] = useState<Rubric[]>(rubrics || []);
 
   const jobProfiles = [
     "Software Engineer",
@@ -123,7 +135,7 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
 
   const handleResumeAnalysis = useCallback(
     async (file: File) => {
-      setIsUploading(true);
+      setIsUploadingResume(true);
       setResumeFile(file);
 
       const resumeText = await extractTextFromPDF(file);
@@ -131,7 +143,7 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
         toast.error("Error extracting text from PDF");
         return;
       }
-      console.log("Extracted Resume Text:", resumeText);
+      // console.log("Extracted Resume Text:", resumeText);
       setResumeText(resumeText);
       // if (resumeText) {
       //     const extractStructuredData = async (text: string) => {
@@ -183,7 +195,7 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
         if (!uploadResponse.ok) {
           toast.error("Resume Upload Failed");
         }
-        setIsUploading(false);
+        setIsUploadingResume(false);
       } catch (error) {
         console.error(error);
       }
@@ -222,15 +234,22 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
 
   const handleJDAnalysis = async (file: File) => {
     setJDFile(file);
-
+    setIsUploadingJD(true);
     const extractedText = await extractTextFromPDF(file);
 
     if (extractedText) {
-      // ws.send(
-      //     JSON.stringify({ type: "analyze_jd", job_description: extractedText })
-      // );
+
+      const response = await generateInterviewRubrics(extractedText)
+
+      if (response.status !== 200) {
+        toast.error("Failed to generate rubrics.");
+        return;
+      }
+      const data = response.result;
+      setRubricsList(data.evaluation_criteria);
       setJD(extractedText);
       toast.success("Job Description analysed successfully");
+      setIsUploadingJD(false);
     } else {
       console.error("websocket is not initialised or no extracted text");
     }
@@ -313,16 +332,8 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
     if (!jobProfile) {
       return;
     }
-
     setJD(jobProfile);
     toast.success("Job Description analysed successfully");
-
-    // ws?.send(
-    //     JSON.stringify({
-    //         type: "analyze_jd",
-    //         job_description: jobProfile,
-    //     })
-    // );
   };
 
   const handleJDUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -354,9 +365,10 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
     }
   };
 
-  useEffect(() => {
-    console.log("JD11", JD);
-  }, [JD]);
+  // useEffect(() => {
+  //   console.log("JD11", JD);
+  //   console.log("rubrics22", rubricsList);
+  // }, [JD, rubricsList]);
 
 
   const startInterview = useCallback(async () => {
@@ -376,24 +388,29 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
 
         // Verify media devices access without actually using them
         try {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            audio: true,
-            video: true,
-          });
+          // const stream = await navigator.mediaDevices.getUserMedia({
+          //   audio: true,
+          //   video: true,
+          // });
 
-          // Release streams immediately
-          stream.getTracks().forEach(track => track.stop());
+          // // Release streams immediately
+          // stream.getTracks().forEach(track => track.stop());
 
           if (res.status === "success" && res.interviewId) {
             // Store interview data in sessionStorage
             sessionStorage.setItem('interviewData', JSON.stringify({
               pdf_text: resumeText,
               job_description: JD,
-              interview_id: res.interviewId
+              interview_id: res.interviewId,
+              rubrics: rubricsList,
             }));
 
             // Navigate to interview page
-            router.push(`/interview/${res.interviewId}?type=${interviewType}`);
+            if (category) {
+              router.push(`/interview/${res.interviewId}?type=${interviewType}&c=${category}`);
+            } else {
+              router.push(`/interview/${res.interviewId}?type=${interviewType}`);
+            }
           } else {
             toast.error(res.message || "Failed to create interview");
             setLoading(false);
@@ -428,43 +445,42 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
                 <h3 className="text-lg font-medium mb-3 text-gray-800">Resume/CV</h3>
 
                 {/* Existing Resume Selection */}
-                {resumeList && resumeList.length > 0 && (
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Select Existing Resume
-                    </label>
-                    <Select
-                      onValueChange={(value) => {
-                        const selectedResume = resumeList.find(resume => resume.id === value);
-                        if (selectedResume) {
-                          setResumeText(selectedResume.resumeFileText || '');
-                          // Additional logic to handle selection
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose a resume" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {resumeList.map((resume) => (
-                          <SelectItem key={resume.id} value={resume.id}>
-                            {resume.resumeName || 'Unnamed Resume'}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                <div className="mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Existing Resume
+                  </label>
+                  <Select
+                    onValueChange={(value) => {
+                      const selectedResume = resumeList.find(resume => resume.id === value);
+                      if (selectedResume) {
+                        setResumeText(selectedResume.resumeFileText || '');
+                        // Additional logic to handle selection
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose a resume" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(resumeList && resumeList.length > 0) ? resumeList.map((resume) => (
+                        <SelectItem key={resume.id} value={resume.id}>
+                          {resume.resumeName || 'Unnamed Resume'}
+                        </SelectItem>
+                      )) : "No resumes available"}
+                    </SelectContent>
+                  </Select>
 
-                    {/* Divider */}
-                    <div className="flex items-center my-2">
-                      <div className="flex-grow border-t border-gray-300"></div>
-                      <span className="px-3 text-xs text-gray-500">OR</span>
-                      <div className="flex-grow border-t border-gray-300"></div>
-                    </div>
+                  {/* Divider */}
+                  <div className="flex items-center my-2">
+                    <div className="flex-grow border-t border-gray-300"></div>
+                    <span className="px-3 text-xs text-gray-500">OR</span>
+                    <div className="flex-grow border-t border-gray-300"></div>
                   </div>
-                )}
+                </div>
+
 
                 {/* Upload New Resume */}
-                {resumeFile ? (
+                {resumeText !== "" && resumeFile ? (
                   <div className="text-center text-gray-600 font-medium relative h-[80px] flex items-center justify-center border border-gray-200 rounded-md p-2">
                     Resume Uploaded: {resumeFile?.name}
                     <button
@@ -502,7 +518,13 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
                       onChange={handleResumeUpload}
                     />
                     <div className="text-3xl mt-1 text-gray-300">
-                      <IoCloudUploadOutline />
+                      {isUploadingResume ? <Circles
+                        height="20"
+                        width="20"
+                        color="white"
+                        ariaLabel="circles-loading"
+                        visible={true}
+                      /> : <IoCloudUploadOutline />}
                     </div>
                     <p className="text-slate-500 text-xs mt-1">
                       PDF format only. Max 1 MB
@@ -518,16 +540,28 @@ const CreateInterviewComponent = ({ jobDescription }: { jobDescription: string }
                   <div className="bg-white py-3 px-4 rounded-xl w-full shadow-md">
                     <h3 className="text-lg font-medium mb-3 text-gray-800">Job Description</h3>
 
-                    <div className="w-full mb-3">
+                    <div className="w-full mb-3 relative">
                       <textarea
                         id="JD"
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                        className={`w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm ${isUploadingJD ? 'bg-gray-100' : ''}`}
                         rows={4}
                         placeholder="Paste or type job description here..."
                         value={JD || ""}
                         onChange={(e) => setJD(e.target.value)}
+                        disabled={isUploadingJD}
                       />
+
+                      {isUploadingJD && (
+                        <div className="absolute inset-0 flex justify-center items-center pointer-events-none">
+                          <div className="flex gap-1 items-center">
+                            <div className="h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="h-2 w-2 bg-black rounded-full animate-bounce"></div>
+                          </div>
+                        </div>
+                      )}
                     </div>
+
 
                     {/* Divider */}
                     <div className="relative w-full py-1">

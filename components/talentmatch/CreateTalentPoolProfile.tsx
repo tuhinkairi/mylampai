@@ -29,7 +29,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,6 +45,11 @@ import { ArrayInput } from "@/components/misc/ArrayInput";
 import { Calendar } from "@/components/ui/calendar";
 import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { addCareerProfile } from "@/lib/features/talent_pool_profile/talentPoolProfileSlice";
+import { generateInterviewRubrics } from "@/actions/interviewTemplates/createTemplateActions";
+import * as pdfjsLib from "pdfjs-dist/webpack";
+
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const profileSchema = z.object({
   resumeId: z.string(),
@@ -80,6 +85,12 @@ type ResumeList = {
   resumeFileText?: string | null;
   resumeUrl: string | null;
 }[];
+
+type RubricsType = {
+  parameter: string,
+  description: string,
+  weightage: number
+}
 
 const profileOptions = [
   "Software Engineer",
@@ -172,6 +183,7 @@ export default function CreateTalentPoolProfileDialog({
       skills: [],
       interviewDate: roundToNearest30(),
       locationPref: "Onsite",
+      targetFor: "JOB",
     },
   });
 
@@ -200,11 +212,26 @@ export default function CreateTalentPoolProfileDialog({
 
     try {
       console.log("values", values);
+
+      const rubricsContext = `{
+        "role": "${values.role}",
+        "skills": ${JSON.stringify(values.skills)},
+        "targetFor": "${values.targetFor}",`
+
+      const response = await generateInterviewRubrics(rubricsContext)
+
+      if (response.status !== 200) {
+        toast.error("Failed to generate rubrics.");
+        return;
+      }
+      const data = response.result;
+      // console.log("rubrics::in :: ", data.evaluation_criteria)
+      console.log("resumeIDD : ", uploadedResumeId, " valuesndf:: ", values.resumeId)
       const res = await createTalentPoolProfile({
         ...values,
         talentProfileId: id,
         resumeId: values.resumeId || uploadedResumeId || "",
-      });
+      }, data.evaluation_criteria);
 
       if (res.status === "success" && res.data) {
         toast.success(res.message);
@@ -215,6 +242,7 @@ export default function CreateTalentPoolProfileDialog({
           resumeUrl: res.data.resume.resumeUrl,
           interviewDate: values.interviewDate.toISOString(),
           interviewId: res.data.interviewId,
+          rubrics: res.data.rubrics,
         }));
         setIsCTPPDialogOpen(false);
         createProfile.reset();
@@ -228,10 +256,39 @@ export default function CreateTalentPoolProfileDialog({
     }
   }
 
+  const extractTextFromPDF = useCallback((file: File): Promise<string> => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function (event) {
+        const typedArray = new Uint8Array(event.target?.result as ArrayBuffer);
+
+        if (typeof window !== "undefined") {
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          let text = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(" ");
+            text += ` ${pageText}`;
+          }
+          resolve(text.trim());
+        } else {
+          reject(
+            new Error("pdfjs-dist is not available in the server environment")
+          );
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
+
   const handleResumeUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setIsUploading(true)
+    setIsUploading(true);
     const file = event.target.files?.[0];
     if (!file) {
       toast.error("No file selected");
@@ -250,14 +307,17 @@ export default function CreateTalentPoolProfileDialog({
 
     if (!userData || !userData.id) return;
 
-    const formData = new FormData();
-
-    formData.append("file", file);
-
     try {
-      // const res = await addUsersResume({body:{resumeFile:file}}, userData.id);
+      const resumeText = await extractTextFromPDF(file);
+      if (!resumeText) {
+        toast.error("Error extracting text from PDF");
+        return;
+      }
+
       const formData = new FormData();
       formData.append("resumeFile", file);
+      formData.append("resumeFileText", resumeText);
+
       const response = await fetch("/api/resume/add_new", {
         method: "POST",
         headers: {
@@ -268,23 +328,24 @@ export default function CreateTalentPoolProfileDialog({
 
       const res = await response.json();
       console.log("res", res);
+
       if (res.status === 200 || res.status === 209) {
-        setUploadedResumeId(res.resume.id);
+        const newResumeId = res.resume.resumeId || res.resume.id;
+        setUploadedResumeId(newResumeId);
+
         const newResume = {
-          id: res.resume.resumeId,
+          id: newResumeId,
           resumeName: res.resume.resumeName,
           resumeUrl: res.resume.resumeUrl,
         };
 
-        // Update list first, then set the selected resumeId in the next render cycle
-        setResumeList((prev) => {
-          const updated = [...prev, newResume];
-          return updated;
-        });
+        // Update resumeList with the new resume
+        setResumeList((prev) => [...prev, newResume]);
+
+        // Directly set the form value to select the new resume
+        createProfile.setValue("resumeId", String(newResumeId));
 
         toast.success("Resume uploaded successfully");
-
-
       } else {
         toast.error("Failed to upload resume");
         return null;
@@ -294,17 +355,17 @@ export default function CreateTalentPoolProfileDialog({
       toast.error("Failed to upload resume");
       return null;
     } finally {
-      setIsUploading(false)
-      setIsUploaded(true)
+      setIsUploading(false);
+      setIsUploaded(true);
     }
   };
 
-  useEffect(() => {
-    if (uploadedResumeId) {
-      console.log("resumeId", uploadedResumeId);
-      createProfile.setValue("resumeId", uploadedResumeId);
-    }
-  }, [uploadedResumeId]);
+  // useEffect(() => {
+  //   if (uploadedResumeId) {
+  //     console.log("resumeId", uploadedResumeId);
+  //     createProfile.setValue("resumeId", uploadedResumeId);
+  //   }
+  // }, [uploadedResumeId]);
 
   const handleTitleChange = (value: string) => {
     createProfile.setValue("role", value);
@@ -515,6 +576,7 @@ export default function CreateTalentPoolProfileDialog({
                       <FormLabel>Select or Upload Resume</FormLabel>
                       <div className="flex gap-4">
                         <Select
+                          key={resumeList.length}
                           onValueChange={field.onChange}
                           value={field.value}
                           defaultValue=""

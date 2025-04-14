@@ -39,6 +39,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useRouter } from "next/navigation";
 
 
+type RubricsType = {
+  parameter: string,
+  description: string,
+  weightage: number
+}
+
 type ProfileData = {
   resumeId: string;
   resumeUrl?: string;
@@ -48,9 +54,10 @@ type ProfileData = {
   targetFor: string;
   locationPref?: "Onsite" | "Remote" | "Hybrid" | null;
   availability: "FULL_TIME" | "PART_TIME" | "FREELANCE" | null;
-  interviewState: "pending" | "completed" | "cancelled";
+  interviewState: "pending" | "completed" | "cancelled" | string;
   interviewDate: Date;
   interviewId: string;
+  rubrics: RubricsType[];
 };
 
 
@@ -102,11 +109,12 @@ function TalentMatchContent() {
           skills: profile.skills,
           locationPref: profile.locationPref as 'Onsite' | 'Remote' | 'Hybrid' | null,
           availability: profile.availability as 'FULL_TIME' | 'PART_TIME' | 'FREELANCE' | null,
-          interviewState: profile.interviewState as 'pending' | 'completed' | 'cancelled',
+          interviewState: profile.interview && profile.interview.interviewState as 'pending' | 'completed' | 'cancelled' | string,
           interviewDate: profile.interviewDate.toISOString(),
           resumeUrl: profile.resume.resumeUrl || "",
           interviewId: profile.interview && profile.interview.id || "",
-          resumeFileText: profile.resume.resumeFileText || ""
+          resumeFileText: profile.resume.resumeFileText || "",
+          rubrics: profile.interview && profile.interview?.rubrics || []
         }));
         // console.log("talent pool profiles: ", profiles)
         dispatch(setCareerProfiles(profiles))
@@ -176,11 +184,11 @@ function TalentMatchContent() {
     )
   }
 
-  const handleStartNow = async (interviewId: string, resumeFileText: string, jobRole: string) => {
+  const handleStartNow = async (interviewId: string, resumeFileText: string, jobRole: string, rubrics: RubricsType[]) => {
     try {
       console.log("interviewId: ", interviewId)
       console.log("resumeFileText: ", resumeFileText)
-
+      console.log("rubricsin afnan: ", rubrics)
       // const res = await acceptTalentMatch(interviewId);
       // if (res === "success") {
       //   toast.success("Interview started successfully");
@@ -190,7 +198,8 @@ function TalentMatchContent() {
       sessionStorage.setItem('interviewData', JSON.stringify({
         pdf_text: resumeFileText,
         job_description: jobRole,
-        interview_id: interviewId
+        interview_id: interviewId,
+        rubrics: rubrics
       }));
 
       router.push(`/interview/${interviewId}?type=talent`)
@@ -418,7 +427,7 @@ function TalentMatchContent() {
                                           ? "Pending"
                                           : profile.interviewState === "completed"
                                             ? "Completed"
-                                            : "Cancelled"}
+                                            : profile.interviewState}
                                       </p>
                                       <div className="flex items-center gap-2">
                                         <CalendarIcon className="w-4 h-4 text-muted-foreground" />
@@ -438,7 +447,7 @@ function TalentMatchContent() {
 
                                       <Button
                                         onClick={() => profile.interviewId && profile.resumeFileText && profile.role &&
-                                          handleStartNow(profile.interviewId, profile.resumeFileText, profile.role)
+                                          handleStartNow(profile.interviewId, profile.resumeFileText, profile.role, profile.rubrics)
                                         }
                                         disabled={!profile.interviewId || !profile.resumeFileText || !profile.role}
                                       >

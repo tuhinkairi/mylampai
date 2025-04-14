@@ -20,8 +20,9 @@ import {
 } from "chart.js";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { getInterviewVideo } from "@/actions/interviewActions";
+import { getConversation, getInterviewVideo } from "@/actions/interviewActions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ChatInterface from "./ChatInterface";
 
 ChartJS.register(
   CategoryScale,
@@ -48,13 +49,19 @@ interface OverallAssessment {
   suggestions: string[];
 }
 
+interface weightedScroe {
+  score: number;
+  max_score: number;
+  percentage: number;
+}
+
 interface AnalysisItem {
   analysis: {
     line_analysis: LineAnalysis[];
     overall_assessment: OverallAssessment;
+    weighted_score: weightedScroe
   };
-  answer: string;
-  question: string;
+  conversationChat: []
 }
 
 interface TranscriptItem {
@@ -92,7 +99,7 @@ const Analysis: React.FC = () => {
 
   // If you need to track selections separately for each analysis item, use this instead:
   const [selectedLineIndices, setSelectedLineIndices] = useState<Record<number, number | null>>({});
-
+  const [conversationChat, setConversationChat] = useState<any[]>([]);
   useEffect(() => {
     console.log("Video URL:", videoUrl);
   }, [videoUrl]);
@@ -101,7 +108,7 @@ const Analysis: React.FC = () => {
       try {
         const response = await axios.get(`/api/interviewer/get_review/${interviewId}`);
         const structuredData = response.data.data;
-        console.log("Structured Data:", structuredData);
+        console.log("Structured Analysis Data:", structuredData);
         // Convert structured data to array format based on the interview sections
         const transformedData = Object.keys(structuredData[0])
           .filter((key) => INTERVIEW_SECTIONS.includes(key))
@@ -114,7 +121,7 @@ const Analysis: React.FC = () => {
         setExpandedSections(Array(transformedData.length).fill(false));
       } catch (error) {
         console.error("Error fetching analysis data:", error);
-        setError("Failed to load analysis data");
+        // setError("Failed to load analysis data");
       }
     };
 
@@ -145,62 +152,78 @@ const Analysis: React.FC = () => {
       }
     };
 
-    const generateTranscriptFromAnalysis = (data: AnalysisItem[]) => {
-      if (!data || data.length === 0) return [];
-
-      const transcript: TranscriptItem[] = [];
-      let currentTime = 10; // Start time in seconds
-
-      data.forEach((item, index) => {
-        // Extract question text (handling if it's a string or an object)
-        let questionText: string;
-        if (typeof item.question === 'string') {
-          questionText = item.question;
-        } else {
-          // If it's something else, convert to string or use a default
-          questionText = "Interview question";
+    //function to fetch conversation
+    const fetchConversation = async () => {
+      try {
+        const response = await getConversation(interviewId);
+        if (!response || Array.isArray(response) || response.status !== 200) {
+          throw new Error("Failed to fetch conversation data");
         }
+        const data = response?.data;
+        setConversationChat(data);
+        console.log("Conversation Data:", data);
+      } catch (error) {
+        console.error("Error fetching conversation data:", error);
+      }
+    }
 
-        // Handle the answer which appears to be an object with multiple string keys
-        let answerText: string;
-        if (typeof item.answer === 'string') {
-          answerText = item.answer;
-        } else if (typeof item.answer === 'object' && item.answer !== null) {
-          // If answer is an object, we'll concatenate all string values
-          const answerValues = Object.values(item.answer)
-            .filter(val => typeof val === 'string')
-            .join("\n\n");
-          answerText = answerValues || "No answer provided";
-        } else {
-          answerText = "No answer provided";
-        }
+    // const generateTranscriptFromAnalysis = (data: AnalysisItem[]) => {
+    //   if (!data || data.length === 0) return [];
 
-        // Add interviewer question
-        transcript.push({
-          speaker: "AI Interviewer",
-          text: questionText.trim(),
-          timestamp: currentTime
-        });
+    //   const transcript: TranscriptItem[] = [];
+    //   let currentTime = 10; // Start time in seconds
 
-        currentTime += 15; // Approximate time for question
+    //   data.forEach((item, index) => {
+    //     // Extract question text (handling if it's a string or an object)
+    //     let questionText: string;
+    //     if (typeof item.question === 'string') {
+    //       questionText = item.question;
+    //     } else {
+    //       // If it's something else, convert to string or use a default
+    //       questionText = "Interview question";
+    //     }
 
-        // Add candidate answer
-        transcript.push({
-          speaker: "You",
-          text: answerText.trim(),
-          timestamp: currentTime
-        });
+    //     // Handle the answer which appears to be an object with multiple string keys
+    //     let answerText: string;
+    //     if (typeof item.answer === 'string') {
+    //       answerText = item.answer;
+    //     } else if (typeof item.answer === 'object' && item.answer !== null) {
+    //       // If answer is an object, we'll concatenate all string values
+    //       const answerValues = Object.values(item.answer)
+    //         .filter(val => typeof val === 'string')
+    //         .join("\n\n");
+    //       answerText = answerValues || "No answer provided";
+    //     } else {
+    //       answerText = "No answer provided";
+    //     }
 
-        currentTime += 25; // Approximate time for answer
-      });
+    //     // Add interviewer question
+    //     transcript.push({
+    //       speaker: "AI Interviewer",
+    //       text: questionText.trim(),
+    //       timestamp: currentTime
+    //     });
 
-      return transcript;
-    };
+    //     currentTime += 15; // Approximate time for question
+
+    //     // Add candidate answer
+    //     transcript.push({
+    //       speaker: "You",
+    //       text: answerText.trim(),
+    //       timestamp: currentTime
+    //     });
+
+    //     currentTime += 25; // Approximate time for answer
+    //   });
+
+    //   return transcript;
+    // };
     const initializeData = async () => {
       try {
         setLoading(true);
         await fetchVideo();
         await fetchAnalysis();
+        // await fetchConversation();
         setLoading(false);
       } catch (error) {
         console.error("Error initializing data:", error);
@@ -212,41 +235,41 @@ const Analysis: React.FC = () => {
   }, [interviewId, interviewType]);
 
   // Generate transcript from analysis data when it's available
-  useEffect(() => {
-    if (analysisData && analysisData.length > 0) {
-      const generatedTranscript = generateTranscriptFromAnalysis(analysisData);
-      setTranscript(generatedTranscript);
-    }
-  }, [analysisData]);
+  // useEffect(() => {
+  //   if (analysisData && analysisData.length > 0) {
+  //     const generatedTranscript = generateTranscriptFromAnalysis(analysisData);
+  //     setTranscript(generatedTranscript);
+  //   }
+  // }, [analysisData]);
 
-  const generateTranscriptFromAnalysis = (data: AnalysisItem[]) => {
-    if (!data || data.length === 0) return [];
+  // const generateTranscriptFromAnalysis = (data: AnalysisItem[]) => {
+  //   if (!data || data.length === 0) return [];
 
-    const transcript: TranscriptItem[] = [];
-    let currentTime = 10; // Start time in seconds
+  //   const transcript: TranscriptItem[] = [];
+  //   let currentTime = 10; // Start time in seconds
 
-    data.forEach((item, index) => {
-      // Add interviewer question
-      transcript.push({
-        speaker: "AI Interviewer",
-        text: item.question,
-        timestamp: currentTime
-      });
+  //   data.forEach((item, index) => {
+  //     // Add interviewer question
+  //     transcript.push({
+  //       speaker: "AI Interviewer",
+  //       text: item.question,
+  //       timestamp: currentTime
+  //     });
 
-      currentTime += 15; // Approximate time for question
+  //     currentTime += 15; // Approximate time for question
 
-      // Add candidate answer
-      transcript.push({
-        speaker: "You",
-        text: item.answer,
-        timestamp: currentTime
-      });
+  //     // Add candidate answer
+  //     transcript.push({
+  //       speaker: "You",
+  //       text: item.answer,
+  //       timestamp: currentTime
+  //     });
 
-      currentTime += 25; // Approximate time for answer
-    });
+  //     currentTime += 25; // Approximate time for answer
+  //   });
 
-    return transcript;
-  };
+  //   return transcript;
+  // };
 
   useEffect(() => {
     // Update current transcript based on video time
@@ -351,8 +374,8 @@ const Analysis: React.FC = () => {
     if (!analysisData || analysisData.length === 0) return 0;
 
     const sum = analysisData.reduce((acc, item) =>
-      acc + (item.analysis?.overall_assessment?.overall_score || 0), 0);
-    return (sum / analysisData.length).toFixed(1);
+      acc + (item.analysis?.weighted_score.score || 0), 0);
+    return (sum);
   };
 
   // Get main strengths and areas to improve for summary
@@ -376,6 +399,13 @@ const Analysis: React.FC = () => {
 
     // Return top 3 most common areas
     return [...new Set(allAreas)].slice(0, 3);
+  };
+
+  const handleLineSelect = (sectionIndex: number, lineIndex: number) => {
+    setSelectedLineIndices(prev => ({
+      ...prev,
+      [sectionIndex]: lineIndex
+    }));
   };
 
   return (
@@ -404,7 +434,7 @@ const Analysis: React.FC = () => {
             {/* Overall Score */}
             <div className="bg-gradient-to-br from-primary to-purple-700 text-white rounded-xl p-6 flex flex-col items-center justify-center">
               <h3 className="text-xl font-semibold mb-2">Overall Score</h3>
-              <div className="text-5xl font-bold">{calculateOverallScore()}/10</div>
+              <div className="text-5xl font-bold">{calculateOverallScore()}/100</div>
             </div>
 
             {/* Top Strengths */}
@@ -457,6 +487,7 @@ const Analysis: React.FC = () => {
                 <TabsTrigger
                   value="transcript"
                   className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-white py-2"
+                // disabled
                 >
                   Conversation Transcript
                 </TabsTrigger>
@@ -478,7 +509,7 @@ const Analysis: React.FC = () => {
                       className="w-full aspect-video"
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
-                      controls={false}
+                      controls={true}
                     />
                     <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
                       <button
@@ -556,256 +587,242 @@ const Analysis: React.FC = () => {
             </div>
           )}
 
-          {analysisData?.map((analysisItem, index) => (
-            <div
-              key={index}
-              className="mb-8 border border-gray-200 rounded-xl overflow-hidden"
-            >
-              {/* Section Label */}
-              <div className="bg-gray-100 px-6 py-2 border-l-4 border-primary">
-                <h3 className="font-medium text-gray-700">
-                  Section: {INTERVIEW_SECTIONS[index]}
-                </h3>
-                <p className="text-sm text-gray-500">{SECTION_DESCRIPTIONS[INTERVIEW_SECTIONS[index] as keyof typeof SECTION_DESCRIPTIONS]}</p>
-              </div>
+          {analysisData && analysisData.length > 0 && (
+            <Tabs defaultValue="0" className="w-full">
+              <TabsList className="w-full mb-6 grid"
+                style={{ gridTemplateColumns: `repeat(${INTERVIEW_SECTIONS.length}, 1fr)` }}>
+                {INTERVIEW_SECTIONS.map((section, index) => (
+                  <TabsTrigger key={index} value={index.toString()}>
+                    {section}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
 
-              {/* Question and Answer Panel */}
-              <div className="bg-gradient-to-r from-primary/10 to-purple-100 p-6">
-                <div className="mb-4">
-                  <h3 className="text-lg font-bold text-gray-800">Question {index + 1}</h3>
-                  <p className="mt-2 text-gray-800">
-                    {typeof analysisItem.question === 'string'
-                      ? analysisItem.question
-                      : "Interview question"}
-                  </p>
-                </div>
-
-                <div className="mt-4">
-                  <h4 className="font-semibold text-gray-800">Your Answer:</h4>
-                  <p className="mt-1 text-gray-700 bg-white/60 p-4 rounded-lg border border-gray-200">
-                    {typeof analysisItem.answer === 'string'
-                      ? analysisItem.answer
-                      : typeof analysisItem.answer === 'object' && analysisItem.answer !== null
-                        ? Object.values(analysisItem.answer)
-                          .filter(val => typeof val === 'string')
-                          .join("\n\n")
-                        : "No answer provided"}
-                  </p>
-                </div>
-
-                <div className="flex justify-center mt-6">
-                  <span className="text-lg font-bold bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-                    Score: {analysisItem.analysis?.overall_assessment?.overall_score || "N/A"}/10
-                  </span>
-                </div>
-              </div>
-
-              {/* Toggle Button */}
-              <button
-                onClick={() => toggleSectionVisibility(index)}
-                className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 py-3 border-t border-gray-200 transition"
-              >
-                <span className="font-medium mr-2">
-                  {expandedSections[index] ? "Hide Analysis" : "Show Detailed Analysis"}
-                </span>
-                <RiArrowDropDownLine
-                  className={`text-3xl transition-transform ${expandedSections[index] ? "rotate-180" : ""}`}
-                />
-              </button>
-
-              {/* Collapsible Content */}
-              {expandedSections[index] && analysisItem.analysis && (
-                <div className="p-6 border-t border-gray-200">
-                  {/* Strengths and Areas to Improve Summary */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    {/* Strengths */}
-                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                      <h4 className="text-lg font-semibold text-green-700 mb-2 flex items-center">
-                        <span className="mr-2">✓</span> Strengths
-                      </h4>
-                      {analysisItem.analysis?.overall_assessment?.strengths &&
-                        analysisItem.analysis.overall_assessment.strengths.length > 0 ? (
-                        <ul className="space-y-2">
-                          {analysisItem.analysis.overall_assessment.strengths.map((strength, i) => (
-                            <li key={i} className="flex items-start">
-                              <span className="inline-block bg-green-100 text-green-600 p-1 rounded-full mr-2">•</span>
-                              <span>{strength}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p>No specific strengths highlighted.</p>
-                      )}
-                    </div>
-
-                    {/* Areas for Improvement */}
-                    <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                      <h4 className="text-lg font-semibold text-orange-700 mb-2 flex items-center">
-                        <span className="mr-2">↗</span> Areas for Improvement
-                      </h4>
-                      {analysisItem.analysis?.overall_assessment?.areas_for_improvement &&
-                        analysisItem.analysis.overall_assessment.areas_for_improvement.length > 0 ? (
-                        <ul className="space-y-2">
-                          {analysisItem.analysis.overall_assessment.areas_for_improvement.map((area, i) => (
-                            <li key={i} className="flex items-start">
-                              <span className="inline-block bg-orange-100 text-orange-600 p-1 rounded-full mr-2">•</span>
-                              <span>{area}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      ) : (
-                        <p>No specific areas for improvement highlighted.</p>
-                      )}
-                    </div>
+              {analysisData.map((analysisItem, index) => (
+                <TabsContent key={index} value={index.toString()} className="focus:outline-none">
+                  <div className="mb-2 text-sm text-gray-500 italic">
+                    {SECTION_DESCRIPTIONS[INTERVIEW_SECTIONS[index] as keyof typeof SECTION_DESCRIPTIONS]}
                   </div>
 
-                  {/* Suggestions */}
-                  <div className="mb-8 bg-blue-50 p-4 rounded-lg border border-blue-200">
-                    <h4 className="text-lg font-semibold text-blue-700 mb-2">Key Suggestions</h4>
-                    {analysisItem.analysis?.overall_assessment?.suggestions &&
-                      analysisItem.analysis.overall_assessment.suggestions.length > 0 ? (
-                      <ul className="space-y-2">
-                        {analysisItem.analysis.overall_assessment.suggestions.map((suggestion, i) => (
-                          <li key={i} className="flex items-start">
-                            <span className="inline-block bg-blue-100 text-blue-600 p-1 rounded-full mr-2">💡</span>
-                            <span>{suggestion}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p>No specific suggestions provided.</p>
-                    )}
-                  </div>
+                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                    {/* Question and Answer Panel */}
+                    <div className="bg-gradient-to-r from-primary/10 to-purple-100 p-6">
+                      <div className="flex justify-center mt-2 mb-4">
+                        <span className="text-lg font-bold bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
+                          Score: {analysisItem.analysis?.weighted_score.score || "N/A"}/{analysisItem.analysis?.weighted_score?.max_score}
+                        </span>
+                      </div>
 
-                  {/* Detailed Line Analysis */}
-                  <div className="border-t border-gray-200 pt-6">
-                    <h4 className="text-lg font-semibold mb-4">Detailed Response Analysis</h4>
-                    {analysisItem.analysis?.line_analysis &&
-                      analysisItem.analysis.line_analysis.length > 0 ? (
-                      <div className="space-y-8">
-                        {/* Add line selector using Shadcn Select component */}
-                        <div className="mb-4">
-                          <label htmlFor="lineSelector" className="block text-sm font-medium text-gray-700 mb-1">
-                            Select line to analyze:
-                          </label>
-                          <Select
-                            onValueChange={(value) => {
-                              const selectedIndex = parseInt(value);
-                              setSelectedLineIndex(selectedIndex);
-                            }}
-                            value={selectedLineIndex !== null ? selectedLineIndex.toString() : undefined}
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select a response line" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {analysisItem.analysis.line_analysis.map((line, idx) => (
-                                <SelectItem key={idx} value={idx.toString()}>
-                                  {line.line.length > 50 ? `${line.line.substring(0, 50)}...` : line.line}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                    </div>
+
+                    {/* Toggle Button */}
+                    <button
+                      onClick={() => toggleSectionVisibility(index)}
+                      className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-200 py-3 border-t border-gray-200 transition mb-2"
+                    >
+                      <span className="font-medium mr-2">
+                        {expandedSections[index] ? "Hide Analysis" : "Show Detailed Analysis"}
+                      </span>
+                      <RiArrowDropDownLine
+                        className={`text-3xl transition-transform ${expandedSections[index] ? "rotate-180" : ""}`}
+                      />
+                    </button>
+
+                    {/* Collapsible Content */}
+                    {expandedSections[index] && analysisItem.analysis && (
+                      <div className="p-6 border-t border-gray-200">
+                        {/* Strengths and Areas to Improve Summary */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                          {/* Strengths */}
+                          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                            <h4 className="text-lg font-semibold text-green-700 mb-2 flex items-center">
+                              <span className="mr-2">✓</span> Strengths
+                            </h4>
+                            {analysisItem.analysis?.overall_assessment?.strengths &&
+                              analysisItem.analysis.overall_assessment.strengths.length > 0 ? (
+                              <ul className="space-y-2">
+                                {analysisItem.analysis.overall_assessment.strengths.map((strength, i) => (
+                                  <li key={i} className="flex items-start">
+                                    <span className="inline-block bg-green-100 text-green-600 p-1 rounded-full mr-2">•</span>
+                                    <span>{strength}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p>No specific strengths highlighted.</p>
+                            )}
+                          </div>
+
+                          {/* Areas for Improvement */}
+                          <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                            <h4 className="text-lg font-semibold text-orange-700 mb-2 flex items-center">
+                              <span className="mr-2">↗</span> Areas for Improvement
+                            </h4>
+                            {analysisItem.analysis?.overall_assessment?.areas_for_improvement &&
+                              analysisItem.analysis.overall_assessment.areas_for_improvement.length > 0 ? (
+                              <ul className="space-y-2">
+                                {analysisItem.analysis.overall_assessment.areas_for_improvement.map((area, i) => (
+                                  <li key={i} className="flex items-start">
+                                    <span className="inline-block bg-orange-100 text-orange-600 p-1 rounded-full mr-2">•</span>
+                                    <span>{area}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p>No specific areas for improvement highlighted.</p>
+                            )}
+                          </div>
                         </div>
 
-                        {/* Display only the selected line analysis */}
-                        {selectedLineIndex !== null && (
-                          <div
-                            className="bg-gray-50 p-6 rounded-lg border border-gray-200"
-                          >
-                            <p className="font-medium mb-4 pb-3 border-b border-gray-300">
-                              "{analysisItem.analysis.line_analysis[selectedLineIndex].line}"
-                            </p>
+                        {/* Suggestions */}
+                        <div className="mb-8 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                          <h4 className="text-lg font-semibold text-blue-700 mb-2">Key Suggestions</h4>
+                          {analysisItem.analysis?.overall_assessment?.suggestions &&
+                            analysisItem.analysis.overall_assessment.suggestions.length > 0 ? (
+                            <ul className="space-y-2">
+                              {analysisItem.analysis.overall_assessment.suggestions.map((suggestion, i) => (
+                                <li key={i} className="flex items-start">
+                                  <span className="inline-block bg-blue-100 text-blue-600 p-1 rounded-full mr-2">💡</span>
+                                  <span>{suggestion}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p>No specific suggestions provided.</p>
+                          )}
+                        </div>
 
-                            {/* Chart */}
-                            <div className="mb-6 bg-white p-4 rounded-lg">
-                              <Bar
-                                data={createChartData(analysisItem.analysis.line_analysis[selectedLineIndex])}
-                                options={{
-                                  responsive: true,
-                                  scales: {
-                                    y: {
-                                      beginAtZero: true,
-                                      max: 10
-                                    }
-                                  }
-                                }}
-                              />
+                        {/* Detailed Line Analysis */}
+                        <div className="border-t border-gray-200 pt-6">
+                          <h4 className="text-lg font-semibold mb-4">Detailed Response Analysis</h4>
+                          {analysisItem.analysis?.line_analysis &&
+                            analysisItem.analysis.line_analysis.length > 0 ? (
+                            <div className="space-y-8">
+                              {/* Add line selector using Shadcn Select component */}
+                              <div className="mb-4">
+                                <label htmlFor="lineSelector" className="block text-sm font-medium text-gray-700 mb-1">
+                                  Select line to analyze:
+                                </label>
+                                <Select
+                                  onValueChange={(value) => {
+                                    const selectedIndex = parseInt(value);
+                                    handleLineSelect(index, selectedIndex);
+                                  }}
+                                  value={selectedLineIndices[index]?.toString() || undefined}
+                                >
+                                  <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Select a response line" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {analysisItem.analysis.line_analysis.map((line, idx) => (
+                                      <SelectItem key={idx} value={idx.toString()}>
+                                        {line.line.length > 50 ? `${line.line.substring(0, 50)}...` : line.line}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              {/* Display only the selected line analysis */}
+                              {selectedLineIndices[index] !== undefined && selectedLineIndices[index] !== null && (
+                                <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                                  <p className="font-medium mb-4 pb-3 border-b border-gray-300">
+                                    "{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].line}"
+                                  </p>
+
+                                  {/* Chart */}
+                                  <div className="mb-6 bg-white p-4 rounded-lg">
+                                    <Bar
+                                      data={createChartData(analysisItem.analysis.line_analysis[selectedLineIndices[index] as number])}
+                                      options={{
+                                        responsive: true,
+                                        scales: {
+                                          y: {
+                                            beginAtZero: true,
+                                            max: 10
+                                          }
+                                        }
+                                      }}
+                                    />
+                                  </div>
+
+                                  {/* Analysis Tabs */}
+                                  <Tabs defaultValue="clarity">
+                                    <TabsList className="w-full grid grid-cols-5 mb-4">
+                                      <TabsTrigger value="clarity">Clarity</TabsTrigger>
+                                      <TabsTrigger value="depth">Depth</TabsTrigger>
+                                      <TabsTrigger value="professionalism">Professionalism</TabsTrigger>
+                                      <TabsTrigger value="relevance">Relevance</TabsTrigger>
+                                      <TabsTrigger value="technical">Technical</TabsTrigger>
+                                    </TabsList>
+
+                                    <TabsContent value="clarity" className="p-4 bg-white rounded-lg border border-gray-200">
+                                      <div className="flex justify-between mb-2">
+                                        <h5 className="font-bold">Clarity</h5>
+                                        <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                                          Score: {analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].clarity.score}/10
+                                        </span>
+                                      </div>
+                                      <p>{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].clarity.reasoning}</p>
+                                    </TabsContent>
+
+                                    <TabsContent value="depth" className="p-4 bg-white rounded-lg border border-gray-200">
+                                      <div className="flex justify-between mb-2">
+                                        <h5 className="font-bold">Depth</h5>
+                                        <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
+                                          Score: {analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].depth.score}/10
+                                        </span>
+                                      </div>
+                                      <p>{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].depth.reasoning}</p>
+                                    </TabsContent>
+
+                                    <TabsContent value="professionalism" className="p-4 bg-white rounded-lg border border-gray-200">
+                                      <div className="flex justify-between mb-2">
+                                        <h5 className="font-bold">Professionalism</h5>
+                                        <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
+                                          Score: {analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].professionalism.score}/10
+                                        </span>
+                                      </div>
+                                      <p>{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].professionalism.reasoning}</p>
+                                    </TabsContent>
+
+                                    <TabsContent value="relevance" className="p-4 bg-white rounded-lg border border-gray-200">
+                                      <div className="flex justify-between mb-2">
+                                        <h5 className="font-bold">Relevance</h5>
+                                        <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm font-medium">
+                                          Score: {analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].relevance.score}/10
+                                        </span>
+                                      </div>
+                                      <p>{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].relevance.reasoning}</p>
+                                    </TabsContent>
+
+                                    <TabsContent value="technical" className="p-4 bg-white rounded-lg border border-gray-200">
+                                      <div className="flex justify-between mb-2">
+                                        <h5 className="font-bold">Technical Accuracy</h5>
+                                        <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
+                                          Score: {analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].technical_accuracy.score}/10
+                                        </span>
+                                      </div>
+                                      <p>{analysisItem.analysis.line_analysis[selectedLineIndices[index] as number].technical_accuracy.reasoning}</p>
+                                    </TabsContent>
+                                  </Tabs>
+                                </div>
+                              )}
                             </div>
-
-                            {/* Analysis Tabs */}
-                            <Tabs defaultValue="clarity">
-                              <TabsList className="w-full grid grid-cols-5 mb-4">
-                                <TabsTrigger value="clarity">Clarity</TabsTrigger>
-                                <TabsTrigger value="depth">Depth</TabsTrigger>
-                                <TabsTrigger value="professionalism">Professionalism</TabsTrigger>
-                                <TabsTrigger value="relevance">Relevance</TabsTrigger>
-                                <TabsTrigger value="technical">Technical</TabsTrigger>
-                              </TabsList>
-
-                              <TabsContent value="clarity" className="p-4 bg-white rounded-lg border border-gray-200">
-                                <div className="flex justify-between mb-2">
-                                  <h5 className="font-bold">Clarity</h5>
-                                  <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
-                                    Score: {analysisItem.analysis.line_analysis[selectedLineIndex].clarity.score}/10
-                                  </span>
-                                </div>
-                                <p>{analysisItem.analysis.line_analysis[selectedLineIndex].clarity.reasoning}</p>
-                              </TabsContent>
-
-                              <TabsContent value="depth" className="p-4 bg-white rounded-lg border border-gray-200">
-                                <div className="flex justify-between mb-2">
-                                  <h5 className="font-bold">Depth</h5>
-                                  <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-sm font-medium">
-                                    Score: {analysisItem.analysis.line_analysis[selectedLineIndex].depth.score}/10
-                                  </span>
-                                </div>
-                                <p>{analysisItem.analysis.line_analysis[selectedLineIndex].depth.reasoning}</p>
-                              </TabsContent>
-
-                              <TabsContent value="professionalism" className="p-4 bg-white rounded-lg border border-gray-200">
-                                <div className="flex justify-between mb-2">
-                                  <h5 className="font-bold">Professionalism</h5>
-                                  <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm font-medium">
-                                    Score: {analysisItem.analysis.line_analysis[selectedLineIndex].professionalism.score}/10
-                                  </span>
-                                </div>
-                                <p>{analysisItem.analysis.line_analysis[selectedLineIndex].professionalism.reasoning}</p>
-                              </TabsContent>
-
-                              <TabsContent value="relevance" className="p-4 bg-white rounded-lg border border-gray-200">
-                                <div className="flex justify-between mb-2">
-                                  <h5 className="font-bold">Relevance</h5>
-                                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-sm font-medium">
-                                    Score: {analysisItem.analysis.line_analysis[selectedLineIndex].relevance.score}/10
-                                  </span>
-                                </div>
-                                <p>{analysisItem.analysis.line_analysis[selectedLineIndex].relevance.reasoning}</p>
-                              </TabsContent>
-
-                              <TabsContent value="technical" className="p-4 bg-white rounded-lg border border-gray-200">
-                                <div className="flex justify-between mb-2">
-                                  <h5 className="font-bold">Technical Accuracy</h5>
-                                  <span className="bg-red-100 text-red-800 px-2 py-1 rounded-full text-sm font-medium">
-                                    Score: {analysisItem.analysis.line_analysis[selectedLineIndex].technical_accuracy.score}/10
-                                  </span>
-                                </div>
-                                <p>{analysisItem.analysis.line_analysis[selectedLineIndex].technical_accuracy.reasoning}</p>
-                              </TabsContent>
-                            </Tabs>
-                          </div>
-                        )}
+                          ) : (
+                            <p>No detailed line analysis available.</p>
+                          )}
+                        </div>
                       </div>
-                    ) : (
-                      <p>No detailed line analysis available.</p>
                     )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                    <ChatInterface conversationChat={analysisItem?.conversationChat} />
 
+                  </div>
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+        </div>
       </div>
     </div>
   );

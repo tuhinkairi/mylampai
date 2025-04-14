@@ -24,7 +24,18 @@ type Interview = {
   id: string;
   interviewState: "In_Progress" | "Scheduled" | "Analysis_Completed";
   interviewFeedback: any[];
-  createdAt?: string; // Add createdAt field for sorting
+  createdAt: Date;
+  updatedAt: Date;
+  messages: {
+    id: string;
+    createdAt: Date;
+    type: string;
+    sender: string;
+    response: string;
+    code: string | null;
+    interviewId: string;
+  }[];
+  analysis: any[];
 };
 
 export default function InterviewsPage() {
@@ -44,8 +55,9 @@ export default function InterviewsPage() {
       // console.log("interviews:: ", res, " for:: ", talentProfileId);
 
       // Add mock dates if they don't exist for demonstration
-      const interviewsWithDates = res.map((interview: Interview, index: number) => ({
+      const interviewsWithDates = res.map((interview, index) => ({
         ...interview,
+        interviewState: interview.interviewState as "In_Progress" | "Scheduled" | "Analysis_Completed",
         createdAt: interview.createdAt || new Date(Date.now() - (index * 24 * 60 * 60 * 1000)).toISOString()
       }));
 
@@ -210,7 +222,7 @@ export default function InterviewsPage() {
 
               </DialogHeader>
               <ScrollArea className=" w-full">
-                <CreateInterviewComponent jobDescription="" />
+                <CreateInterviewComponent jobDescription="" category="" rubrics={[]} />
               </ScrollArea>
             </DialogContent>
 

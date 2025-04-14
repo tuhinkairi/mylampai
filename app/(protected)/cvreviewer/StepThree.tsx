@@ -1568,7 +1568,7 @@ const PDFViewer = () => {
                   <DialogHeader>
                     <DialogTitle>Summary</DialogTitle>
                     <DialogDescription className="text-sm">
-                      {reviewedData?.summary || "No summary available"} 
+                      {reviewedData?.summary || "No summary available"}
                     </DialogDescription>
                   </DialogHeader>
                 </DialogContent>

@@ -41,9 +41,9 @@ export const generateSasToken = async (blobName: string) => {
 export const generateSasUrlForInterview = async () => {
   const sasOptions = {
     containerName: interviewContainerName,
-    permissions: BlobSASPermissions.parse("cw"),
-    startsOn: new Date(Date.now() - 5 * 60 * 1000),
-    expiresOn: new Date(Date.now() + 40 * 60 * 1000),
+    permissions: BlobSASPermissions.parse("rcw"),
+    startsOn: new Date(Date.now() - 10 * 60 * 1000),
+    expiresOn: new Date(Date.now() + 60 * 60 * 1000),
   };
 
   try {

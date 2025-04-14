@@ -1,5 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
+
+type RubricsType={
+  parameter:string,
+  description:string,
+  weightage:number
+}
+
 type TalentPoolProfileDataType = {
   id: string;
   resumeId: string;
@@ -13,6 +20,7 @@ type TalentPoolProfileDataType = {
   interviewDate?: string;
   interviewState?: "pending" | "completed" | "cancelled";
   interviewId: string;
+  rubrics:RubricsType[]
 };
 
 interface CareerProfilesState {

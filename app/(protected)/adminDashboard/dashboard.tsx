@@ -5,6 +5,7 @@ import QuillWrapper from "@/components/adminDashboard/QuillWrapper";
 // import otptemplate from "@/utils/otptemplate";
 // import { sendNewsLetter, scheduleNewsLetter } from "@/utils/newlettermailing";
 import { getTemplates } from "@/actions/emailfetch";
+import { toast } from "sonner";
 
 // const availableTemplates = [
 //   { name: "Standard Template", template: emailtemplate },
@@ -19,11 +20,11 @@ interface TemplateType {
 }
 
 export default function AdminDashboard() {
-  const [value, setValue] = useState(""); 
+  const [value, setValue] = useState("");
   const [emailTemplate, setEmailTemplate] = useState<TemplateType | null>(null);
   const [finalHTMLTemplate, setFinalHtmlTemplate] = useState("");
-  const [subject, setSubject] = useState(""); 
-  const [emailIds, setEmailIds] = useState(""); 
+  const [subject, setSubject] = useState("");
+  const [emailIds, setEmailIds] = useState("");
   const [scheduleMode, setScheduleMode] = useState(false);
   const [scheduleDate, setScheduleDate] = useState("");
   const [scheduleTime, setScheduleTime] = useState("");
@@ -37,9 +38,9 @@ export default function AdminDashboard() {
         console.log("asshedwuhd", templates)
         if (templates.length > 0) {
           setAvailableTemplates(templates);
-          setEmailTemplate(templates[0]); 
+          setEmailTemplate(templates[0]);
           setSubject(templates[0].subject);
-          setFinalHtmlTemplate(templates[0].html_body); 
+          setFinalHtmlTemplate(templates[0].html_body);
         } else {
           console.error("No templates found");
         }
@@ -83,12 +84,15 @@ export default function AdminDashboard() {
         to: recipientEmails,
         sender: "Support <support@wize.co.in>",
         subject,
-        html_body:finalHTMLTemplate
+        html_body: finalHTMLTemplate
       }),
     });
 
-    const data = await response.json();
-    console.log("Email Send Response:", data);
+    const res = await response.json();
+    console.log("Email Send Response:", res.data);
+    const total = res.data.failed + res.data.succeeded;
+    const succeeded = res.data.succeeded;
+    toast.success(`Email sent: ${succeeded}/${total}`)
   };
 
   return (

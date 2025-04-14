@@ -5,6 +5,12 @@ import prisma from "@/lib";
 import { generateSasToken } from "./azureActions";
 import { auth } from "@/lib/authlib";
 
+type Rubrics = {
+  parameter: string;
+  description: string;
+  weightage: number;
+};
+
 type TalentPoolProfileType = {
   resumeId: string;
   role: string;
@@ -16,7 +22,8 @@ type TalentPoolProfileType = {
 };
 
 export const createTalentPoolProfile = async (
-  talentPoolProfileData: TalentPoolProfileType
+  talentPoolProfileData: TalentPoolProfileType,
+  rubrics: Rubrics[]
 ) => {
   try {
     const res = await prisma.talentPoolProfile.create({
@@ -33,13 +40,20 @@ export const createTalentPoolProfile = async (
         talentPoolProfileId: res.id,
         interviewDate: talentPoolProfileData.interviewDate,
         interviewState: "Scheduled",
+        rubrics: {
+          createMany: {
+            data: rubrics.map((rubric) => ({
+              ...rubric,
+            })),
+          },
+        },
       },
     });
 
     return {
       message: "Profile created successfully",
       status: "success",
-      data: { ...res, interviewId: interview.id },
+      data: { ...res, interviewId: interview.id, rubrics: rubrics },
     };
   } catch (error) {
     console.error(error);
@@ -150,7 +164,19 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
         interviewDate: true,
         interviewState: true,
         resume: true,
-        interview: true,
+        interview: {
+          select: {
+            id: true,
+            rubrics: {
+              select:{
+                parameter:true,
+                description:true,
+                weightage:true
+              }
+            },
+            interviewState: true,
+          },
+        },
       },
     });
 

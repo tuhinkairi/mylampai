@@ -8,11 +8,11 @@ const endpoint = "http://127.0.0.1:5000";
 
 export const generateInterviewRubrics = async (jobDescriotion: string) => {
   try {
-    console.log("this is job description", jobDescriotion);
+    // console.log("this is job description", jobDescriotion);
     const response = await axios.post(`${endpoint}/generate_rubrics`, {
       job_description: jobDescriotion,
     });
-    console.log("Rubics fetch Success:", response);
+    // console.log("Rubics fetch Success:", response);
     return {
       status: 200,
       result: response.data.rubrics,
