@@ -14,6 +14,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { format } from "date-fns";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import Image from "next/image";
 
 type Resume = {
   id: string;
@@ -71,7 +72,7 @@ const Page: React.FC = () => {
 
   return (
     <div className="container mx-auto py-8">
-      {loading && <FullScreenLoader message="Loading resumes..." />}
+      {/* {loading && <FullScreenLoader message="Loading resumes..." />} */}
 
       <div className="flex flex-col md:flex-row justify-between gap-4 md:items-center mb-8">
         <div>
@@ -106,8 +107,8 @@ const Page: React.FC = () => {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="overflow-hidden border border-border">
               <CardHeader className="pb-3">
                 <Skeleton className="h-6 w-3/4 mb-2" />
@@ -129,7 +130,7 @@ const Page: React.FC = () => {
           <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="text-xl font-semibold mb-2">No analyzed resumes found</h3>
           <p className="text-muted-foreground mb-6 max-w-md">
-            You haven't analyzed any resumes yet. Start by clicking the "Analyze New CV" button above.
+            You haven&apos;t analyzed any resumes yet. Start by clicking the &quot;Analyze New CV&quot; button above.
           </p>
           <Dialog>
             <DialogTrigger asChild>
@@ -153,7 +154,7 @@ const Page: React.FC = () => {
           </Dialog>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {resumeList.map((resume) => (
             <Card key={resume.id} className="overflow-hidden hover:shadow-md transition-shadow duration-200">
               <CardHeader className="pb-3">
@@ -171,32 +172,19 @@ const Page: React.FC = () => {
                 </CardDescription> */}
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground mb-2">
-                  {resume.resumeFileText ? (
-                    (() => {
-                      const parsed = JSON.parse(resume.resumeFileText);
-                      const description = parsed.Description;
-                      return typeof description === "string" ? (
-                        <p className="line-clamp-3">{description.substring(0, 150)}...</p>
-                      ) : (
-                        <p className="italic">No preview available</p>
-                      );
-                    })()
-                  ) : (
-                    <p className="italic">No preview available</p>
-                  )}
-
+                <div className="text-sm text-center text-muted-foreground">
+                  <Image src="/cvreviewer/resumePreview.png" width={200} height={10} alt="No preview" />
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between pt-2 gap-2">
-                {resume.resumeUrl && (
+              <CardFooter className="flex justify-between pt-1 gap-2">
+                {/* {resume.resumeUrl && (
                   <Button variant="outline" size="sm" asChild className="flex-1">
                     <Link href={resume.resumeUrl} target="_blank" rel="noopener noreferrer">
                       <Download className="h-4 w-4 mr-2" />
                       Download
                     </Link>
                   </Button>
-                )}
+                )} */}
                 <Button className="flex-1 bg-primary hover:bg-primary/90" asChild>
                   <Link href={`/cvreviewer/${resume.id}/analysis`}>
                     <ExternalLink className="h-4 w-4 mr-2" />

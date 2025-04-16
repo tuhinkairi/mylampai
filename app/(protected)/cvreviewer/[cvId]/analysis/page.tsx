@@ -1806,7 +1806,7 @@ const ResumeAnalyser = () => {
                                       </AccordionContent>
                                     );
                                   }) : (<AccordionContent key={"N/A"}>
-                                    "N/A"
+                                    N/A
                                   </AccordionContent>)}
                               </AccordionItem>
                             </Accordion>
@@ -2424,7 +2424,7 @@ const ResumeAnalyser = () => {
                                   {reviewedData.spellingerrors.Result.map((ele: any, index: number) => (
                                     <AccordionItem value={`item-${index}`} key={index}>
                                       <AccordionTrigger className="text-left">
-                                        <span className="font-medium text-red-500">{ele.word}</span> - found in: "{ele.context}"
+                                        <span className="font-medium text-red-500">{ele.word}</span> - found in:{ele.context}
                                       </AccordionTrigger>
                                       <AccordionContent>
                                         <div className="pl-2 border-l-2 border-gray-200">

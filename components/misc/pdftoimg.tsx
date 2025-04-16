@@ -59,11 +59,11 @@ const PdfToImage = ({ pdfUrl }: { pdfUrl: string }) => {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-        <VisuallyHidden>
-                <DialogTitle>
-                  hidden title
-                </DialogTitle>
-              </VisuallyHidden>
+          <VisuallyHidden>
+            <DialogTitle>
+              hidden title
+            </DialogTitle>
+          </VisuallyHidden>
           <DialogDescription>
             <Image
               src={imageSrc}
