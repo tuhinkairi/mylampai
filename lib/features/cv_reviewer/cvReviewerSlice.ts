@@ -9,8 +9,9 @@ interface CvReviewerState {
   summaryData: any | null;
   structuredData: any | null;
   jobProfile?: string | null;
-  manualJobDescription?: string | null;
+  jobDescription?: string | null;
   resumeFileText?: string | null;
+  resumeUrl?: string | null;
 }
 
 const initialState: CvReviewerState = {
@@ -22,8 +23,9 @@ const initialState: CvReviewerState = {
   summaryData: null,
   structuredData: null,
   jobProfile: null,
-  manualJobDescription: null,
+  jobDescription: null,
   resumeFileText: null,
+  resumeUrl: null,
 };
 
 const cvReviewerSlice = createSlice({
@@ -51,14 +53,17 @@ const cvReviewerSlice = createSlice({
     setJobProfile: (state, action: PayloadAction<string | null>) => {
       state.jobProfile = action.payload;
     },
-    setManualJobDescription: (state, action: PayloadAction<string | null>) => {
-      state.manualJobDescription = action.payload;
+    setJobDescription: (state, action: PayloadAction<string | null>) => {
+      state.jobDescription = action.payload;
     },
     setResumeName: (state, action: PayloadAction<string | null>) => {
       state.resumeName = action.payload;
     },
     setResumeFileText: (state, action: PayloadAction<string | null>) => {
       state.resumeFileText = action.payload;
+    },
+    setResumeFileUrl: (state, action: PayloadAction<string | null>) => {
+      state.resumeUrl = action.payload;
     },
     clearState: (state) => {
       state.resumeBase64 = null;
@@ -68,6 +73,7 @@ const cvReviewerSlice = createSlice({
       state.summaryData = null;
       state.structuredData = null;
       state.jobProfile = null;
+      state.resumeUrl = null;
     },
   },
 });
@@ -81,8 +87,9 @@ export const {
   setExtractedText,
   setJobProfile,
   setResumeName,
+  setResumeFileUrl,
   setResumeFileText,
-  setManualJobDescription,
+  setJobDescription,
 } = cvReviewerSlice.actions;
 
 export default cvReviewerSlice.reducer;

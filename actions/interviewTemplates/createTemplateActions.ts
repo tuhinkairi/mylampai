@@ -2,10 +2,9 @@
 import prisma from "@/lib";
 import axios from "axios";
 
-// import { InterviewTemplate } from "@prisma/client";
-
 const endpoint =
   "https://ai-interview-dzawedctafcceya3.centralindia-01.azurewebsites.net";
+// const endpoint = "http://localhost:5000";
 
 export const generateInterviewRubrics = async (jobDescriotion: string) => {
   try {
@@ -13,7 +12,7 @@ export const generateInterviewRubrics = async (jobDescriotion: string) => {
     const response = await axios.post(`${endpoint}/generate_rubrics`, {
       job_description: jobDescriotion,
     });
-    // console.log("Rubics fetch Success:", response);
+    // console.log("Rubics fetch Success:", response.data);
     return {
       status: 200,
       result: response.data.rubrics,

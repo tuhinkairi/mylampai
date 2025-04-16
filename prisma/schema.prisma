@@ -99,14 +99,14 @@ model Resume {
   resumeName        String?
   resumeUrl         String // URL in Azure storage
   purpose           String? // Purpose: "AI_REVIEW", "JOB_APPLICATION", "INTERVIEW", "OTHER"
-  jobDescription    String?
   resumeFileText    String?
   userId            String              @db.ObjectId
   user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   currentVersion    Int                 @default(1)
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
-  ResumeAnalysis    ResumeAnalysis?
+  isAnalysisDone    Boolean             @default(false)
+  ResumeAnalysis    ResumeAnalysis?     
   ResumeVersion     ResumeVersion[] // Relation to version history
   talentPoolProfile TalentPoolProfile[]
 }
@@ -130,6 +130,7 @@ model ResumeAnalysis {
   id                    String   @id @default(auto()) @map("_id") @db.ObjectId
   resumeId              String?  @unique @db.ObjectId
   resume                Resume?  @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescription        String?
   sectionanalysis       Json?
   skillsassessment      Json?
   quantification        Json?

@@ -7,7 +7,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { CalendarIcon, Check, CirclePlus, LoaderIcon, Upload } from "lucide-react";
+import { CalendarIcon, Check, CirclePlus, LoaderCircleIcon, LoaderIcon, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Form,
@@ -150,6 +150,9 @@ type ProfileData = {
   interviewDate: Date;
 };
 
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
+
+
 export default function CreateTalentPoolProfileDialog({
   isCTPPDialogOpen,
   setIsCTPPDialogOpen,
@@ -167,12 +170,14 @@ export default function CreateTalentPoolProfileDialog({
   );
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isUploaded, setIsUploaded] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const dispatch = useAppDispatch()
   const profile = useAppSelector((state) => state.talentProfile);
   const careerProfiles = useAppSelector(
     (state) => state.talentPoolProfile.talentPoolProfiles
   );
   const id = profile.id;
+
 
   const createProfile = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
@@ -211,8 +216,8 @@ export default function CreateTalentPoolProfileDialog({
     }
 
     try {
-      console.log("values", values);
-
+      // console.log("values", values);
+      setIsSubmitting(true)
       const rubricsContext = `{
         "role": "${values.role}",
         "skills": ${JSON.stringify(values.skills)},
@@ -226,7 +231,7 @@ export default function CreateTalentPoolProfileDialog({
       }
       const data = response.result;
       // console.log("rubrics::in :: ", data.evaluation_criteria)
-      console.log("resumeIDD : ", uploadedResumeId, " valuesndf:: ", values.resumeId)
+      // console.log("resumeIDD : ", uploadedResumeId, " valuesndf:: ", values.resumeId)
       const res = await createTalentPoolProfile({
         ...values,
         talentProfileId: id,
@@ -235,7 +240,7 @@ export default function CreateTalentPoolProfileDialog({
 
       if (res.status === "success" && res.data) {
         toast.success(res.message);
-        console.log("res.data", res.data);
+        // console.log("res.data", res.data);
         dispatch(addCareerProfile({
           ...values,
           id: res.data.id,
@@ -253,6 +258,8 @@ export default function CreateTalentPoolProfileDialog({
     } catch (error) {
       console.error(error);
       toast.error("Failed to create talent profile");
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -283,6 +290,31 @@ export default function CreateTalentPoolProfileDialog({
       reader.onerror = reject;
       reader.readAsArrayBuffer(file);
     });
+  }, []);
+  const extractStructuredData = useCallback(async (text: string) => {
+    try {
+      // console.log("debug in extractSD")
+      const response = await fetch(`${baseUrl}/extract_profile_data`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cv_text: text }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        // setIsResumeUploaded(true);
+        // toast.success("Resume uploaded successfully");
+        return result;
+      }
+      toast.error("Error extracting structured data from resume");
+      return null;
+    } catch (error) {
+      toast.error("Error extracting structured data from resume");
+      // setUploading(false);
+      return null;
+    }
   }, []);
 
   const handleResumeUpload = async (
@@ -316,7 +348,8 @@ export default function CreateTalentPoolProfileDialog({
 
       const formData = new FormData();
       formData.append("resumeFile", file);
-      formData.append("resumeFileText", resumeText);
+      const structuredText = await extractStructuredData(resumeText)
+      formData.append("resumeFileText", JSON.stringify(structuredText));
 
       const response = await fetch("/api/resume/add_new", {
         method: "POST",
@@ -448,7 +481,7 @@ export default function CreateTalentPoolProfileDialog({
             variant="outline"
             size="icon"
           >
-            <CirclePlus className="w-8 h-8 text-primary" />
+            <CirclePlus className="w-6 h-6 text-primary" />
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
@@ -762,8 +795,8 @@ export default function CreateTalentPoolProfileDialog({
                 )}
               />
               <DialogFooter>
-                <Button type="submit" className="hover:bg-primary-dark">
-                  Create Profile
+                <Button type="submit" className="hover:bg-primary-dark"  disabled={isSubmitting}>
+                  Create Profile {isSubmitting && <LoaderCircleIcon className="ml-2 animate-spin" />}
                 </Button>
               </DialogFooter>
             </form>

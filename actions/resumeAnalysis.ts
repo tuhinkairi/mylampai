@@ -2,7 +2,7 @@
 
 import prisma from "@/lib";
 
-type AnalysisSection = 
+type AnalysisSection =
   | "sectionanalysis"
   | "skillsassessment"
   | "quantification"
@@ -22,29 +22,34 @@ type AnalysisSection =
 
 interface UpdateAnalysisParams {
   resumeId: string;
-  section: AnalysisSection;
-  data: any;
+  section?: AnalysisSection;
+  data?: any;
+  jobDescription?: string;
 }
 
 interface FetchAnalysisParams {
-    resumeId: string;
-    section?: AnalysisSection | AnalysisSection[];  // Optional - if not provided, fetch all sections
-  }
+  resumeId: string;
+  section?: AnalysisSection | AnalysisSection[]; // Optional - if not provided, fetch all sections
+}
 
-export const updateResumeAnalysis = async ({ resumeId, section, data }: UpdateAnalysisParams) => {
+export const updateResumeAnalysis = async ({
+  resumeId,
+  section,
+  data,
+}: UpdateAnalysisParams) => {
   try {
     // Input validation
     if (!resumeId || !section || data === undefined) {
-      return { 
-        success: false, 
-        error: "Missing required parameters", 
-        status: 400 
+      return {
+        success: false,
+        error: "Missing required parameters",
+        status: 400,
       };
     }
 
     // Check if an analysis record exists for this CV
     let analysis = await prisma.resumeAnalysis.findFirst({
-      where: { resumeId }
+      where: { resumeId },
     });
 
     if (analysis) {
@@ -53,243 +58,186 @@ export const updateResumeAnalysis = async ({ resumeId, section, data }: UpdateAn
         where: { id: analysis.id },
         data: {
           [section]: data,
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       });
     } else {
-      // Create new analysis record with initial section
-      analysis = await prisma.resumeAnalysis.create({
-        data: {
-          resumeId,
-          [section]: data
-        }
-      });
+      return {
+        success: false,
+        error: "Internal server error! Already found",
+        status: 500,
+      };
     }
-
     return {
       success: true,
       data: analysis,
-      status: 200
+      status: 200,
     };
-
   } catch (error) {
     console.error(`Error updating ${section} analysis:`, error);
     return {
       success: false,
       error: "Internal server error",
-      status: 500
+      status: 500,
     };
   }
 };
 
-export const fetchResumeAnalysis = async ({ resumeId, section }: FetchAnalysisParams) => {
-    try {
-      if (!resumeId) {
-        return {
-          success: false,
-          error: "CV ID is required",
-          status: 400
-        };
-      }
-  
-      // Define select object for Prisma query
-      let selectFields: Record<string, boolean> = {
-        id: true,
-        resumeId: true,
-        createdAt: true,
-        updatedAt: true
-      };
-  
-      // If specific section(s) requested, only select those
-      if (section) {
-        if (Array.isArray(section)) {
-          section.forEach(field => {
-            selectFields[field] = true;
-          });
-        } else {
-          selectFields[section] = true;
-        }
-      } else {
-        // If no section specified, select all fields
-        selectFields = {
-          id: true,
-          resumeId: true,
-          sectionanalysis: true,
-          skillsassessment: true,
-          quantification: true,
-          repetition: true,
-          verbstrength: true,
-          verbtense: true,
-          spellingerrors: true,
-          summary: true,
-          score: true,
-          personal_info: true,
-          bullet_point_length: true,
-          bullet_point_improver: true,
-          total_bullet_points: true,
-          responsibility: true,
-          resume_length: true,
-          resume_score: true,
-          createdAt: true,
-          updatedAt: true
-        };
-      }
-  
-      const analysis = await prisma.resumeAnalysis.findFirst({
-        where: { resumeId },
-        select: selectFields
+export const createReusmeAnalysis = async ({
+  resumeId,
+  jobDescription,
+}: {
+  resumeId: string;
+  jobDescription: string;
+}) => {
+  try {
+    let analysis = await prisma.resumeAnalysis.findFirst({
+      where: { resumeId },
+    });
+
+    if (!analysis) {
+      const result = await prisma.$transaction(async (tx) => {
+        const newAnalysis = await tx.resumeAnalysis.create({
+          data: {
+            resumeId,
+            jobDescription,
+          },
+        });
+
+        const updatedResume = await tx.resume.update({
+          where: { id: resumeId },
+          data: { isAnalysisDone: true },
+        });
+
+        return { newAnalysis, updatedResume };
       });
-  
-      if (!analysis) {
-        return {
-          success: false,
-          error: "Analysis not found",
-          status: 404
-        };
-      }
-  
+
       return {
-        success: true,
-        data: analysis,
-        status: 200
+        status: 200,
+        data: result.newAnalysis,
+        message: "Analysis created successfully",
       };
-  
-    } catch (error) {
-      console.error("Error fetching resume analysis:", error);
+    } else {
+      return {
+        status: 209,
+        message: "One Analysis Already exist! Redirecting..",
+      };
+    }
+  } catch (error) {
+    console.error("Error in createResumeAnalysis:", error);
+    return {
+      success: false,
+      error: "Internal server error",
+      status: 500,
+    };
+  }
+};
+
+export const fetchResumeAnalysis = async ({
+  resumeId,
+  section,
+}: FetchAnalysisParams) => {
+  try {
+    if (!resumeId) {
       return {
         success: false,
-        error: "Internal server error",
-        status: 500
+        error: "CV ID is required",
+        status: 400,
       };
     }
-  };
+
+    // Define select object for Prisma query
+    let selectFields: Record<string, boolean> = {
+      id: true,
+      resumeId: true,
+      createdAt: true,
+      updatedAt: true,
+    };
+
+    // If specific section(s) requested, only select those
+    if (section) {
+      if (Array.isArray(section)) {
+        section.forEach((field) => {
+          selectFields[field] = true;
+        });
+      } else {
+        selectFields[section] = true;
+      }
+    } else {
+      // If no section specified, select all fields
+      selectFields = {
+        id: true,
+        resumeId: true,
+        jobDescription: true,
+        sectionanalysis: true,
+        skillsassessment: true,
+        quantification: true,
+        repetition: true,
+        verbstrength: true,
+        verbtense: true,
+        spellingerrors: true,
+        summary: true,
+        score: true,
+        personal_info: true,
+        bullet_point_length: true,
+        bullet_point_improver: true,
+        total_bullet_points: true,
+        responsibility: true,
+        resume_length: true,
+        resume_score: true,
+        createdAt: true,
+        updatedAt: true,
+        resume: {
+          select: {
+            resumeUrl: true,
+            resumeFileText: true,
+          },
+        },
+      };
+    }
+
+    const analysis = await prisma.resumeAnalysis.findFirst({
+      where: { resumeId },
+      select: selectFields,
+    });
+
+    if (!analysis) {
+      return {
+        success: false,
+        error: "Analysis not found",
+        status: 404,
+      };
+    }
+
+    return {
+      success: true,
+      data: analysis,
+      status: 200,
+    };
+  } catch (error) {
+    console.error("Error fetching resume analysis:", error);
+    return {
+      success: false,
+      error: "Internal server error",
+      status: 500,
+    };
+  }
+};
 
 export const fetchAnalysis = async (id: string) => {
-    try {
-        // Fetch analysis by id
-        const response = await prisma.resumeAnalysis.findFirst({
-            where: { resumeId: id }
-        });
-        // Return response or error
-        // console.log(response)
-        if (!response) {
-            return { error: "Analysis not found", status: 404 };
-        }
-        return { success: true, data: response, status: 200 };
-    } catch (error) {
-        console.error("Error in fetchAnalysis:", error);
-        return { success: false, error: "Internal server error", status: 500 };
+  try {
+    // Fetch analysis by id
+    const response = await prisma.resumeAnalysis.findFirst({
+      where: { resumeId: id },
+    });
+    // Return response or error
+    // console.log(response)
+    if (!response) {
+      return { error: "Analysis not found", status: 404 };
     }
-}
-
-
-
-// export type AnalysisDataType = {
-//     sectionanalysis?: object;
-//     skillsassessment?: object;
-//     quantification?: object;
-//     repetition?: object;
-//     verbstrength?: object;
-//     verbtense?: object;
-//     spellingerrors: string[];
-//     summary?: string;
-//     score: number;
-//     personal_info?: object;
-//     bullet_point_length: string[];
-//     bullet_point_improver: string[];
-//     total_bullet_points?: object;
-//     responsibility?: object;
-//     resume_length: string[];
-//     resume_score?:object
-//     resumeId?: string;
-// };
-
-// export const analysisResume = async (data: AnalysisDataType) => {
-//     try {
-//         // Ensure the input is valid and type-check
-//         if (!data || typeof data !== "object") {
-//             throw new Error("Data is missing or invalid");
-//         }
-//         const {
-//             sectionanalysis,
-//             skillsassessment,
-//             quantification,
-//             repetition,
-//             verbstrength,
-//             verbtense,
-//             spellingerrors,
-//             summary,
-//             score,
-//             personal_info,
-//             bullet_point_length,
-//             bullet_point_improver,
-//             total_bullet_points,
-//             responsibility,
-//             resume_length,
-//             resume_score,
-//             resumeId
-//         } = data;
-
-//         console.log("debug 111: ",data)
-        
-//         // Validate required fields
-//         // if (
-//         //     !sectionanalysis ||
-//         //     !skillsassessment ||
-//         //     !quantification ||
-//         //     !repetition ||
-//         //     !verbstrength ||
-//         //     !verbtense ||
-//         //     !overusedphrases ||
-//         //     !spellingerrors.length ||
-//         //     !genericpoints.length ||
-//         //     !summary ||
-//         //     !resumeId ||
-//         //     !personal_info ||
-//         //     !bullet_point_length ||
-//         //     !bullet_point_improver ||
-//         //     !total_bullet_points ||
-//         //     !responsibility ||
-//         //     !resume_length ||
-//         //     !resume_score ||
-//         //     typeof score !== "number"
-//         // ) {
-//         //     console.log({ error: "Missing required fields", status: 400 })
-//         //     return { error: "Missing required fields", status: 400 };
-//         // }
-//         // console.log(userId)
-//         // Create ResumeAnalysis and link it with the user
-//         const response = await prisma.resumeAnalysis.create({
-//             data: {
-//                 sectionanalysis,
-//                 skillsassessment,
-//                 quantification,
-//                 repetition,
-//                 verbstrength,
-//                 verbtense,
-//                 spellingerrors,
-//                 summary,
-//                 score,
-//                 personal_info,
-//                 bullet_point_length,
-//                 bullet_point_improver,
-//                 total_bullet_points,
-//                 responsibility,
-//                 resume_length,
-//                 resume_score,
-//                 resumeId
-//             },
-//         });
-//         // Return response or error
-//         // console.log("this is data",data)
-//         // console.log("the response it is", response)
-//         if (!response) {
-//             return { error: "Failed to create resume analysis", status: 500 };
-//         }
-
-//         return { success: true, data: response, status: 200 };
-//     } catch (error) {
-//         console.error("Error in analysisResume:", error);
-//         return { success: false, error: "Internal server error", status: 500 };
-//     }
-// };
+    return { success: true, data: response, status: 200 };
+  } catch (error) {
+    console.error("Error in fetchAnalysis:", error);
+    return { success: false, error: "Internal server error", status: 500 };
+  }
+};

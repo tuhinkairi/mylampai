@@ -61,13 +61,13 @@ export default function Career() {
             process will be shown here.
           </div>
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {jobsData.map((job) => (
             <Job key={job.id} job={job} />
           ))}
-        </div>
+        </div> */}
       </div>
-      <Pagination>
+      {/* <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious href="/career" />
@@ -84,7 +84,7 @@ export default function Career() {
             <PaginationNext href={`/career?page=${Number(page) + 1}`} />
           </PaginationItem>
         </PaginationContent>
-      </Pagination>
+      </Pagination> */}
     </>
   );
 }

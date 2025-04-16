@@ -1,6 +1,5 @@
 "use server";
 import prisma from "@/lib";
-import { uploadFileToAzure } from "./uploadActions";
 
 export const getUserResumesList = async (userId: string) => {
   try {
@@ -13,6 +12,7 @@ export const getUserResumesList = async (userId: string) => {
         resumeUrl: true,
         resumeName: true,
         resumeFileText: true,
+        isAnalysisDone:true
       },
     });
 

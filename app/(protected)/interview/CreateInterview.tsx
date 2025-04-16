@@ -521,7 +521,7 @@ const CreateInterviewComponent = ({ jobDescription, category, rubrics }: { jobDe
                       {isUploadingResume ? <Circles
                         height="20"
                         width="20"
-                        color="white"
+                        color="text-gray-400"
                         ariaLabel="circles-loading"
                         visible={true}
                       /> : <IoCloudUploadOutline />}

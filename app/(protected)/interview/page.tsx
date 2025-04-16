@@ -15,8 +15,7 @@ import { useAppSelector } from "@/lib/hooks";
 import { Calendar, Clock, FileCheck, FileSearch, FilePlus2, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import InterviewTemplates from "./InterviewTemplates";
-import { Dialog } from "@radix-ui/react-dialog";
-import { DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import CreateInterviewComponent from "./CreateInterview";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -47,6 +46,7 @@ export default function InterviewsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const profile = useAppSelector((state) => state.talentProfile);
   const { id } = profile;
+  const [open, setOpen] = useState(false)
 
   const fetchInterviews = useCallback(async (talentProfileId: string) => {
     try {
@@ -143,13 +143,9 @@ export default function InterviewsPage() {
     }
   }, [id, userData, fetchInterviews]);
 
-  const handleCreateInterview = () => {
-    router.push('/interview/new');
-  };
-
   const getFilteredInterviews = (status: string) => {
-    if (status === "all") return interviews;
-    return interviews.filter(interview => interview.interviewState === status);
+    // if (status === "all") return interviews;
+    return interviews.filter(interview => interview.interviewState === "Analysis_Completed");
   };
 
   const getStatusBadge = (status: string) => {
@@ -200,7 +196,7 @@ export default function InterviewsPage() {
           )}
 
 
-          <Dialog>
+          <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button className="bg-primary hover:bg-primary/90 flex items-center gap-2">
                 <FileSearch className="h-4 w-4" />
@@ -246,7 +242,7 @@ export default function InterviewsPage() {
       <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
         <TabsList className="mb-6 grid grid-cols-4 max-w-md">
           <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="In_Progress">In Progress</TabsTrigger>
+          {/* <TabsTrigger value="In_Progress">In Progress</TabsTrigger> */}
           <TabsTrigger value="Scheduled">Scheduled</TabsTrigger>
           <TabsTrigger value="Analysis_Completed">Completed</TabsTrigger>
         </TabsList>
@@ -324,7 +320,7 @@ export default function InterviewsPage() {
                     "You haven't participated in any interviews yet." :
                     `You don't have any ${tab.replace("_", " ").toLowerCase()} interviews.`}
                 </p>
-                <Button onClick={handleCreateInterview}>Start Your First Interview</Button>
+                <Button onClick={() => setOpen(true)}>Start Your First Interview</Button>
               </div>
             )}
           </TabsContent>

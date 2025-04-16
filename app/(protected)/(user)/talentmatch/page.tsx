@@ -99,7 +99,7 @@ function TalentMatchContent() {
   useEffect(() => {
     const getTalentProfiles = async (id: string) => {
       const res = await getTalentPoolProfiles(id);
-      console.log("res: ", res?.data)
+      // console.log("res: ", res?.data)
       if (res?.status === 200 && res?.data) {
         const profiles = res?.data?.map(profile => ({
           id: profile.id,
@@ -138,16 +138,16 @@ function TalentMatchContent() {
       getTalentProfiles(id);
       getMatches(id);
     } else {
-      console.log("debug12")
+      // console.log("debug12")
       if (!userData) {
         toast.error("User data not found");
         return;
       }
       const checkTalentProfile = async () => {
         const isTalentProfileExist = await getTalentProfile(userData?.id);
-        console.log("debug13", isTalentProfileExist)
+        // console.log("debug13", isTalentProfileExist)
         if (isTalentProfileExist && isTalentProfileExist?.status === 200 && isTalentProfileExist?.data) {
-          console.log("debug14")
+          // console.log("debug14")
           const res = isTalentProfileExist?.data
           dispatch(setId(res.id))
           dispatch(setResumeUrl(res.resumeUrl ?? ""))
@@ -350,7 +350,7 @@ function TalentMatchContent() {
         </div>
         <div className="flex flex-col  w-full mt-2  rounded-lg h-[calc(100vh-2rem)]">
           <Tabs defaultValue="career_profile" className="w-full px-2 ">
-            <TabsList className="w-full justify-start p-2 mb-2 gap-2 h-auto">
+            <TabsList className="w-full justify-start p-2 gap-2 h-auto">
               <TabsTrigger
                 value="career_profile"
                 className="text-muted-foreground text-sm font-medium h-auto"
@@ -367,7 +367,7 @@ function TalentMatchContent() {
 
             <TabsContent value="career_profile" className="flex-1 flex flex-col overflow-hidden m-0 h-full">
               <div className="flex justify-between items-center shrink-0 ">
-                <h1 className='p-4 text-xl font-bold'>Career Profiles</h1>
+                <h1 className='p-2 text-xl font-bold'>Career Profiles</h1>
                 {/* {talentPoolProfiles && talentPoolProfiles.length < 3 && ( */}
                 <CreateTalentPoolProfileDialog
                   isCTPPDialogOpen={isCTPPDialogOpen}
@@ -382,11 +382,11 @@ function TalentMatchContent() {
                 {(!isLoadingCareerProfiles && (!talentPoolProfiles || talentPoolProfiles.length === 0)) ? (
                   <EmptyStateDefault />
                 ) : (
-                  <div className="flex flex-col gap-4 p-4">
+                  <div className="flex flex-col gap-4 p-2">
                     {talentPoolProfiles?.map((profile, index) => (
                       <div
                         key={index}
-                        className="border border-gray-200 p-6 flex flex-col gap-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
+                        className="border border-gray-200 p-4 flex flex-col gap-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 cursor-pointer"
                       >
                         {/* Header - Role Title */}
                         <div className="flex items-center gap-3">

@@ -697,7 +697,7 @@ const InterviewPage = () => {
         <div className="w-[70%] h-[calc(100vh-150px)] overflow-hidden aspect-video rounded-md shadow-lg my-4">
           <video
             ref={videoRef}
-            className={`w-full h-full object-cover ${isVideoOff ? "hidden" : ""}`}
+            className={`w-full h-full object-cover ${isVideoOff ? "hidden" : ""} transform scale-x-[-1]`}
             autoPlay
             muted
           />

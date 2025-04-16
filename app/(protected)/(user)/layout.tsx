@@ -25,7 +25,7 @@ export default async function UserLayout({
     if (!isTalentProfileExist) {
       redirect("/create-profile");
     } else {
-      console.log("Talent Profile Exist")
+      // console.log("Talent Profile Exist")
     }
   } else if (user?.role === "recruiter") {
     redirect("/recruit")

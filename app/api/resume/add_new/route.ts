@@ -59,7 +59,7 @@ export const POST = async (req: NextRequest) => {
 
     console.log("checking for existing cv:: ", existingCV);
     if (existingCV) {
-      return NextResponse.json({ resume: existingCV }, { status: 409 });
+      return NextResponse.json({ resume: existingCV, status: 409 });
     }
 
     // Create a new CV entry
@@ -81,7 +81,6 @@ export const POST = async (req: NextRequest) => {
         resumeName: resumeOriginalName,
         resumeUrl,
         resumeHash,
-        jobDescription: jobDescription || null,
         resumeFileText: resumeFileText || null,
       },
     });

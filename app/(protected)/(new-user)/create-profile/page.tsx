@@ -129,6 +129,7 @@ export default function CreateProfile() {
   const dispatch = useAppDispatch();
   const profile = useAppSelector((state) => state.talentProfile);
   const id = profile?.id
+  const [resumeText, setResumeText] = useState<string>("")
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -189,7 +190,38 @@ export default function CreateProfile() {
     }
   }
 
-  const processResume = async (file: Blob) => {
+  const extractTextFromPDF = useCallback((file: File): Promise<string> => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function (event) {
+        const typedArray = new Uint8Array(event.target?.result as ArrayBuffer);
+
+        if (typeof window !== "undefined") {
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          let text = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(" ");
+            text += ` ${pageText}`;
+          }
+          resolve(text.trim());
+        } else {
+          reject(
+            new Error("pdfjs-dist is not available in the server environment")
+          );
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
+
+
+
+  const processResume = async (file: File) => {
     if (file && file.type !== "application/pdf") {
       toast.error("Please upload a PDF file");
       return;
@@ -207,42 +239,6 @@ export default function CreateProfile() {
         return;
       }
       setUploading(true);
-
-      let newTalentProfileId = null
-      try {
-
-        const formData = new FormData();
-        formData.append("resumeFile", file);
-        const response = await fetch("/api/resume/add_new", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: (formData),
-        });
-
-        const result = await response.json();
-
-        if (result.status === 409 || result.status === 200) {
-          dispatch(setResumeUrl(result.resume.resumeUrl))
-          dispatch(setId(result.resume.id))
-        }
-
-        const res = await createTalentProfile(result.resume.resumeUrl, userData.id);
-
-        if (res.status !== 200) {
-          toast.error(res.error);
-        } else {
-          if (res.data) {
-            // console.log("Result from createTalentProfile:: ", res.data.id);
-            newTalentProfileId = res.data.id
-            dispatch(setResumeUrl(res.data?.resumeUrl ?? ''));
-            dispatch(setId(res.data.id));
-          }
-        }
-      } catch (error) {
-        toast.error("Failed to upload resume");
-      }
 
       const blobName = generateFileName("resume.pdf", "cv");
       const sasUrl = await generateSasToken(blobName);
@@ -277,66 +273,66 @@ export default function CreateProfile() {
       // Start analysing
       setAnalysing(true);
 
-      const fileReader = new FileReader();
-      let extractedText = "";
+      const extractedText = await extractTextFromPDF(file)
 
-      fileReader.onload = async function () {
-        const typedArray = new Uint8Array(this.result as ArrayBuffer);
+      try {
+        const structuredDataResult = await extractStructuredData(
+          extractedText
+        );
+        let newTalentProfileId = null
+        try {
+          const formData = new FormData();
+          formData.append("resumeFile", file);
+          formData.append("resumeFileText", JSON.stringify(structuredDataResult))
+          const response = await fetch("/api/resume/add_new", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: (formData),
+          });
 
-        // Load the PDF document
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          const result = await response.json();
 
-        // Loop through each page
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-          const page = await pdf.getPage(pageNumber);
-          const textContent = await page.getTextContent();
-
-          // Extract text
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(" ");
-          extractedText += pageText + "\n";
-        }
-
-        // Convert the file to base64
-        const base64Reader = new FileReader();
-        base64Reader.onloadend = async () => {
-          const base64String = base64Reader.result?.toString().split(",")[1];
-
-
-
-          if (base64String && extractedText) {
-            try {
-              const structuredDataResult = await extractStructuredData(
-                extractedText
-              );
-
-              // Check if structuredDataResult and structuredDataResult.message exist before accessing
-
-              if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
-                // console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
-                await processAndSaveData(
-                  structuredDataResult,
-                  userData?.id,
-                  newTalentProfileId
-                );
-                setIsResumeUploaded(true);
-              } else {
-                toast.error("Failed to extract structured data");
-              }
-            } catch (err) {
-              toast.error("Failed to process the PDF");
-              console.error("Error:", err);
-            }
-          } else {
-            toast.error("Error converting file to base64 or extracting text");
+          if (result.status === 409 || result.status === 200) {
+            dispatch(setResumeUrl(result.resume.resumeUrl))
+            dispatch(setId(result.resume.id))
           }
-          setAnalysing(false);
-        };
 
-        base64Reader.readAsDataURL(file); // Start reading the file as a data URL
-      };
-      fileReader.readAsArrayBuffer(file);
+          const res = await createTalentProfile(result.resume.resumeUrl, userData.id);
+
+          if (res.status !== 200) {
+            toast.error(res.error);
+          } else {
+            if (res.data) {
+              // console.log("Result from createTalentProfile:: ", res.data.id);
+              newTalentProfileId = res.data.id
+              dispatch(setResumeUrl(res.data?.resumeUrl ?? ''));
+              dispatch(setId(res.data.id));
+            }
+          }
+        } catch (error) {
+          toast.error("Failed to upload resume");
+        }
+        // Check if structuredDataResult and structuredDataResult.message exist before accessing
+
+        if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
+          // console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
+          await processAndSaveData(
+            structuredDataResult,
+            userData?.id,
+            newTalentProfileId
+          );
+          setIsResumeUploaded(true);
+        } else {
+          toast.error("Failed to extract structured data");
+        }
+      } catch (err) {
+        toast.error("Failed to process the PDF");
+        console.error("Error:", err);
+      } finally {
+        setAnalysing(false);
+      }
     } else {
       toast.error("Please upload a PDF file");
       setUploading(false);
@@ -373,8 +369,8 @@ export default function CreateProfile() {
 
       const result = await response.json();
       if (response.ok) {
-        setIsResumeUploaded(true);
-        toast.success("Resume uploaded successfully");
+        // setIsResumeUploaded(true);
+        // toast.success("Resume uploaded successfully");
         return result;
       }
       toast.error("Error extracting structured data from resume");
