@@ -97,6 +97,7 @@ const InterviewPage = () => {
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewStage, setInterviewStage] = useState("initializing"); // initializing -> setup -> inProgress -> ending -> completed
 
+
   const [isStoppingMicrophone, setIsStoppingMicrophone] = useState(false);
 
   const recordedChunks = useRef<BlobPart[]>([]);
@@ -193,6 +194,8 @@ const InterviewPage = () => {
                 console.warn("Video play error:", playError);
               }
             };
+          } else {
+            toast.error("Failed to access camera or microphone. Please check permissions.");
           }
 
           // Initialize blob storage for recording
@@ -220,8 +223,8 @@ const InterviewPage = () => {
             }
           }
         } catch (err) {
-          // console.error("Media setup error:", err);
-          toast.error("Failed to access camera or microphone. Please check permissions.");
+          console.error("Media setup error:", err);
+          // toast.error("Failed to access camera or microphone. Please check permissions.");
         }
       } catch (error) {
         // console.error("Interview initialization error:", error);
@@ -231,6 +234,23 @@ const InterviewPage = () => {
 
     initializeInterview();
   }, [interviewerWs, connectInterviewer, interviewId, interviewType, interviewStarted]);
+
+  useEffect(() => {
+    const scrollToBottom = () => {
+      const chatContainer = document.getElementById('chat-messages-container');
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    };
+
+    scrollToBottom();
+
+    // const timeoutId = setTimeout(() => {
+    //   scrollToBottom();
+    // }, 100);
+
+    // return () => clearTimeout(timeoutId);
+  }, [chatMessages]);
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -246,6 +266,8 @@ const InterviewPage = () => {
           response: message,
         });
         // console.log("sending to AI: ", message)
+
+
         ws?.send(JSON.stringify({ type: "answer", answer: message }));
       }
     },
@@ -669,7 +691,7 @@ const InterviewPage = () => {
   };
 
   return (
-    <div className="min-h-screen w-full h-full bg-gray-100">
+    <div className="min-h-screen w-full h-screen bg-gray-200 p-0 m-0 overflow-hidden">
       {(interviewStage !== "inProgress" && interviewStage !== "ending" && interviewStage !== "completed" && loading) && (
         <FullScreenLoader message={getLoadingMessage()} />
       )}
@@ -692,24 +714,83 @@ const InterviewPage = () => {
       </Dialog>
 
       {/* Main interview container with centered video */}
-      <div className="w-full flex flex-col items-center justify-center min-h-screen bg-gray-100 relative">
-        {/* Centered video container */}
-        <div className="w-[70%] h-[calc(100vh-150px)] overflow-hidden aspect-video rounded-md shadow-lg my-4">
-          <video
-            ref={videoRef}
-            className={`w-full h-full object-cover ${isVideoOff ? "hidden" : ""} transform scale-x-[-1]`}
-            autoPlay
-            muted
-          />
-          {isVideoOff && (
-            <div className="inset-0 w-full h-full bg-gray-800 flex items-center justify-center">
-              <User className="text-white w-24 h-24" />
+      <div className="w-full h-full flex flex-col items-center justify-between min-h-screen bg-gray-200 relative p-0 m-0">
+        {/* Container for video and chat */}
+        <div className="w-full h-[calc(100vh-80px)] relative">
+          {/* Video container div - now with conditional margins */}
+          <div
+            className={`absolute transition-all duration-300 ease-in-out h-full flex items-center justify-center`}
+            style={{
+              left: 0,
+              right: isChatOpen ? '31vw' : 0
+            }}
+          >
+            <div className="w-[85%] h-[96%] overflow-hidden aspect-video rounded-xl shadow-lg">
+              <video
+                ref={videoRef}
+                className={`w-full h-full object-cover ${isVideoOff ? "hidden" : ""} transform scale-x-[-1] rounded-xl`}
+                autoPlay
+                muted
+              />
+              {isVideoOff && (
+                <div className="inset-0 w-full h-full bg-gray-800 flex items-center justify-center rounded-xl">
+                  <User className="text-white w-24 h-24" />
+                </div>
+              )}
             </div>
-          )}
+          </div>
+
+          {/* Chat sidebar */}
+          <div
+            className={`absolute top-2 right-2 bg-white rounded-2xl border-l border-slate-300 shadow-lg h-[calc(100vh-100px)] w-[30vw] transition-all duration-300 ease-in-out transform ${isChatOpen ? 'translate-x-0' : 'translate-x-[110%]'
+              } flex flex-col z-0`}
+          >
+            <div className="flex justify-between items-center bg-primary text-white p-2 rounded-t-2xl">
+              <span className="font-semibold text-lg">Prompt Box</span>
+              <button
+                onClick={() => setIsChatOpen(false)}
+                className="text-white text-2xl hover:bg-primary-dark rounded-full w-8 h-8 flex items-center justify-center"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div id="chat-messages-container" className="flex-1 overflow-y-auto p-4">
+              {chatMessages.map((chat, index) => (
+                <div key={index} className="bg-gray-100 p-2 rounded-lg mb-2">
+                  <span className="font-semibold">{chat.user}: </span>
+                  <span>{chat.message}</span>
+                </div>
+              ))}
+            </div>
+
+            <form
+              onSubmit={handleChatSubmit}
+              className="p-2 bg-gray-100 border-t border-slate-300 rounded-b-2xl"
+            >
+              <div className="flex items-center">
+                <input
+                  id="answerInput"
+                  type="text"
+                  placeholder="Type your message"
+                  className="flex-grow px-4 py-2 border border-slate-300 rounded-l-full focus:ring-2 focus:ring-primary focus:outline-none"
+                />
+                <button
+                  id="sendAnswerButton"
+                  className="bg-primary text-white font-bold py-2 px-4 rounded-r-full hover:bg-primary focus:ring-2 focus:ring-primary-foreground transition"
+                >
+                  <span className="sr-only">Send</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
+                    <path d="M3.478 2.404a.75.75 0 0 0-.926.941l2.432 7.905H13.5a.75.75 0 0 1 0 1.5H4.984l-2.432 7.905a.75.75 0 0 0 .926.94 60.519 60.519 0 0 0 18.445-8.986.75.75 0 0 0 0-1.218A60.517 60.517 0 0 0 3.478 2.404Z" />
+                  </svg>
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
         {/* Speech recognition component */}
-        <div className="flex justify-center w-full absolute bottom-24">
+        <div className="justify-center hidden w-full absolute bottom-24">
           <SpeechRecognition
             isRecording={isRecording}
             onStart={handleStart}
@@ -722,16 +803,22 @@ const InterviewPage = () => {
           />
         </div>
 
-        {/* Chat messages - HR and User */}
-        <div className="flex flex-col w-[70%] absolute bottom-28">
+        {/* Chat messages - HR and User - with dynamic width */}
+        <div
+          className="absolute left-3 bottom-16 flex flex-col z-10 transition-all duration-300"
+          style={{
+            width: isChatOpen ? 'calc(69% - 6px)' : '85%',
+            maxWidth: isChatOpen ? 'calc(69% - 6px)' : '85%'
+          }}
+        >
           {lastInterviewerQuestion && lastInterviewerQuestion.length > 0 ? (
-            <div className="bg-blue-100/80 p-4 flex gap-3 rounded-lg shadow mb-4">
+            <div className="bg-gray-100/80 max-h-24 overflow-y-scroll custom-scrollbar p-4 flex gap-3 rounded-xl shadow mb-4">
               <h3 className="font-semibold whitespace-nowrap">HR:</h3>
               <p className="text-gray-800">{lastInterviewerQuestion}</p>
             </div>
           ) : (
             finalTranscript && (
-              <div className="bg-white/80 p-4 flex gap-3 rounded-lg shadow">
+              <div className="bg-white/80 overflow-y-scroll  custom-scrollbar mb-4 max-h-24 p-4 flex gap-3 rounded-xl shadow">
                 <h3 className="font-semibold">You:</h3>
                 <p className="text-gray-700">{finalTranscript || "No transcript yet"}</p>
               </div>
@@ -739,51 +826,49 @@ const InterviewPage = () => {
           )}
         </div>
 
-        {/* Control bar at bottom */}
-        <div className="relative rounded-sm bottom-0 left-0 right-0 flex items-center justify-between bg-primary-foreground border-t-2 border-red-100 p-3 w-[60%]">
-          <div className="flex items-center gap-4 ml-4">
-            <div className="bg-blue-600 w-[5rem] h-[3rem] rounded-sm shadow-lg flex items-center justify-center">
-              <div className="relative">
-                <User className="text-white w-8 h-8" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant={isRecording ? "destructive" : "secondary"}
-                size="icon"
-                onClick={toggleMic}
-                className="border-2 border-gray-200"
-              >
-                {isRecording ? (
-                  <MicOff className="h-4 w-4  animate-pulse" />
-                ) : (
-                  <Mic className="h-4 w-4" />
-                )}
-              </Button>
-              <Button
-                variant={isVideoOff ? "destructive" : "secondary"}
-                size="icon"
-                onClick={toggleVideo}
-                className="border-2 border-gray-200"
-              >
-                {isVideoOff ? (
-                  <VideoOff className="h-4 w-4" />
-                ) : (
-                  <Video className="h-4 w-4" />
-                )}
-              </Button>
+        {/* Fixed bottom control bar */}
+        <div className="fixed bottom-0 left-0 right-0 flex items-center justify-between bg-primary-foreground p-3 w-full h-20 z-10">
+          <div className="bg-blue-600 w-[6rem] h-[4rem] rounded-lg shadow-lg flex items-center justify-center ml-10">
+            <div className="relative">
+              <User className="text-white w-8 h-8" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white animate-pulse"></div>
             </div>
           </div>
-          <div className="flex items-center mr-4">
+          <div className="flex items-center gap-4">
+            <Button
+              variant={isRecording ? "destructive" : "secondary"}
+              size="lg"
+              onClick={toggleMic}
+              className="border-2 border-gray-200 rounded-lg"
+            >
+              {isRecording ? (
+                <MicOff className="h-4 w-4 animate-pulse" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
+            <Button
+              variant={isVideoOff ? "destructive" : "secondary"}
+              size="lg"
+              onClick={toggleVideo}
+              className="border-2 border-gray-200 rounded-lg"
+            >
+              {isVideoOff ? (
+                <VideoOff className="h-4 w-4" />
+              ) : (
+                <Video className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <div className="flex items-center mr-10">
             <button
-              className="mx-4 bg-primary p-2 rounded-full w-8 h-8 relative"
+              className="mx-4 bg-primary p-2 rounded-full w-10 h-10 relative hover:bg-primary-dark transition"
               onClick={() => setIsChatOpen(!isChatOpen)}
             >
               <MessageSquare className="absolute top-1/2 right-1/2 w-5 -translate-y-1/2 translate-x-1/2 text-white" />
             </button>
             <button
-              className="bg-destructive text-white text-sm px-4 py-2 rounded-full"
+              className="bg-destructive text-white font-medium px-6 py-2.5 rounded-lg hover:bg-destructive/90 transition shadow-md"
               onClick={handleInterviewEnd}
             >
               END INTERVIEW
@@ -797,57 +882,10 @@ const InterviewPage = () => {
           </audio>
         )}
 
-        {/* Chat sidebar */}
-        {isChatOpen && (
-          <div className="fixed top-1/2 -translate-y-1/2 right-6 bg-white border border-slate-500 shadow-lg rounded-xl w-[30vw] h-3/4 flex flex-col">
-            <div className="flex justify-between items-center bg-primary text-white p-4 rounded-t-lg">
-              <span className="font-semibold text-lg">Prompt Box</span>
-              <button
-                onClick={() => setIsChatOpen(false)}
-                className="text-white text-2xl"
-              >
-                &times;
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4">
-              <div>
-                {chatMessages.map((chat, index) => (
-                  <div key={index} className="bg-gray-100 p-2 rounded-md mb-2">
-                    <span className="font-semibold">{chat.user}: </span>
-                    <span>{chat.message}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <form
-              onSubmit={handleChatSubmit}
-              className="p-4 bg-gray-100 border-t border-slate-500 rounded-b-lg"
-            >
-              <input
-                id="answerInput"
-                type="text"
-                placeholder="Type your answer here"
-                className="w-full px-4 py-4 border border-slate-500 rounded-full focus:ring-2 focus:ring-primary focus:outline-none mb-4"
-              />
-
-              <div className="flex justify-between">
-                <button
-                  id="sendAnswerButton"
-                  className="bg-primary text-white font-bold py-2 px-4 rounded-lg hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
-                >
-                  Send Answer
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
         {/* Feedback modal */}
         {showFeedback && !feedbackSubmitted && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-[40vw] min-w-[400px] min-h-[400px]">
+          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-40">
+            <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-[40vw] min-w-[400px] min-h-[400px]">
               <div className="text-center">
                 <h2 className="text-2xl font-bold mb-4 inline">
                   A quick feedback and we&apos;ll guide you to your interview

@@ -56,7 +56,7 @@ const formSchema = z.object({
 });
 
 // const baseUrl = "https://optim-cv-judge.onrender.com";
-const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
 
 
 function generateFileName(originalFileName: string, filetype: string) {
@@ -283,7 +283,7 @@ export default function CreateProfile() {
         try {
           const formData = new FormData();
           formData.append("resumeFile", file);
-          formData.append("resumeFileText", JSON.stringify(structuredDataResult))
+          formData.append("resumeFileText", JSON.stringify(structuredDataResult.message))
           const response = await fetch("/api/resume/add_new", {
             method: "POST",
             headers: {

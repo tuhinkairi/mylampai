@@ -8,7 +8,7 @@ interface EmptyStateProps {
   description: string
   icons?: LucideIcon[]
   action?: {
-    label: string
+    label: any
     onClick: () => void
   }
   className?: string
@@ -60,7 +60,6 @@ export function EmptyState({
       {action && (
         <Button
           onClick={action.onClick}
-          variant="outline"
           className={cn(
             "mt-4",
             "shadow-sm active:shadow-none"

@@ -6,6 +6,7 @@ import QuillWrapper from "@/components/adminDashboard/QuillWrapper";
 // import { sendNewsLetter, scheduleNewsLetter } from "@/utils/newlettermailing";
 import { getTemplates } from "@/actions/emailfetch";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 // const availableTemplates = [
 //   { name: "Standard Template", template: emailtemplate },
@@ -30,12 +31,13 @@ export default function AdminDashboard() {
   const [scheduleTime, setScheduleTime] = useState("");
   const [scheduleFrequency, setScheduleFrequency] = useState("One-Time");
   const [availableTemplates, setAvailableTemplates] = useState<TemplateType[]>([]);
+  const [isSending, setIsSending] = useState(false)
 
   useEffect(() => {
     const fetchTemplates = async () => {
       try {
         const templates = await getTemplates();
-        console.log("asshedwuhd", templates)
+        // console.log("asshedwuhd", templates)
         if (templates.length > 0) {
           setAvailableTemplates(templates);
           setEmailTemplate(templates[0]);
@@ -75,7 +77,9 @@ export default function AdminDashboard() {
       finalHTMLTemplate,
     });
 
-    const response = await fetch("/api/sendEmails", {
+    setIsSending(true)
+
+    const response = await fetch("/api/emails/sendEmails", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -92,6 +96,7 @@ export default function AdminDashboard() {
     console.log("Email Send Response:", res.data);
     const total = res.data.failed + res.data.succeeded;
     const succeeded = res.data.succeeded;
+    setIsSending(false)
     toast.success(`Email sent: ${succeeded}/${total}`)
   };
 
@@ -197,6 +202,9 @@ export default function AdminDashboard() {
           className="px-6 py-2 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition"
         >
           Send Email
+          {isSending &&
+            <Loader2 className="animate-spin" />
+          }
         </button>
         <button
           onClick={() => setScheduleMode(!scheduleMode)}

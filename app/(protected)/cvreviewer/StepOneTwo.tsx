@@ -70,6 +70,7 @@ const StepOneTwo = () => {
   const [resumeText, setResumeText] = useState("");
   const [jdFile, setJDFile] = useState<File | null>(null);
   const [JD, setJD] = useState<string>("")
+  const [structuredTextData, setStructuredTextData] = useState("")
 
 
   // Set initial job profile from redux if available
@@ -81,7 +82,7 @@ const StepOneTwo = () => {
 
   useEffect(() => {
     if (JD) {
-      console.log("final JD:: ", JD)
+      // console.log("final JD:: ", JD)
       dispatch(setJobDescription(JD));
     }
   }, [JD])
@@ -117,7 +118,7 @@ const StepOneTwo = () => {
       const resumeBase64 = await fileToBase64(file);
       const resumeName = file.name;
       if (resumeBase64) {
-        console.log("hereeerrrrrrfrrfff")
+        // console.log("hereeerrrrrrfrrfff")
         dispatch(setResumeBase64(resumeBase64));
         dispatch(setResumeName(resumeName));
       }
@@ -139,15 +140,18 @@ const StepOneTwo = () => {
       }
 
       // 5. Extract structured data
+      // console.log("debug1213: ", extractedText)
       const structuredDataResult = await extractStructuredData(extractedText);
       if (structuredDataResult && structuredDataResult.message) {
         dispatch(setStructuredData(structuredDataResult.message));
+        const temp = JSON.stringify(structuredDataResult.message)
+        setStructuredTextData(temp)
       } else {
         toast.error("Failed to extract structured data");
       }
 
       // 6. Upload CV and job description to API
-      await uploadCVAndJobDescription(file, extractedText);
+      // await uploadCVAndJobDescription(file, extractedText);
       setResumeText(extractedText)
     } catch (error) {
       console.error("Error processing resume:", error);
@@ -203,7 +207,7 @@ const StepOneTwo = () => {
 
   const extractStructuredData = async (text: string) => {
     try {
-      console.log("debugp1:: ", text)
+      // console.log("debugp1:: ", text)
       const response = await fetch(`${baseUrl}/extract_structured_data`, {
         method: "POST",
         headers: {
@@ -213,7 +217,7 @@ const StepOneTwo = () => {
       });
 
       const result = await response.json();
-      console.log("p2:: ", response)
+      // console.log("p2:: ", result)
       if (response.ok) {
         return result;
       }
@@ -224,7 +228,16 @@ const StepOneTwo = () => {
     }
   };
 
-  const uploadCVAndJobDescription = async (file: File, extractedText: string) => {
+  useEffect(() => {
+    if (resumeFile && structuredTextData && structuredTextData.length > 0) {
+      const resAsync = async () => {
+        await uploadCVAndJobDescription(resumeFile, structuredTextData)
+      }
+      resAsync()
+    }
+  }, [resumeFile, structuredTextData])
+
+  const uploadCVAndJobDescription = async (file: File, structuredData: string) => {
     try {
       if (!token) {
         toast.error("Authorization required");
@@ -232,7 +245,8 @@ const StepOneTwo = () => {
       }
       const formData = new FormData();
       formData.append("resumeFile", file);
-      formData.append("resumeFileText", JSON.stringify(structuredData))
+      // console.log("data to store:: ", structuredData)
+      formData.append("resumeFileText", structuredData)
       const response = await fetch("/api/resume/add_new", {
         method: "POST",
         headers: {
@@ -363,7 +377,7 @@ const StepOneTwo = () => {
         resumeId: cvId,
         jobDescription: JD
       });
-      console.log("resss:: ", res)
+      // console.log("resss:: ", res)
       if (res.status == 200 && res.data) {
         router.push(`/cvreviewer/${cvId}/analysis`);
       } else if (res.status == 209) {
@@ -580,6 +594,7 @@ const StepOneTwo = () => {
               onClick={handleStartAnalysis}
               disabled={loading || (!resumeText || !JD)}
               className="w-full py-2"
+              variant="default"
             >
               {loading ? (
                 <span className="flex items-center justify-center">

@@ -33,7 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useParams, useSearchParams } from "next/navigation";
-import { setJobDescription, setResumeBase64, setResumeFileUrl, setStructuredData } from "@/lib/features/cv_reviewer/cvReviewerSlice";
+// import { setJobDescription, setResumeFileUrl } from "@/lib/features/cv_reviewer/cvReviewerSlice";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
@@ -67,13 +67,17 @@ const ResumeAnalyser = () => {
   const [isTextLayerReady, setIsTextLayerReady] = useState(false);
   const [loading, setLoading] = useState(false)
   const cvReviewerStorage = useAppSelector((state) => state.cvReviewer);
-  const { structuredData, jobDescription, resumeBase64, resumeName, resumeUrl } = cvReviewerStorage;
+  // const { resumeName, resumeUrl } = cvReviewerStorage;
   const params = useParams();
   const resumeId = params.cvId as string;
   const [sentencesToHighlight, setSentencesToHighlight] = useState<string[]>(
     []
   );
   const [cvText, setCvText] = useState<string>("")
+  const [resumeBase64, setResumeBase64] = useState<string>("")
+  const [structuredData, setStructuredData] = useState<any>(null)
+  const [jobDescription, setJobDescription] = useState<string>("")
+  const [resumeUrl, setResumeUrl] = useState<string>("")
 
   const dispatch = useAppDispatch()
 
@@ -95,27 +99,37 @@ const ResumeAnalyser = () => {
     spelling: false
   });
 
-  useEffect(() => {
-    // console.log("sd,jp,ru:: " + JSON.stringify(structuredData) + "\nJd::" + jobDescription + "\nurl:" + resumeUrl)
-    if (structuredData && jobDescription && resumeUrl && resumeUrl.length > 0) {
-      // console.log("is this calling")
-      setCvText(JSON.stringify(structuredData))
-      // setJD(jobDescription)
-      // setResume_Url(resumeUrl)
-    }
-  }, [structuredData, jobDescription, resumeUrl])
+  // useEffect(() => {
+  //   // console.log("sd,jp,ru:: " + JSON.stringify(structuredData) + "\nJd::" + jobDescription + "\nurl:" + resumeUrl)
+  //   if (structuredData && jobDescription && resumeUrl && resumeUrl.length > 0) {
+  //     // console.log("is this calling")
+  //     setCvText(JSON.stringify(structuredData))
+  //     // setJD(jobDescription)
+  //     // setResume_Url(resumeUrl)
+  //   }
+  // }, [structuredData, jobDescription, resumeUrl])
 
+
+  interface ResumeAnalysisResponse {
+    status: number;
+    data?: {
+      resume?: {
+        resumeFileText?: string;
+        resumeUrl?: string;
+      };
+      jobDescription?: string;
+    };
+  }
 
   useEffect(() => {
     if (resumeId) {
       (async () => {
-        const res = await fetchResumeAnalysis({ resumeId });
-        if (res.status === 200 && res.data) {
-          // console.log("reskjhdjas : ", res.data)
-          // console.log("parsedData:: ", JSON.parse(res?.data.resume?.resumeFileText))
-          dispatch(setStructuredData(JSON.parse(res?.data.resume?.resumeFileText)))
-          dispatch(setResumeFileUrl(res.data.resume.resumeUrl || ""))
-          dispatch(setJobDescription(res.data.jobDescription))
+        const res = await fetchResumeAnalysis({ resumeId }) as ResumeAnalysisResponse;
+        if (res.status === 200 && res.data && res.data.resume) {
+          setStructuredData(JSON.parse(res.data.resume.resumeFileText || "") || "")
+          setCvText(res.data.resume.resumeFileText || "")
+          setResumeUrl(res.data.resume.resumeUrl || "")
+          setJobDescription(res.data.jobDescription || "")
         }
       })()
     }
@@ -155,7 +169,7 @@ const ResumeAnalyser = () => {
         const base64 = await urlToBase64(resumeUrl)
         // console.log("huuuuuuu")
         if (base64) {
-          dispatch(setResumeBase64(base64))
+          setResumeBase64(base64)
         }
       }
       runAsync()
@@ -928,12 +942,12 @@ const ResumeAnalyser = () => {
                 }));
               } else {
                 // If not in DB, make API call
-                //console.log("quantification is not found in DB")
+                // console.log("quantification is not found in DB")
                 endpoint = "/quantification";
                 data = {
                   extracted_data: structuredData,
                 };
-                //console.log("body::", data)
+                // console.log("body::", data)
                 result = await analyzeResume(endpoint, data, query);
 
                 if (result?.message) {
@@ -1852,7 +1866,7 @@ const ResumeAnalyser = () => {
                           <DialogTitle>Bullet Point Length</DialogTitle>
                           <DialogDescription>
                             {reviewedData?.bullet_point_length &&
-                              reviewedData?.bullet_point_length["Result"].length !== 0 ? (
+                              reviewedData?.bullet_point_length["Result"]?.length !== 0 ? (
                               reviewedData?.bullet_point_length["Result"]?.map(
                                 (data: string, ind: number) => {
                                   return <div key={ind}>{data}</div>;

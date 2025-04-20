@@ -294,7 +294,7 @@ export default function CreateTalentPoolProfileDialog({
   const extractStructuredData = useCallback(async (text: string) => {
     try {
       // console.log("debug in extractSD")
-      const response = await fetch(`${baseUrl}/extract_profile_data`, {
+      const response = await fetch(`${baseUrl}/extract_structured_data`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -306,7 +306,7 @@ export default function CreateTalentPoolProfileDialog({
       if (response.ok) {
         // setIsResumeUploaded(true);
         // toast.success("Resume uploaded successfully");
-        return result;
+        return result.message;
       }
       toast.error("Error extracting structured data from resume");
       return null;
@@ -795,7 +795,7 @@ export default function CreateTalentPoolProfileDialog({
                 )}
               />
               <DialogFooter>
-                <Button type="submit" className="hover:bg-primary-dark"  disabled={isSubmitting}>
+                <Button type="submit" className="hover:bg-primary-dark" disabled={isSubmitting}>
                   Create Profile {isSubmitting && <LoaderCircleIcon className="ml-2 animate-spin" />}
                 </Button>
               </DialogFooter>

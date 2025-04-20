@@ -30,7 +30,7 @@ import { createTalentProject, deleteTalentProject, updateTalentProject } from "@
 import { ArrayInput } from "../misc/ArrayInput";
 import { ProfileSection, Project } from "@prisma/client";
 import { CalendarIcon, Pencil, PlusSquare } from "lucide-react";
-import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { addProject, deleteProject, updateProject } from "@/lib/features/talent_profile/talentProfileSlice";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
@@ -63,11 +63,16 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 
 export function CreateProject({
   talentProfileId,
+  open,
+  setOpen
 }: {
   talentProfileId: string;
+  open:boolean;
+  setOpen: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  // const [open, setOpen] = useState(false);
   const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile)
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
@@ -78,6 +83,8 @@ export function CreateProject({
       skills: [],
     },
   });
+
+
 
   async function onSubmit(data: ProjectFormValues) {
     try {
@@ -109,7 +116,7 @@ export function CreateProject({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size={"icon"}><PlusSquare /></Button>
+        <Button variant="outline" size={"icon"}  className={`cursor-pointer ${profile.projects.length === 0 ? 'hidden' : ''}`}><PlusSquare /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader className="mb-4 px-4">

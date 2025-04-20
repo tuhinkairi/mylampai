@@ -160,7 +160,7 @@ function InterviewTemplates() {
                                         key={template?.id}
                                         className="rounded-lg overflow-hidden border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 relative group"
                                     >
-                                        <div className="bg-purple-100 h-32 p-2 flex items-center justify-start gap-2 relative">
+                                        <div className="bg-purple-50 h-32 p-2 flex items-center justify-start gap-2 relative">
                                             {/* Share button - appears on hover */}
                                             <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                                 <TooltipProvider delayDuration={0}>
@@ -208,8 +208,8 @@ function InterviewTemplates() {
                                             <div className="mt-4">
                                                 <Dialog>
                                                     <DialogTrigger asChild>
-                                                        <Button variant="link" className="text-purple-600 font-medium flex items-center gap-1 hover:text-purple-800">
-                                                            Start New Interview
+                                                        <Button variant="secondary" className="text-purple-600 font-medium flex items-center gap-1 hover:text-purple-800">
+                                                            Start Interview
                                                             <ArrowRight className="w-4 h-4" />
                                                         </Button>
                                                     </DialogTrigger>

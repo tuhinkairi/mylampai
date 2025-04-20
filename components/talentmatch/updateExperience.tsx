@@ -39,7 +39,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArrayInput } from "../misc/ArrayInput";
 import { createTalentExperience, deleteTalentExperience, updateTalentExperience } from "@/actions/talentMatchActions";
-import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { addExperience, deleteExperience, updateExperience } from "@/lib/features/talent_profile/talentProfileSlice";
 import { ScrollArea } from "../ui/scroll-area";
 
@@ -68,9 +68,19 @@ type ExperiencesData = {
 
 type WorkExperience = z.infer<typeof formSchema>;
 
-export function CreateExperience({ talentProfileId }: { talentProfileId: string }) {
-  const [open, setOpen] = React.useState(false);
+export function CreateExperience({
+  talentProfileId,
+  open,
+  setOpen
+}: {
+  talentProfileId: string;
+  open:boolean;
+  setOpen: (open: boolean) => void;
+}) {
+  // const [open, setOpen] = React.useState(false);
   const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile)
+
 
   const form = useForm<WorkExperience>({
     resolver: zodResolver(formSchema),
@@ -104,7 +114,7 @@ export function CreateExperience({ talentProfileId }: { talentProfileId: string 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size={"icon"} ><PlusSquare /></Button>
+        <Button variant="outline" size={"icon"}  className={`cursor-pointer ${profile.experiences.length === 0 ? 'hidden' : ''}`} ><PlusSquare /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>

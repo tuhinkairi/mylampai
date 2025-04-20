@@ -23,6 +23,8 @@ import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import Image from "next/image";
 import { setProjects } from "@/lib/features/talent_profile/talentProfileSlice";
 import { UpdateBio } from "@/components/talentmatch/updateBio";
+import { EmptyState } from "@/components/ui/empty-state";
+import { BookOpen, Briefcase, Building, Calendar, FileText, GraduationCap, Layers, Layout, PlusSquare, School } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -102,6 +104,9 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   const profile = useAppSelector((state) => state.talentProfile)
   const dispatch = useAppDispatch()
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isProjDialogOpen, setIsProjDialogOpen] = useState(false)
+  const [isEduDialogOpen, setIsEduDialogOpen] = useState(false)
+  const [isExpDialogOpen, setIsExpDialogOpen] = useState(false)
 
   // console.log("profile from redux store__> ", profile)
 
@@ -224,9 +229,8 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
   if (!userData) return null;
 
   return (
-    <div className="mx-auto">
-
-      <div className="flex items-center gap-4 h-32 bg-[url(/images/background.jpg)] relative bg-opacity-5">
+    <div className="mx-auto ">
+      <div className="flex rounded-t-md items-center gap-4 h-32 bg-[url(/images/background.jpg)] relative bg-opacity-5">
       </div>
       <div className="flex flex-row items-top gap-3 pt-2">
         <Avatar className="h-24 w-24 rounded-lg relative  left-2 shadow-lg ">
@@ -364,9 +368,9 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
         <TabsContent value="education" className="mt-0 flex flex-col gap-2">
           <div className=" flex justify-between items-center ">
             <h1 className='p-4 text-xl font-bold'>Education</h1>
-            <CreateEducation talentProfileId={talentProfileId} />
+            <CreateEducation talentProfileId={talentProfileId} open={isEduDialogOpen} setOpen={setIsEduDialogOpen} />
           </div>
-          {education?.map((edu, index) => (
+          {education && education.length > 0 ? education?.map((edu, index) => (
             <div key={index} className="relative border rounded-lg p-4 mb-4">
               <div className="absolute right-4 top-4">
                 <UpdateEducationDetails education={edu} />
@@ -400,14 +404,24 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
                 <TagList title="Skills" items={edu.skills} />
               )}
             </div>
-          ))}
+          )) : (<div className="flex justify-center w-full">
+            <EmptyState
+              title="No Education Details Found"
+              description="Add your educational background to complete your profile."
+              icons={[GraduationCap, School, BookOpen]}
+              action={{
+                label: <><PlusSquare className="mr-1" />Add Education</>,
+                onClick: () => setIsEduDialogOpen(true),
+              }}
+            />
+          </div>)}
         </TabsContent>
         <TabsContent value="experience" className="mt-0 flex flex-col gap-2">
           <div className="flex justify-between items-center ">
             <h1 className='p-4 text-xl font-bold'>Experience</h1>
-            <CreateExperience talentProfileId={talentProfileId} />
+            <CreateExperience talentProfileId={talentProfileId} open={isExpDialogOpen} setOpen={setIsExpDialogOpen} />
           </div>
-          {experience?.map((exp, index) => (
+          {experience && experience.length > 0 ? experience?.map((exp, index) => (
             <div key={index} className="relative border rounded-lg p-4">
               <div className="absolute right-4 top-4">
                 <UpdateWorkExperiences experience={exp} />
@@ -439,15 +453,25 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
                 <TagList title="Skills" items={exp.skills} />
               )}
             </div>
-          ))}
+          )) : (<div className="flex justify-center w-full">
+            <EmptyState
+              title="No Work Experience Found"
+              description="Add your work history to highlight your professional background."
+              icons={[Briefcase, Building, Calendar]}
+              action={{
+                label: <><PlusSquare className="mr-1" />Add Experience</>,
+                onClick: () => setIsExpDialogOpen(true),
+              }}
+            />
+          </div>)}
         </TabsContent>
         <TabsContent value="projects" className="mt-0 flex flex-col gap-2">
           <div className="flex justify-between items-center ">
             <h1 className='p-4 text-xl font-bold'>Projects</h1>
-            <CreateProject talentProfileId={talentProfileId} />
+            <CreateProject talentProfileId={talentProfileId} open={isProjDialogOpen} setOpen={setIsProjDialogOpen} />
           </div>
 
-          {project && project.length > 0 && (
+          {project && project.length > 0 ? (
             project.map((item, index) => (
               <div key={index} className="relative border rounded-lg p-4 mb-4">
                 <div className="absolute right-4 top-2">
@@ -479,7 +503,17 @@ export function TalentProfileCard({ talentProfileId }: { talentProfileId: string
                 )}
               </div>
             ))
-          )}
+          ) : (<div className="flex justify-center w-full">
+            <EmptyState
+              title="No Projects Found"
+              description="Add your project details to showcase your work."
+              icons={[Layout, Layers, FileText]}
+              action={{
+                label: <><PlusSquare className="mr-1" />Create Project</>,
+                onClick: () => setIsProjDialogOpen(true),
+              }}
+            />
+          </div>)}
         </TabsContent>
 
         {/* <TabsContent value="skills" className="mt-0 flex flex-col gap-2">

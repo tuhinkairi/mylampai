@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { updateUserEducation } from "@/actions/profileActions";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { ArrayInput } from "../misc/ArrayInput";
-import { useAppDispatch } from "@/lib/hooks";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { addEducation, deleteEducation, updateEducation } from "@/lib/features/talent_profile/talentProfileSlice";
 import { createTalentEducation, deleteTalentEducation } from "@/actions/talentMatchActions";
 
@@ -69,9 +69,18 @@ type EducationData = {
   description?: string;
 };
 
-export function CreateEducation({ talentProfileId }: { talentProfileId: string }) {
-  const [open, setOpen] = React.useState(false);
+export function CreateEducation({
+  talentProfileId,
+  open,
+  setOpen
+}: {
+  talentProfileId: string;
+  open:boolean;
+  setOpen: (open: boolean) => void;
+}) {
+  // const [open, setOpen] = React.useState(false);
   const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile)
 
   const form = useForm<EducationSchema>({
     resolver: zodResolver(formSchema),
@@ -117,7 +126,7 @@ export function CreateEducation({ talentProfileId }: { talentProfileId: string }
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="icon" ><PlusSquare /></Button>
+        <Button variant="outline" size="icon"  className={`cursor-pointer ${profile.educations.length === 0 ? 'hidden' : ''}`} ><PlusSquare /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[800px]">
         <DialogHeader>

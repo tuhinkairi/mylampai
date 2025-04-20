@@ -14,6 +14,7 @@ import {
   User2,
   Clock,
   CalendarCheck,
+  PlusCircle,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import TalentMatchCSS from "./Talent.module.css";
@@ -212,25 +213,12 @@ function TalentMatchContent() {
 
   const [isCTPPDialogOpen, setIsCTPPDialogOpen] = useState(false);
 
-  function EmptyStateDefault() {
-    return (
-      <EmptyState
-        title="No Career Profiles Found"
-        description="Create a new career profile to get started."
-        icons={[FileText, SquareUser, BookUser]}
-        action={{
-          label: "Create Profile",
-          onClick: () => setIsCTPPDialogOpen(true),
-        }}
-      />
-    )
-  }
-
   const handleStartNow = async (interviewId: string, resumeFileText: string, jobRole: string, rubrics: RubricsType[]) => {
     try {
-      console.log("interviewId: ", interviewId)
-      console.log("resumeFileText: ", resumeFileText)
-      console.log("rubricsin afnan: ", rubrics)
+      // console.log("interviewId: ", interviewId)
+      // console.log("resumeFileText: ", resumeFileText)
+      // console.log("role: ",jobRole)
+      // console.log("rubricsin afnan: ", rubrics)
       // const res = await acceptTalentMatch(interviewId);
       // if (res === "success") {
       //   toast.success("Interview started successfully");
@@ -367,7 +355,7 @@ function TalentMatchContent() {
 
             <TabsContent value="career_profile" className="flex-1 flex flex-col overflow-hidden m-0 h-full">
               <div className="flex justify-between items-center shrink-0 ">
-                <h1 className='p-2 text-xl font-bold'>Career Profiles</h1>
+                <h1 className='p-1 text-xl font-bold'>Career Profiles</h1>
                 {/* {talentPoolProfiles && talentPoolProfiles.length < 3 && ( */}
                 <CreateTalentPoolProfileDialog
                   isCTPPDialogOpen={isCTPPDialogOpen}
@@ -380,7 +368,17 @@ function TalentMatchContent() {
                   isLoadingCareerProfiles && (<CareerProfileSkeleton />)
                 }
                 {(!isLoadingCareerProfiles && (!talentPoolProfiles || talentPoolProfiles.length === 0)) ? (
-                  <EmptyStateDefault />
+                  (
+                    <EmptyState
+                      title="No Career Profiles Found"
+                      description="Create a new career profile to get started."
+                      icons={[FileText, SquareUser, BookUser]}
+                      action={{
+                        label: <><PlusCircle className="mr-1" />Create Profile</>,
+                        onClick: () => setIsCTPPDialogOpen(true),
+                      }}
+                    />
+                  )
                 ) : (
                   <div className="flex flex-col gap-4 p-2">
                     {talentPoolProfiles?.map((profile, index) => (
@@ -500,7 +498,7 @@ function TalentMatchContent() {
                                         onClick={() => profile.interviewId && profile.resumeFileText && profile.role &&
                                           handleStartNow(profile.interviewId, profile.resumeFileText, profile.role, profile.rubrics)
                                         }
-                                        disabled={!profile.interviewId || !profile.resumeFileText || !profile.role}
+                                      // disabled={!profile.interviewId || !profile.resumeFileText || !profile.role}
                                       >
                                         Start Now
                                       </Button>
@@ -540,7 +538,7 @@ function TalentMatchContent() {
           </Tabs>
         </div>
       </ScrollArea>
-      <ScrollArea className="h-screen w-[57.5%]">
+      <ScrollArea className="h-screen w-[57.5%] sm:p-4">
         <TalentProfileCard talentProfileId={id} />
       </ScrollArea>
     </div>

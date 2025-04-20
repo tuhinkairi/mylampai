@@ -144,8 +144,8 @@ export default function InterviewsPage() {
   }, [id, userData, fetchInterviews]);
 
   const getFilteredInterviews = (status: string) => {
-    // if (status === "all") return interviews;
-    return interviews.filter(interview => interview.interviewState === "Analysis_Completed");
+    if (status === "all") return interviews.filter(interview => interview.interviewState !== "In_Progress");
+    return interviews.filter(interview => interview.interviewState === status);
   };
 
   const getStatusBadge = (status: string) => {

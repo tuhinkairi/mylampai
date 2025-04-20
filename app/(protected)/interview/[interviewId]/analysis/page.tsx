@@ -23,6 +23,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { getConversation, getInterviewVideo } from "@/actions/interviewActions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ChatInterface from "./ChatInterface";
+import VideoPlayer from "./VideoPlayer";
 
 ChartJS.register(
   CategoryScale,
@@ -503,15 +504,16 @@ const Analysis: React.FC = () => {
                   </div>
                 ) : videoUrl ? (
                   <div>
-                    <video
+                    {/* <video
                       ref={videoRef}
                       src={videoUrl}
                       className="w-full aspect-video"
                       onPlay={() => setIsPlaying(true)}
                       onPause={() => setIsPlaying(false)}
                       controls={true}
-                    />
-                    <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
+                    /> */}
+                    <VideoPlayer videoUrl={videoUrl} />
+                    {/* <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
                       <button
                         onClick={handlePlayPause}
                         className="flex items-center space-x-2 bg-primary hover:bg-primary/90 py-2 px-4 rounded-lg"
@@ -526,7 +528,7 @@ const Analysis: React.FC = () => {
                         <FaExpand className="mr-2" />
                         <span>Fullscreen</span>
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                 ) : (
                   <div className="bg-gray-100 p-8 text-center rounded-lg">

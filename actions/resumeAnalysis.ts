@@ -147,7 +147,7 @@ export const fetchResumeAnalysis = async ({
     }
 
     // Define select object for Prisma query
-    let selectFields: Record<string, boolean> = {
+    let selectFields: Record<string, boolean | object> = {
       id: true,
       resumeId: true,
       createdAt: true,

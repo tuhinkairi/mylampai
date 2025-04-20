@@ -9,7 +9,6 @@
 
 @layer base {
   :root {
-
     --custom-height: calc(100vh - 4rem);
 
     --navbar-height: 4rem;
@@ -24,9 +23,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 260, 100%, 66%;
-    --primary-foreground: 260, 100%, 94%;
-    --primary-dark: 264, 73%, 51%;
+    --primary: 260 100% 66%;
+    --primary-foreground: 260 100% 94%;
+    --primary-dark: 264 73% 51%;
 
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222.2 47.4% 11.2%;
@@ -64,7 +63,6 @@
   }
 
   .dark {
-
     --custom-height: calc(100vh - 4rem);
 
     --background: 222.2 84% 4.9%;
@@ -78,7 +76,7 @@
 
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --primary-dark: 264, 73%, 51%;
+    --primary-dark: 264 73% 51%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
@@ -137,8 +135,6 @@ body::--webkit-scrollbar {
   min-height: 200px;
 }
 
-
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -151,4 +147,32 @@ body::--webkit-scrollbar {
 .selectedItemBg[data-state="checked"] {
   background-color: #e0f7fa; /* Desired background color for selected item */
   color: #006064; /* Optional: Desired text color for selected item */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px; /* Width of the scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; /* Makes the track (path) invisible */
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.3); /* Color of the scrollbar handle */
+  border-radius: 10px; /* Rounded scrollbar */
+  border: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.5); /* Darker on hover */
+}
+ /* Hide the up and down buttons */
+ .minimal-scrollbar::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* For Firefox */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
 }
