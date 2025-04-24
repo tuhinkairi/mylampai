@@ -169,7 +169,7 @@ const HomeNavbar = () => {
 
         {userData ? (
           <Link
-            href={"/talentmatch"}
+            href={userData.role=="user"?"/talentmatch":"/dashboard"}
             className="flex items-center bg-primary h-[35px] text-white pl-4 pr-2 gap-2 rounded-lg "
           >
             {initials}
