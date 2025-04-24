@@ -22,7 +22,7 @@ export default function CreateRubrics() {
       const res = await axios.post('http://localhost:5500/get-rubric-evaluation', {
         "job_description": jobDescription
       })
-      console.log(res.data)
+      // console.log(res.data)
       if (res.data.result?.evaluation_criteria) {
         setCriteria(res.data.result.evaluation_criteria)
       }

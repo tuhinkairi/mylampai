@@ -49,6 +49,6 @@ export default function RootLayout({
   return (
     <Suspense fallback={<LoadingGlobal text="page" />}>
       <AuthLayoutContent>{children}</AuthLayoutContent>
-     </Suspense>
+    </Suspense>
   );
 }

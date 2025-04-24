@@ -7,7 +7,7 @@ interface CaptionProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 export default function Caption({ text, className, ...props }: CaptionProps) {
-  console.log("caption ", text)
+  // console.log("caption ", text)
   return (
     text &&
     <div

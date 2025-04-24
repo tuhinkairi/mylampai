@@ -263,7 +263,7 @@ export const createEducation = async (
         })
       )
     );
-    console.log("debug1234:: ", res);
+    // console.log("debug1234:: ", res);
     return {
       response: res,
       message: "Education added successfully",

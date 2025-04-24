@@ -65,7 +65,7 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
 
   useEffect(() => {
     if (analysisData && analysisData.length > 0) {
-      console.log("Received Analysis Data: ", analysisData);
+      // console.log("Received Analysis Data: ", analysisData);
 
       setExpandedSections(analysisData.map(() => false));
       setLoading(false);
@@ -75,7 +75,7 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
   const { interviewId } = useParams<{ interviewId: string }>();
   useEffect(() => {
     if (analysisData && analysisData.length > 0) {
-      console.log("Received Analysis Data: ", analysisData);
+      // console.log("Received Analysis Data: ", analysisData);
       setExpandedSections(analysisData.map(() => false)); // Initial state for expanded sections
       setLoading(false); // Set loading to false once data is loaded
     }
@@ -144,11 +144,11 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
         ),
       };
 
-      console.log("Final Body:", body);
+      // console.log("Final Body:", body);
 
       try {
         const response = await axios.post("/api/interviewer/post_review", body);
-        console.log("Analysis submitted successfully:", response.data);
+        // console.log("Analysis submitted successfully:", response.data);
       } catch (error) {
         console.error("Error submitting analysis:", error);
       }
