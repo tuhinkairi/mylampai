@@ -17,8 +17,8 @@ export default function Dashboard() {
     <>
       <section className="pb-3 grid md:grid-cols-3 md:grid-rows-5 items-start justify-center  gap-5 gap-x-3 h-screen overflow-hidden text-gray-700">
         {/* top section */}
-        <div className="col-span-3 grid grid-cols-3 ">
-          <div className="col-span-1 overflow-hidden grid">
+        <div className="col-span-2 sm:col-span-3 grid grid-cols-3 ">
+          <div className="col-span-1 overflow-hidden sm:grid hidden">
             <AddJobsMini classnames="min-w-full px-2 pt-4 mx-0 h-full " />
           </div>
           <div className="col-span-2 ">
