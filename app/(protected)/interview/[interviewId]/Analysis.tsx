@@ -81,7 +81,7 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
     }
   }, [analysisData]);
 
-  
+
 
   // Trigger submission on load or when `analysisData` or `interviewId` changes
   useEffect(() => {
@@ -143,9 +143,9 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
           {}
         ),
       };
-  
+
       console.log("Final Body:", body);
-  
+
       try {
         const response = await axios.post("/api/interviewer/post_review", body);
         console.log("Analysis submitted successfully:", response.data);
@@ -252,9 +252,8 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
             >
               {expandedSections[index] ? "Hide Analysis" : "Show Analysis"}
               <RiArrowDropDownLine
-                className={`text-3xl ml-2 transition-transform ${
-                  expandedSections[index] ? "rotate-180" : ""
-                }`}
+                className={`text-3xl ml-2 transition-transform ${expandedSections[index] ? "rotate-180" : ""
+                  }`}
               />
             </button>
 
@@ -265,7 +264,7 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
                 <div className="mt-6">
                   <strong>Detailed analysis of your reply:</strong>
                   {analysisItem.analysis.line_analysis &&
-                  analysisItem.analysis.line_analysis.length > 0 ? (
+                    analysisItem.analysis.line_analysis.length > 0 ? (
                     <div className="mt-2">
                       {analysisItem.analysis.line_analysis.map(
                         (line, lineIndex) => (
@@ -324,11 +323,11 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
                               <p>
                                 Reasoning:{" "}
                                 {typeof line.professionalism.reasoning ===
-                                "string"
+                                  "string"
                                   ? line.professionalism.reasoning
                                   : JSON.stringify(
-                                      line.professionalism.reasoning
-                                    )}
+                                    line.professionalism.reasoning
+                                  )}
                               </p>
                               <p>Score: {line.professionalism.score}</p>
                             </div>
@@ -355,11 +354,11 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
                               <p>
                                 Reasoning:{" "}
                                 {typeof line.technical_accuracy.reasoning ===
-                                "string"
+                                  "string"
                                   ? line.technical_accuracy.reasoning
                                   : JSON.stringify(
-                                      line.technical_accuracy.reasoning
-                                    )}
+                                    line.technical_accuracy.reasoning
+                                  )}
                               </p>
                               <p>Score: {line.technical_accuracy.score}</p>
                             </div>
@@ -388,7 +387,7 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
                   <div className="mt-4">
                     <strong>Strengths:</strong>
                     {analysisItem.analysis.overall_assessment.strengths &&
-                    analysisItem.analysis.overall_assessment.strengths.length >
+                      analysisItem.analysis.overall_assessment.strengths.length >
                       0 ? (
                       <ul className="list-disc list-inside">
                         {analysisItem.analysis.overall_assessment.strengths.map(
@@ -411,8 +410,8 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
                     <strong>Areas for Improvement:</strong>
                     {analysisItem.analysis.overall_assessment
                       .areas_for_improvement &&
-                    analysisItem.analysis.overall_assessment
-                      .areas_for_improvement.length > 0 ? (
+                      analysisItem.analysis.overall_assessment
+                        .areas_for_improvement.length > 0 ? (
                       <ul className="list-disc list-inside">
                         {analysisItem.analysis.overall_assessment.areas_for_improvement.map(
                           (area, i) => (
@@ -433,8 +432,8 @@ const Analysis: React.FC<AnalysisProps> = ({ analysisData }) => {
                   <div className="mt-4">
                     <strong>Suggestions:</strong>
                     {analysisItem.analysis.overall_assessment.suggestions &&
-                    analysisItem.analysis.overall_assessment.suggestions
-                      .length > 0 ? (
+                      analysisItem.analysis.overall_assessment.suggestions
+                        .length > 0 ? (
                       <ul className="list-disc list-inside">
                         {analysisItem.analysis.overall_assessment.suggestions.map(
                           (suggestion, i) => (

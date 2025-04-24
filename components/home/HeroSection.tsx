@@ -16,6 +16,8 @@ import { useRouter } from "next/navigation";
 import { useRoleStore } from "@/utils/loginStore";
 import { useUserStore } from "@/utils/userStore";
 import LoginComponent from "../global/Login";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
+import { DialogTitle } from "@radix-ui/react-dialog";
 
 export default function HeroSection() {
   const router = useRouter();
@@ -112,6 +114,11 @@ export default function HeroSection() {
                       </div>
                     </DialogTrigger>
                     <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                    <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
                       <LoginComponent />
                     </DialogContent>
                   </Dialog>
@@ -138,6 +145,11 @@ export default function HeroSection() {
                     </div>
                   </DialogTrigger>
                   <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                  <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
                     <LoginComponent />
                   </DialogContent>
                 </Dialog>

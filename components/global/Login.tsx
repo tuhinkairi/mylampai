@@ -24,6 +24,7 @@ import { handleSendOTP, verifyOTPandLogin } from "@/actions/authActions";
 import Globe from "@/components/ui/globe";
 import { Linkedin } from "react-bootstrap-icons";
 import { useRoleStore } from "@/utils/loginStore";
+import { DialogTitle } from "@radix-ui/react-dialog";
 // import { useSearchParams } from "next/navigation";
 
 const FormSchema = z.object({
@@ -169,11 +170,11 @@ export default function LoginComponent() {
               height={40}
             />
           </div>
-          <div className="flex font-medium justify-center text-nowrap items-center">
+          <DialogTitle className="flex font-medium justify-center text-nowrap items-center">
             <span>Signup or Login to &nbsp;</span>
             <span className="text-primary"> wiZ</span>
             <span>e in seconds</span>
-          </div>
+          </DialogTitle>
           <div className="flex flex-col justify-center items-center px-8 mt-8">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="w-full">

@@ -38,21 +38,11 @@ model User {
   accounts          Account[]
   sessions          Session[]
   otps              OTP[]
-  cvs               CV[]
   credits           Int            @default(0)
   isRegistered      Boolean        @default(false)
-  // posts            Modules[]
-  // communityIds     String[]        @db.ObjectId
-  // communities      Community[]     @relation(fields: [communityIds], references: [id])
-  // seenMessageIds   String[]        @db.ObjectId
-  // seenMessages     Message[]       @relation("Seen", fields: [seenMessageIds], references: [id])
-  // messages         Message[]
-  // sentmessages     Directmessage[] @relation("SenderUser")
-  // receivedMessages Directmessage[] @relation("ReceiverUser")
   JobCandidate      JobCandidate[]
   // newsletters    Newsletter[]    @relation("NewsletterRecipients")
-  Resume            Resume[]
-  Interview         Interview[]
+  resume            Resume[]
 }
 
 model Account {
@@ -91,22 +81,6 @@ model Language {
   updatedAt       DateTime      @updatedAt
 }
 
-model Education {
-  id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  school          String
-  degree          String?
-  field           String?
-  grade           String?
-  startDate       DateTime?
-  endDate         DateTime?
-  description     String?
-  skills          String[]
-  talentProfileId String        @db.ObjectId
-  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-}
-
 model OTP {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
@@ -117,14 +91,64 @@ model OTP {
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Unified Resume model (combining previous CV and Resume)
 model Resume {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-  resumeUrl  String
-  resumeName String?
-  userId     String   @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                String              @id @default(auto()) @map("_id") @db.ObjectId
+  resumeBase64      String? // The base64 string of the document
+  resumeHash        String
+  resumeName        String?
+  resumeUrl         String // URL in Azure storage
+  purpose           String? // Purpose: "AI_REVIEW", "JOB_APPLICATION", "INTERVIEW", "OTHER"
+  resumeFileText    String?
+  userId            String              @db.ObjectId
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentVersion    Int                 @default(1)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  isAnalysisDone    Boolean             @default(false)
+  ResumeAnalysis    ResumeAnalysis?     
+  ResumeVersion     ResumeVersion[] // Relation to version history
+  talentPoolProfile TalentPoolProfile[]
+}
+
+// Version control table for Resume
+model ResumeVersion {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  resumeId          String   @db.ObjectId
+  resume            Resume   @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  version           Int
+  resumeBase64      String // Document content for this version
+  resumeUrl         String // URL for this version
+  resumeName        String? // Filename for this version
+  changeDescription String? // Description of changes made in this version
+  createdAt         DateTime @default(now())
+
+  @@unique([resumeId, version]) // Ensure unique version numbers per resume
+}
+
+model ResumeAnalysis {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  resumeId              String?  @unique @db.ObjectId
+  resume                Resume?  @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+  jobDescription        String?
+  sectionanalysis       Json?
+  skillsassessment      Json?
+  quantification        Json?
+  repetition            Json?
+  verbstrength          Json?
+  verbtense             Json?
+  spellingerrors        Json?
+  summary               String?
+  personal_info         Json?
+  bullet_point_length   Json?
+  bullet_point_improver Json?
+  total_bullet_points   Json?
+  responsibility        Json?
+  resume_length         Json?
+  resume_score          Json?
+  score                 Int?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 // recruiter
@@ -157,6 +181,22 @@ model TalentMatch {
   @@unique([talentId, talentPoolId])
 }
 
+model Education {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  school          String
+  degree          String?
+  field           String?
+  grade           String?
+  startDate       DateTime
+  endDate         DateTime?
+  description     String?
+  skills          String[]
+  talentProfileId String        @db.ObjectId
+  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
 model TalentProfile {
   id                 String                @id @default(auto()) @map("_id") @db.ObjectId
   userId             String                @unique @db.ObjectId
@@ -168,16 +208,16 @@ model TalentProfile {
   skills             String[]
   profiles           String[]
   hours              String?
-  mockInterviews     Interview[]
-  talentPoolProfiles TalentPoolProfile[]
+  mockInterviews     MockInterview[]       @relation(name: "MockInterviewToTalentProfile")
+  talentPoolProfiles TalentPoolProfile[]   @relation(name: "TalentPoolProfileToTalentProfile")
   talentMatch        TalentMatch[]
   languages          Language[]
   education          Education[]
   projects           Project[]
-  employment         Employment[]
+  experience         Experience[]
   candidates         JobCandidate[]
   moreSections       MoreSections[]
-  favouritedBy       TalentPoolFavourite[] // Explicit relation
+  favouritedBy       TalentPoolFavourite[]
   createdAt          DateTime              @default(now())
   updatedAt          DateTime              @updatedAt
 }
@@ -196,17 +236,18 @@ model TalentPoolFavourite {
 
 model TalentPoolProfile {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
-  resumeUrl       String
+  resumeId        String        @db.ObjectId
+  resume          Resume        @relation(fields: [resumeId], references: [id])
   role            String
   targetFor       String
   skills          String[]
   availability    String
   locationPref    String?
   interviewDate   DateTime
-  interviewStatus String
-  interview       Interview?
+  interviewState  String?
+  interview       Interview?    @relation(name: "TalentPoolProfileToInterview")
   talentProfileId String        @db.ObjectId
-  talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
+  talentProfile   TalentProfile @relation(name: "TalentPoolProfileToTalentProfile", fields: [talentProfileId], references: [id], onDelete: Cascade)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -218,13 +259,15 @@ model Project {
   role            String?
   url             String?
   skills          String[]
+  startDate       DateTime?
+  endDate         DateTime?
   talentProfileId String        @db.ObjectId
   talentProfile   TalentProfile @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
 
-model Employment {
+model Experience {
   id              String        @id @default(auto()) @map("_id") @db.ObjectId
   company         String
   position        String
@@ -274,6 +317,22 @@ model JobProfile {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   JobCandidate         JobCandidate[]
+  ResumeList           ResumeList[]
+}
+
+model ResumeList {
+  id            String     @id @default(auto()) @map("_id") @db.ObjectId
+  personal_info Json?
+  description   String[]
+  skills        String[]
+  education     String[]
+  sections      String[]
+  resume_score  String
+  resume_result Json?
+  jobProfileId  String     @db.ObjectId
+  jobProfile    JobProfile @relation(fields: [jobProfileId], references: [id], onDelete: Cascade)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 }
 
 enum Availability {
@@ -342,41 +401,6 @@ model QualifiedRounds {
   JobRound       JobRound?     @relation(fields: [jobRoundId], references: [id], onDelete: Cascade)
 }
 
-model CV {
-  id             String           @id @default(auto()) @map("_id") @db.ObjectId
-  Resume         String
-  JobDescription String
-  userId         String?          @db.ObjectId
-  user           User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  ResumeAnalysis ResumeAnalysis[]
-}
-
-model ResumeAnalysis {
-  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
-  cvId                  String?  @db.ObjectId
-  cv                    CV?      @relation(fields: [cvId], references: [id], onDelete: Cascade)
-  sectionanalysis       Json?
-  skillsassessment      Json?
-  quantification        Json?
-  repetition            Json?
-  verbstrength          Json?
-  verbtense             Json?
-  spellingerrors        Json?
-  summary               String?
-  personal_info         Json?
-  bullet_point_length   Json?
-  bullet_point_improver Json?
-  total_bullet_points   Json?
-  responsibility        Json?
-  resume_length         Json?
-  resume_score          Json?
-  score                 Int?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
-
 model Notification {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
   userId      String     @db.ObjectId
@@ -394,57 +418,107 @@ model Recruiter {
 
 model Interview {
   id                  String              @id @default(auto()) @map("_id") @db.ObjectId
-  cvText              String?
+  resumeText          String?
   jdText              String?
   audioUrl            String?
   videoUrl            String?
-  User                User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String              @db.ObjectId
   messages            InterviewMessage[]
-  isStarted           Boolean             @default(false)
-  InterviewFeedback   InterviewFeedback[]
-  Analysis            Analysis[]
-  isCompleted         Boolean             @default(false)
-  isFeedbackGiven     Boolean             @default(false)
-  TalentProfile       TalentProfile?      @relation(fields: [talentProfileId], references: [id], onDelete: Cascade)
-  talentProfileId     String?             @db.ObjectId
-  talentPoolProfile   TalentPoolProfile?  @relation(fields: [talentPoolProfileId], references: [id])
-  talentPoolProfileId String?             @unique @db.ObjectId
+  interviewFeedback   InterviewFeedback[]
+  analysis            InterviewAnalysis[]
+  rubrics             Rubric[]            // Added rubrics relation
+  interviewState      String?             @default("Not_Started")
+  interviewDate       DateTime
+  talentPoolProfileId String              @unique @db.ObjectId
+  talentPoolProfile   TalentPoolProfile   @relation(name: "TalentPoolProfileToInterview", fields: [talentPoolProfileId], references: [id], onDelete: Cascade)
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
 }
 
+model MockInterview {
+  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
+  resumeText          String?
+  jdText              String?
+  audioUrl            String?
+  videoUrl            String?
+  messages            InterviewMessage[]
+  interviewFeedback   InterviewFeedback[]
+  analysis            InterviewAnalysis[]
+  rubrics             Rubric[]            
+  interviewState      String              @default("Not_Started")
+  talentProfileId     String              @db.ObjectId
+  talentProfile       TalentProfile       @relation(name: "MockInterviewToTalentProfile", fields: [talentProfileId], references: [id], onDelete: Cascade)
+  interviewTemplate   InterviewTemplate?  @relation(fields: [interviewTemplateId], references: [id])
+  interviewTemplateId String?             @db.ObjectId
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+}
+
+
 model InterviewMessage {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  interviewId String    @db.ObjectId
-  type        String
-  sender      String
-  response    String
-  code        String?
-  createdAt   DateTime  @default(now())
-  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  type          String
+  sender        String
+  response      String
+  code          String?
+  interview     Interview?     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId   String         @db.ObjectId
+  MockInterview MockInterview? @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
 }
 
 model InterviewFeedback {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  feedback    String
-  rating      Int
-  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewId String    @db.ObjectId
-  createdAt   DateTime  @default(now())
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  feedback      String
+  rating        Int
+  interview     Interview?     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId   String         @db.ObjectId
+  MockInterview MockInterview? @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
 }
 
-model Analysis {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  Introduction Json
-  Project      Json
-  Coding       Json
-  Technical    Json
-  Outro        Json
-  createdAt    DateTime  @default(now())
-  interview    Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
-  interviewId  String    @db.ObjectId
-  updatedAt    DateTime  @updatedAt
+model InterviewAnalysis {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  Introduction  Json
+  Project       Json
+  Coding        Json
+  Technical     Json
+  Outro         Json
+  interview     Interview?     @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId   String         @db.ObjectId
+  MockInterview MockInterview? @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model InterviewTemplate {
+  id               String           @id @default(auto()) @map("_id") @db.ObjectId
+  title            String?
+  jobDescription   String
+  companyName      String
+  roleTitle        String
+  category         String?
+  difficulty       String? // e.g., "Beginner", "Intermediate", "Advanced"
+  expectedDuration Int
+  isActive         Boolean          @default(true)
+  rubrics          Rubric[]
+  mockInterviews   MockInterview[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+}
+
+model Rubric {
+  id                  String              @id @default(auto()) @map("_id") @db.ObjectId
+  parameter           String
+  description         String
+  weightage           Int
+  interview           Interview?          @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  interviewId         String?             @db.ObjectId
+  mockInterview       MockInterview?      @relation(fields: [mockInterviewId], references: [id], onDelete: Cascade)
+  mockInterviewId     String?             @db.ObjectId
+  interviewTemplate   InterviewTemplate?  @relation(fields: [interviewTemplateId], references: [id], onDelete: Cascade)
+  interviewTemplateId String?             @db.ObjectId
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 }
 
 model Email {

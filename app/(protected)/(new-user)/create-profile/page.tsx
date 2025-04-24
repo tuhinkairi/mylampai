@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { addProfiles, addSkills, createEducation, createEmployments, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
+import { addProfiles, addSkills, createEducation, createExperiences, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
 import { Check, Clock9 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JobCategoriesSelector } from "@/components/create-profile/job-specialites";
@@ -29,11 +29,26 @@ import { PersonalDetailsForm } from "@/components/create-profile/personal-detail
 import { useState, useRef, useCallback, DragEvent, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUserStore } from "@/utils/userStore";
-import { useProfileStore } from "@/utils/profileStore";
 import * as pdfjsLib from "pdfjs-dist/webpack";
 import { generateSasToken } from "@/actions/azureActions";
 import { IoCloudUploadOutline, IoDocumentAttach } from "react-icons/io5";
 import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks';
+import {
+  setId,
+  setResumeUrl,
+  setTitle,
+  setBio,
+  setRate,
+  setSkills,
+  setProfiles,
+  setHours,
+  setExperiences,
+  setEducations,
+  setLanguages,
+} from '@/lib/features/talent_profile/talentProfileSlice';
+import exp from "constants";
+
 
 
 const formSchema = z.object({
@@ -41,7 +56,7 @@ const formSchema = z.object({
 });
 
 // const baseUrl = "https://optim-cv-judge.onrender.com";
-const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
 
 
 function generateFileName(originalFileName: string, filetype: string) {
@@ -50,10 +65,11 @@ function generateFileName(originalFileName: string, filetype: string) {
   return `${timestamp}_${filetype}.${fileExtension}`;
 }
 
-interface EmploymentData {
+interface ExperiencesData {
   company: string;
   position: string;
   location?: string;
+  skills: string[];
   startDate?: Date;
   endDate?: Date;
   description: string;
@@ -65,7 +81,8 @@ interface EducationData {
   degree: string;
   field?: string;
   grade?: string;
-  startDate?: Date;
+  skills: string[];
+  startDate: Date;
   endDate?: Date;
   description?: string;
 };
@@ -84,7 +101,7 @@ interface StructuredResult {
   profiles: string[];
   skills: string[];
   jobRole: string;
-  experience: EmploymentData[];
+  experience: ExperiencesData[];
   education: EducationData[];
   bio: string;
 }
@@ -102,14 +119,17 @@ interface UserInfo {
 }
 
 export default function CreateProfile() {
-  const { id, setId, setResumeUrl } = useProfileStore();
-  const { userData} = useUserStore();
+  const { userData, token } = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.talentProfile);
+  const id = profile?.id
+  const [resumeText, setResumeText] = useState<string>("")
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -125,7 +145,7 @@ export default function CreateProfile() {
   // const [profiles, setProfiles] = useState<string[]>([])
   // const [skills, setSkills] = useState<string[]>([])
   // const [jobTitle, setJobTitle] = useState<string>("")
-  // const [experiences, setExperiences] = useState<EmploymentData[]>([])
+  // const [experiences, setExperiences] = useState<ExperienceData[]>([])
   // const [educations, setEducations] = useState<EducationData[]>([])
   // const [userBio, setUserBio] = useState<string>("")
   // const user = await auth();
@@ -170,17 +190,48 @@ export default function CreateProfile() {
     }
   }
 
-  const processResume = async (file: Blob) => {
+  const extractTextFromPDF = useCallback((file: File): Promise<string> => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function (event) {
+        const typedArray = new Uint8Array(event.target?.result as ArrayBuffer);
+
+        if (typeof window !== "undefined") {
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          let text = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(" ");
+            text += ` ${pageText}`;
+          }
+          resolve(text.trim());
+        } else {
+          reject(
+            new Error("pdfjs-dist is not available in the server environment")
+          );
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
+
+
+
+  const processResume = async (file: File) => {
     if (file && file.type !== "application/pdf") {
       toast.error("Please upload a PDF file");
       return;
     }
-  
+
     if (!userData) {
       toast.error("Unknown error occurred");
       return;
     }
-  
+
     if (file && file.type === "application/pdf") {
       if (file.size > 1 * 1024 * 1024) {
         toast.error("File size should be less than 1MB");
@@ -188,37 +239,16 @@ export default function CreateProfile() {
         return;
       }
       setUploading(true);
-  
-      // Calling createTalentProfile
-      const data = new FormData();
-      data.append("resume", file);
-      let newTalentProfileId=null
-      try {
-        const res = await createTalentProfile(data, userData.id);
-  
-        if (res.status !== 200) {
-          toast.error(res.error);
-        } else {
-          if (res.data) {
-            console.log("Result from createTalentProfile:: ", res.data.id);
-            newTalentProfileId=res.data.id
-            setResumeUrl(res.data?.resumeUrl ?? '');
-            setId(res.data.id);
-          }
-        }
-      } catch (error) {
-        toast.error("Failed to upload resume");
-      }
-  
+
       const blobName = generateFileName("resume.pdf", "cv");
       const sasUrl = await generateSasToken(blobName);
-  
+
       if (!sasUrl) {
         toast.error("Error uploading resume");
         setUploading(false);
         return;
       }
-  
+
       try {
         const uploadResponse = await fetch(sasUrl, {
           method: "PUT",
@@ -227,11 +257,11 @@ export default function CreateProfile() {
           },
           body: file,
         });
-  
+
         if (!uploadResponse.ok) {
           toast.error("Resume Upload Failed");
         } else {
-          console.log(uploadResponse);
+          // console.log(uploadResponse);
         }
       } catch (error) {
         console.error(error);
@@ -239,68 +269,70 @@ export default function CreateProfile() {
       } finally {
         setUploading(false);
       }
-  
+
       // Start analysing
       setAnalysing(true);
-  
-      const fileReader = new FileReader();
-      let extractedText = "";
-  
-      fileReader.onload = async function () {
-        const typedArray = new Uint8Array(this.result as ArrayBuffer);
-  
-        // Load the PDF document
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-  
-        // Loop through each page
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-          const page = await pdf.getPage(pageNumber);
-          const textContent = await page.getTextContent();
-  
-          // Extract text
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(" ");
-          extractedText += pageText + "\n";
-        }
-  
-        // Convert the file to base64
-        const base64Reader = new FileReader();
-        base64Reader.onloadend = async () => {
-          const base64String = base64Reader.result?.toString().split(",")[1];
-  
-          if (base64String && extractedText) {
-            try {
-              const structuredDataResult = await extractStructuredData(
-                extractedText
-              );
-  
-              // Check if structuredDataResult and structuredDataResult.message exist before accessing
 
-              if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
-                console.log("userId::",userData.id," talentProfileId:: ",newTalentProfileId)
-                await processAndSaveData(
-                  structuredDataResult,
-                  userData?.id,
-                  newTalentProfileId
-                );
-                setIsResumeUploaded(true);
-              } else {
-                toast.error("Failed to extract structured data");
-              }
-            } catch (err) {
-              toast.error("Failed to process the PDF");
-              console.error("Error:", err);
-            }
-          } else {
-            toast.error("Error converting file to base64 or extracting text");
+      const extractedText = await extractTextFromPDF(file)
+
+      try {
+        const structuredDataResult = await extractStructuredData(
+          extractedText
+        );
+        let newTalentProfileId = null
+        try {
+          const formData = new FormData();
+          formData.append("resumeFile", file);
+          formData.append("resumeFileText", JSON.stringify(structuredDataResult.message))
+          const response = await fetch("/api/resume/add_new", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: (formData),
+          });
+
+          const result = await response.json();
+
+          if (result.status === 409 || result.status === 200) {
+            dispatch(setResumeUrl(result.resume.resumeUrl))
+            dispatch(setId(result.resume.id))
           }
-          setAnalysing(false);
-        };
-  
-        base64Reader.readAsDataURL(file); // Start reading the file as a data URL
-      };
-      fileReader.readAsArrayBuffer(file);
+
+          const res = await createTalentProfile(result.resume.resumeUrl, userData.id);
+
+          if (res.status !== 200) {
+            toast.error(res.error);
+          } else {
+            if (res.data) {
+              // console.log("Result from createTalentProfile:: ", res.data.id);
+              newTalentProfileId = res.data.id
+              dispatch(setResumeUrl(res.data?.resumeUrl ?? ''));
+              dispatch(setId(res.data.id));
+            }
+          }
+        } catch (error) {
+          toast.error("Failed to upload resume");
+        }
+        // Check if structuredDataResult and structuredDataResult.message exist before accessing
+
+        if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
+          // console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
+          await processAndSaveData(
+            structuredDataResult,
+            userData?.id,
+            newTalentProfileId
+          );
+          setIsResumeUploaded(true);
+        } else {
+          toast.error("Failed to extract structured data");
+        }
+      } catch (err) {
+        toast.error("Failed to process the PDF");
+        console.error("Error:", err);
+      } finally {
+        setAnalysing(false);
+      }
     } else {
       toast.error("Please upload a PDF file");
       setUploading(false);
@@ -326,7 +358,7 @@ export default function CreateProfile() {
 
   const extractStructuredData = useCallback(async (text: string) => {
     try {
-      console.log("debug in extractSD")
+      // console.log("debug in extractSD")
       const response = await fetch(`${baseUrl}/extract_profile_data`, {
         method: "POST",
         headers: {
@@ -337,8 +369,8 @@ export default function CreateProfile() {
 
       const result = await response.json();
       if (response.ok) {
-        setIsResumeUploaded(true);
-        toast.success("Resume uploaded successfully");
+        // setIsResumeUploaded(true);
+        // toast.success("Resume uploaded successfully");
         return result;
       }
       toast.error("Error extracting structured data from resume");
@@ -354,8 +386,8 @@ export default function CreateProfile() {
     try {
       if (!id) return;
       const res = await addSkills(values.skills, id);
-
       if (res.status === 200) {
+        dispatch(setSkills(values.skills))
         setStep(4);
       } else {
         console.error("Error adding skills:", res.error);
@@ -377,20 +409,20 @@ export default function CreateProfile() {
 
   //manual createTalentProfile without resume
 
-  const handleManualCreateProfile=async()=>{
+  const handleManualCreateProfile = async () => {
     try {
       if (!userData) {
         toast.error("Unknown error occurred");
         return;
       }
-      const res=await createManualProfile(userData?.id)
+      const res = await createManualProfile(userData?.id)
       if (res.status !== 200) {
         toast.error(res.error);
       } else {
         if (res.data) {
-          console.log("Result from createTalentProfile:: ", res.data.id);
-          setId(res.data.id);
-          handleIncStep(step+1);
+          // console.log("Result from createTalentProfile:: ", res.data.id);
+          dispatch(setId(res.data.id));
+          handleIncStep(step + 1);
         }
       }
     } catch (error) {
@@ -420,7 +452,7 @@ export default function CreateProfile() {
 
 
 
-    const employmentData = experience.map((exp: EmploymentData): EmploymentData => ({
+    const experienceData = experience.map((exp: ExperiencesData): ExperiencesData => ({
       ...exp,
       startDate: exp.startDate ? new Date(exp.startDate) : undefined,
       endDate: exp.endDate ? new Date(exp.endDate) : undefined
@@ -428,17 +460,17 @@ export default function CreateProfile() {
 
     const educationData = education.map((edu: EducationData): EducationData => ({
       ...edu,
-      startDate: edu.startDate ? new Date(edu.startDate) : undefined,
+      startDate: new Date(edu.startDate),
       endDate: edu.endDate ? new Date(edu.endDate) : undefined
     }))
 
     // Define update functions
-    console.log("updating details for : ", talentProfileId, "userId: ", userId)
+    // console.log("updating details for : ", talentProfileId, "userId: ", userId)
     const updateUserInfo = () => updateProfile(userInfo, userId);
     const updateUserProfiles = () => addProfiles(profiles, talentProfileId);
     const updateUserSkills = () => addSkills(skills, talentProfileId);
     const updateUserJobTitle = () => updateTitle(jobRole, talentProfileId);
-    const updateUserExperiences = () => createEmployments(employmentData, talentProfileId);
+    const updateUserExperiences = () => createExperiences(experienceData, talentProfileId);
     const updateUserEducations = () => createEducation(educationData, talentProfileId);
     const updateUserBio = () => updateBio(bio, talentProfileId);
 
@@ -466,7 +498,21 @@ export default function CreateProfile() {
       const allFulfilled = results.every((result) => result.status === "fulfilled")
 
       if (allFulfilled) {
-        console.log("All updates succeeded. Redirecting to /talentmatch...");
+        dispatch(setBio(bio))
+        dispatch(setTitle(jobRole))
+        dispatch(setEducations(educationData.map((edu: any) => ({
+          ...edu,
+          startDate: edu.startDate.toISOString(),
+          endDate: edu.endDate ? edu.endDate.toISOString() : undefined
+        }))))
+        dispatch(setExperiences(experienceData.map((exp: any) => ({
+          ...exp,
+          startDate: exp.startDate.toISOString(),
+          endDate: exp.endDate ? exp.endDate.toISOString() : undefined
+        })
+        )))
+        dispatch(setProfiles(profiles))
+        // console.log("All updates succeeded. Redirecting to /talentmatch...");
         router.push("/talentmatch");
       } else {
         console.error("Some updates failed. Please check the logs.");
@@ -581,7 +627,7 @@ export default function CreateProfile() {
                 </div>
               </div>
             </div>
-            <div>
+            {/* <div>
               OR
             </div>
             <div className="items-center justify-center">
@@ -589,11 +635,11 @@ export default function CreateProfile() {
               <Button
                 type="button"
                 className="bg-white text-primary border border-primary hover:bg-primary mt-3 hover:text-white"
-                onClick={async() =>(await handleManualCreateProfile())}
+                onClick={async () => (await handleManualCreateProfile())}
               >
                 Manually enter details
               </Button>
-            </div>
+            </div> */}
           </div>
         </section>
 
@@ -643,7 +689,7 @@ export default function CreateProfile() {
                     </FormDescription>
                     <FormControl>
                       <ArrayInput
-                        value={field.value}
+                        value={field?.value || []}
                         onChange={field.onChange}
                         placeholder="Enter skills required"
                       />

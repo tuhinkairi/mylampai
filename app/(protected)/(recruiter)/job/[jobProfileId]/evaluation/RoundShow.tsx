@@ -54,18 +54,18 @@ const RoundShow = () => {
                 setLoading(false);
             });
     }, [jobProfileId]);
-    
+
     // console.log(rounds)
     return (
         <div className="p-4">
             <h2 className="text-xl font-bold mb-4">Job Rounds for {title}</h2>
             {loading ? (
-                <LoadingGlobal text={"Rounds"}/>
+                <LoadingGlobal text={"Rounds"} />
             ) : rounds.length === 0 ? (
                 <p>No rounds found.</p>
             ) : (
                 <ul className="space-y-4">
-                    {rounds.map((round:any) => (
+                    {rounds.map((round: any) => (
                         <li
                             key={round.id}
                             className="p-4 border rounded-lg shadow-sm bg-gray-50"
@@ -79,9 +79,9 @@ const RoundShow = () => {
                             <p className="mt-2">{round.details}</p>
                             <p className="mt-2">Round: {round.roundNumber}</p>
                             <div className="mt-5">
-                                <button onClick={() =>router.push(`/job/${jobProfileId}/evaluation/${round.id}`)}
+                                <button onClick={() => router.push(`/job/${jobProfileId}/evaluation/${round.id}`)}
                                     className="border rounded-md p-2 bg-purple-400 hover:bg-purple-500 text-white">show rubics</button><button className="border rounded-md p-2 bg-red-400 hover:bg-red-500 ml-2 text-white">delete</button></div>
-                            
+
                         </li>
                     ))}
                 </ul>

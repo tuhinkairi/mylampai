@@ -17,6 +17,7 @@ const nextConfig = {
 
     if(!isServer){
       config.resolve.alias['pdfjs-dist']='pdfjs-dist/webpack';
+      config.output.globalObject = 'self';
     }
     return config
   },

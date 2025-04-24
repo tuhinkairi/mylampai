@@ -53,6 +53,7 @@ export default function ProfileMatches({
 }) {
   const [profiles, setProfiles] = useState<any[]>([]);
   const [openProfile, setOpenProfile] = useState<any>({})
+
   const handleGetProfiles = useCallback(async () => {
     try {
       const res = await matchTalentProfile(poolData);
@@ -74,7 +75,7 @@ export default function ProfileMatches({
   useEffect(() => {
     // console.log("openProfile--: ", openProfile)
     handleGetProfiles()
-  }, [])
+  }, [handleGetProfiles])
 
   useEffect(() => {
     setOpenProfile(profiles[0])
@@ -97,7 +98,7 @@ export default function ProfileMatches({
               <Button variant="ghost" key={profile.id} className={cn('flex justify-start overflow-hidden mr-3 mb-2 h-12 w-full', profile.id === openProfile?.id
                 ? 'border-blue-500 bg-blue-200'
                 : 'border-2 border-blue-300')} onClick={() => handleOpenProfile(profile.id)}>
-                <div className="text-md flex gap-2 items-center"><User2Icon />{profile?.user?.name} 
+                <div className="text-md flex gap-2 items-center"><User2Icon />{profile?.user?.name}
                   <CheckCircle2 className="text-purple-500" />
                 </div>
                 {/* <span className="text-gray-500 text-sm">(testData.title)</span> */}

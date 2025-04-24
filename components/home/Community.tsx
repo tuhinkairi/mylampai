@@ -89,14 +89,10 @@ export default function CommunitySection() {
             </Link>
           ) : (
             <Dialog>
-              <DialogTrigger className="z-10">
-                <div
-                  onClick={() => setRole("user")}
-                  className=" flex gap-4  items-center w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 my-2 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark"
-                >
-                  Get hired instantly
-                  <ArrowRight size={24} />
-                </div>
+              <DialogTrigger className="z-10 flex gap-4  items-center w-[225px] h-[45px] justify-center bg-primary rounded-lg text-white text-sm font-semibold py-2 md:py-3 pl-4 my-2 md:pl-8 px-2 md:px-3 md:max-w-[300px] hover:bg-primary-dark" onClick={() => setRole("user")}
+              >
+                Get hired instantly
+                <ArrowRight size={24} />
               </DialogTrigger>
               <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
                 <LoginComponent />
