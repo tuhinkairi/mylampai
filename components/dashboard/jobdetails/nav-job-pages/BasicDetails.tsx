@@ -1,3 +1,4 @@
+import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
 import React, { useState } from "react";
 import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
@@ -16,7 +17,7 @@ type FormData = {
     expectedStartDate: string;
 };
 
-const BasicDetails = () => {
+const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
     const [formData, setFormData] = useState<FormData>({
         jobTitle: "",
         HiringType: "",
@@ -55,6 +56,18 @@ const BasicDetails = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Form Data:", formData);
+        setFormData({
+            jobTitle: "",
+            HiringType: "",
+            workplaceType: "",
+            jobLocation: "",
+            skills: [],
+            salaryType: "",
+            salaryFigure: "",
+            jobDescription: "",
+            employmentType: "",
+            expectedStartDate: "",
+        });
     };
 
 
@@ -72,6 +85,7 @@ const BasicDetails = () => {
                             name="jobTitle"
                             value={formData.jobTitle}
                             onChange={handleChange}
+                            required
                             className="w-full p-2 mt-1 border rounded-md focus:outline-primary"
                         />
                     </label>
@@ -90,6 +104,7 @@ const BasicDetails = () => {
                                             value={type}
                                             checked={formData.HiringType === type}
                                             onChange={handleChange}
+                                            required
                                             className="mr-2 accent-primary checked:border-primary"
                                         />
                                         {type}
@@ -105,6 +120,7 @@ const BasicDetails = () => {
                                 name="employmentType"
                                 value={formData.employmentType}
                                 onChange={handleChange}
+                                required
                                 className="w-full p-2 mt-1 border rounded-md focus:outline-primary"
                             >
                                 <option value="" disabled>
@@ -122,6 +138,7 @@ const BasicDetails = () => {
                                 name="workplaceType"
                                 value={formData.workplaceType}
                                 onChange={handleChange}
+                                required
                                 className="w-full p-2 mt-1 border rounded-md focus:outline-primary"
                             >
                                 <option value="" disabled>
@@ -175,6 +192,7 @@ const BasicDetails = () => {
                                     name="expectedStartDate"
                                     value={formData.expectedStartDate}
                                     onChange={handleChange}
+                                    required
                                     placeholder="in new season......."
                                     className="px-4 py-2 border rounded-lg bg-transparent  focus:outline-none focus:outline-primary"
                                 />
@@ -223,6 +241,7 @@ const BasicDetails = () => {
                                 name="salaryFigure"
                                 value={formData.salaryFigure}
                                 onChange={handleChange}
+                                required
                                 className="w-full bg-transparent focus:outline-none py-2"
                                 placeholder="Enter salary amount..."
                             />
@@ -266,27 +285,16 @@ const BasicDetails = () => {
 
                         {/* Text Editor */}
                         <textarea
-                            className="w-full h-64  p-3 focus:outline-none resize-none"
+                            className="w-full h-64 p-3 focus:outline-none resize-none"
                             placeholder="Enter job description..."
+                            onChange={handleChange}
+                            required
+                            name="jobDescription"
+                            value={formData.jobDescription}
+                            spellCheck={true}
                         />
                     </div>
                 </section>
-
-                {/* <section className="_part3 grid gap-4 border rounded-lg px-4 py-3">
-                            
-                    <label className="block">
-                        Job Description (0/250)
-                        <textarea
-                            name="jobDescription"
-                            value={formData.jobDescription}
-                            onChange={handleChange}
-                            className="w-full p-2 mt-1 border rounded-md"
-                            rows={4}
-                        ></textarea>
-                    </label>
-                </section> */}
-
-                {/* Action Buttons */}
                 <div className="flex justify-between">
                     <button type="button" className="border bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-md">
                         Save as Draft
