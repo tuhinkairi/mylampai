@@ -8,9 +8,10 @@ import {
 } from "@/components/ui/sheet"
 import React, { useEffect, useRef, useState } from "react"
 import DetailsShow from "./DetailsShow"
+import { JobProfile } from "@prisma/client"
 // import { DialogTitle } from "@/components/ui/dialog"
 
-function JobDrawer({ children, job_id }: { children: React.ReactNode, job_id?: string }) {
+function JobDrawer({ children, job_data }: { children: React.ReactNode, job_data?: JobProfile }) {
     const [active, setActive] = useState<number>(0)
     const initial = useRef<HTMLButtonElement>(null)
     const handel_active = (e: number) => {
