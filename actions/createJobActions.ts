@@ -123,6 +123,9 @@ export const getRecruiterJobs = async (userId: string) => {
         salary: true,
         location: true,
         availability: true,
+        jobDescription: true,
+        endDate: true,
+        registrationDeadline: true, 
       },
     });
 

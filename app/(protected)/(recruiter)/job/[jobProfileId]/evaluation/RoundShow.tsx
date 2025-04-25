@@ -7,7 +7,7 @@ import RubricList from "./RubricsList";
 import { getRubricsList } from "@/actions/jobs/rubricsGet";
 import LoadingGlobal from "@/components/ui/loading";
 
-interface Round {
+export interface Round {
     id: string;
     roundName: string;
     roundNumber: number;
@@ -27,7 +27,7 @@ interface JobRoundRubric {
     condition: string;
     jobRoundId: string;
 }
-const RoundShow = () => {
+export const RoundShow = () => {
     const { jobProfileId } = useParams<{ jobProfileId: string }>();
     const [rounds, setRounds] = useState<Round[] | any>([]);
     const [title, setTitle] = useState<string>("")

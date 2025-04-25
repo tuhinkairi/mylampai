@@ -16,7 +16,7 @@ function JoblistingRight() {
         try {
             if (!userData?.id) return;
             const jobs = await getRecruiterJobs(userData.id) as JobProfile[];
-            console.log("Fetched jobs:", jobs);
+            console.log("Fetched jobs:", jobs[0].jobDescription);
             setJobs(jobs);
         } catch (error) {
             console.error("Error fetching jobs:", error);

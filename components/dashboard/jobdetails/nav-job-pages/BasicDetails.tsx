@@ -1,14 +1,16 @@
+import { selectFormData, setFormDataStore } from "@/lib/features/jobSlice/jobSlice";
+import { RootState } from "@/lib/store";
 import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
 import React, { useState } from "react";
 import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
-import { RiEjectFill } from "react-icons/ri";
+import { useSelector } from "react-redux";
 
 type FormData = {
+    id:string|null
     jobTitle: string;
     HiringType: string;
     workplaceType: string;
-    jobLocation: string;
     skills: string[];
     salaryType: string;
     salaryFigure: string;
@@ -17,16 +19,18 @@ type FormData = {
     expectedStartDate: string;
 };
 
-const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
+const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
+    console.log(job_data)
+    const Data = useSelector((state: RootState) => selectFormData(state));
     const [formData, setFormData] = useState<FormData>({
-        jobTitle: "",
-        HiringType: "",
-        workplaceType: "",
-        jobLocation: "",
-        skills: [],
+        id:job_data.id,
+        jobTitle: job_data.jobTitle,
+        HiringType: job_data.availability.toString().toLowerCase().replace("_"," "),
+        workplaceType: job_data.location,
+        skills: job_data.skills,
         salaryType: "",
-        salaryFigure: "",
-        jobDescription: "",
+        salaryFigure: job_data.salary,
+        jobDescription: job_data.jobDescription,
         employmentType: "",
         expectedStartDate: "",
     });
@@ -56,18 +60,10 @@ const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Form Data:", formData);
-        setFormData({
-            jobTitle: "",
-            HiringType: "",
-            workplaceType: "",
-            jobLocation: "",
-            skills: [],
-            salaryType: "",
-            salaryFigure: "",
-            jobDescription: "",
-            employmentType: "",
-            expectedStartDate: "",
-        });
+        // setting the form data to store
+        console.log(Data)
+        setFormDataStore(formData)
+        console.log(Data)
     };
 
 
@@ -91,18 +87,18 @@ const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
                     </label>
 
                     {/* Column 2 */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Hiring Type */}
                         <label className="block">
                             Hiring Type:
                             <div className="flex gap-4 mt-2">
-                                {["Job", "Internship", "Contract"].map((type) => (
+                                {["Full Time","Part Time", "Intern", "Contract"].map((type) => (
                                     <label key={type} className="flex items-center">
                                         <input
                                             type="radio"
                                             name="HiringType"
-                                            value={type}
-                                            checked={formData.HiringType === type}
+                                            value={type.toLowerCase()}
+                                            checked={formData.HiringType == type.toLowerCase()}
                                             onChange={handleChange}
                                             required
                                             className="mr-2 accent-primary checked:border-primary"
@@ -114,7 +110,7 @@ const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
                         </label>
 
                         {/* Employment Type */}
-                        <label className="block">
+                        {/* <label className="block">
                             Employment Type:
                             <select
                                 name="employmentType"
@@ -129,7 +125,7 @@ const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
                                 <option value="Full-Time">Full-Time</option>
                                 <option value="Part-Time">Part-Time</option>
                             </select>
-                        </label>
+                        </label> */}
 
                         {/* Workplace Type */}
                         <label className="block">
@@ -144,9 +140,9 @@ const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
                                 <option value="" disabled>
                                     Select Workplace
                                 </option>
-                                <option value="In Office">In Office</option>
-                                <option value="Remote">Remote</option>
-                                <option value="Hybrid">Hybrid</option>
+                                <option value="On_SITE">On Site </option>
+                                <option value="REMOTE">Remote </option>
+                                <option value="HYBRID">Hybrid </option>
                             </select>
                         </label>
                     </div>
@@ -254,7 +250,7 @@ const BasicDetails = ({job_data}:{job_data?:JobProfile}) => {
                 <section className="_part3 grid gap-4 border rounded-lg px-4 py-3">
                     {/* Header */}
                     <div className="flex justify-between items-center">
-                        <p className="text-sm font-semibold">Job Description* <span className="text-gray-400">(0/2500)</span></p>
+                        <p className="text-sm font-semibold">Job Description* <span className="text-gray-400">({formData.jobDescription.length}/2500)</span></p>
                     </div>
 
                     {/* Action Buttons */}
