@@ -95,7 +95,7 @@ export function WorkExperiences({
       const res = await createExperiences(prevExperiences, id);
 
       if (res.status === 200) {
-        console.log(res)
+        // console.log(res)
         if (res.response && Array.isArray(res.response)) {
           dispatch(setExperiences(res.response.map(exp => ({
             ...exp,

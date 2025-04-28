@@ -130,11 +130,11 @@ const RealTimeVideoUploader: React.FC = () => {
           `${interviewId}_${Date.now()}_v.webm`
         );
 
-        console.log(videoBlockIds.current);
+        // console.log(videoBlockIds.current);
 
         if (client) {
           await client.commitBlockList(videoBlockIds.current);
-          console.log("Finalized upload.");
+          // console.log("Finalized upload.");
         }
       }
     } catch (error) {

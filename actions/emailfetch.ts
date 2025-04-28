@@ -47,7 +47,7 @@ export const getTemplates = async () => {
         },
       }
     );
-    console.log("ersa: ",response.data.data.templates)
+    // console.log("ersa: ",response.data.data.templates)
     const templates = response.data.data.templates || [];
     const templatesWithHtml = await Promise.all(
       templates.map(async (temp: any) => {
@@ -79,7 +79,7 @@ export const getTemplates = async () => {
         }
       })
     );
-     console.log("all templates::",templatesWithHtml)
+    //  console.log("all templates::",templatesWithHtml)
     return templatesWithHtml;
   } catch (error) {
     console.error("Error fetching templates:", error);

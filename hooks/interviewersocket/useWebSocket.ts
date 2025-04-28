@@ -25,7 +25,7 @@ const useWebSocket = (options: WebSocketConnectionOptions = {
     
     interviewerSocket.onopen = () => {
       interviewerSocket.send(JSON.stringify({ type: "HELLO_INTERVIEWER" }));
-      console.log("Interviewer WebSocket connected");
+      // console.log("Interviewer WebSocket connected");
     };
     
     interviewerSocket.onerror = (error) => {
@@ -51,7 +51,7 @@ const useWebSocket = (options: WebSocketConnectionOptions = {
     
     rubricsSocket.onopen = () => {
       rubricsSocket.send(JSON.stringify({ type: "HELLO_RUBRICS" }));
-      console.log("Rubrics WebSocket connected");
+      // console.log("Rubrics WebSocket connected");
     };
     
     rubricsSocket.onerror = (error) => {
