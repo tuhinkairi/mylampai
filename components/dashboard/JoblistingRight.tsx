@@ -37,7 +37,10 @@ function JoblistingRight() {
                     <JobDrawer key={element.id} job_data={element}>
                         <div className='joblisting overflow-y-auto p-5 border shadow-sm rounded-md flex items-center justify-around '>
                             <div className='grid gap-2 text-start'>
+                                <div className='flex gap-4 items-center justify-between'>
                                 <h1 className='font-semibold text-lg '>{element.jobTitle}</h1>
+                                <span className={`status text-red-500`}>pending</span>
+                                </div>
                                 <p className='description'>{element.jobDescription}</p>
                                 <div className='flex gap-4 items-center justify-start'>
                                     <div className='meta-data flex gap-x-6 gap-y-4 items-center justify-start w-fit'>

@@ -38,7 +38,7 @@ const initialState: JobState = {
     jobDescription: '',
     employmentType: '',
     expectedStartDate: '',
-    currentState:"Pending"
+    currentState:"Completed"
 };
 
 

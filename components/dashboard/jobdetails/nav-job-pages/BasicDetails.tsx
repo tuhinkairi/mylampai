@@ -1,8 +1,8 @@
-import { selectFormData, setFormDataStore } from "@/lib/features/jobSlice/jobSlice";
+import { selectFormData, setFormDataStore, setIdStore } from "@/lib/features/jobSlice/jobSlice";
 import { RootState } from "@/lib/store";
 import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -21,23 +21,29 @@ type FormData = {
 };
 
 const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
-    console.log(job_data)
     const Data = useSelector((state: RootState) => selectFormData(state));
     const dispatch = useDispatch()
+
     const [formData, setFormData] = useState<FormData>({
-        id:job_data.id,
-        jobTitle: job_data.jobTitle,
-        HiringType: job_data.availability.toString().toLowerCase().replace("_"," "),
-        workplaceType: job_data.location,
-        skills: job_data.skills,
-        salaryType: "",
-        salaryFigure: job_data.salary,
-        jobDescription: job_data.jobDescription,
-        employmentType: "",
-        expectedStartDate: "",
-        currentState:"Pending"
+        id: Data.id.length!=0 ? Data.id : job_data.id,
+        jobTitle: Data.jobTitle.length!=0 ? Data.jobTitle : job_data.jobTitle,
+        HiringType: Data.HiringType.length!=0? Data.HiringType : job_data.availability.toString().toLowerCase().replace("_"," "),
+        workplaceType: Data.workplaceType.length!=0? Data.workplaceType : job_data.location,
+        skills: Data.skills.length!=0 ? Data.skills : job_data.skills,
+        salaryType: Data.salaryType || "",
+        salaryFigure: Data.salaryFigure.length!=0?Data.salaryFigure: job_data.salary,
+        jobDescription: Data.jobDescription.length? Data.jobDescription :  job_data.jobDescription,
+        employmentType: Data.employmentType || "",
+        expectedStartDate: Data.expectedStartDate || "",
+        currentState: Data.currentState
         
     });
+
+    // update the id in redux
+    useEffect(()=>{
+        dispatch(setIdStore(job_data.id))
+    },[dispatch,job_data.id])
+
     // handel the btn toggle in salary section
     const [btntoggle, setButtonToggle] = useState<boolean>(false)
     const handleChange = (
@@ -65,8 +71,15 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
         e.preventDefault();
         console.log("Form Data:", formData);
         // setting the form data to store
+        formData.currentState = "Completed"
         dispatch(setFormDataStore(formData))
     };
+    const handelDraft = () => {
+        console.log("Draft Data:", formData);
+        formData.currentState = "Pending"
+        // setting the form data to store
+        dispatch(setFormDataStore(formData))
+    }
 
 
     return (
@@ -294,7 +307,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                     </div>
                 </section>
                 <div className="flex justify-between">
-                    <button type="button" className="border bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-md">
+                    <button type="button" onClick={handelDraft} className="border bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-md">
                         Save as Draft
                     </button>
                     <button type="submit" className=" px-4 py-2 rounded-md border bg-primary text-white hover:bg-primary-dark">
