@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
 interface FormData{
-    id: string|null
+    id: string;
     jobTitle: string;
     HiringType: string;
     workplaceType: string;
@@ -15,7 +15,7 @@ interface FormData{
 }
 
 interface JobState {
-    id: string | null;
+    id: string ;
     jobTitle: string;
     HiringType: string;
     workplaceType: string;
@@ -28,7 +28,7 @@ interface JobState {
     currentState:"Pending" | "Completed"
 }
 const initialState: JobState = {
-    id: null,
+    id:'',
     jobTitle: '',
     HiringType: '',
     workplaceType: '',
@@ -50,7 +50,7 @@ const jobReducer = createSlice({
             state.id = action.payload;
         },
         clearIdStore: (state) => {
-            state.id = null;
+            state.id = '';
         },
         setFormDataStore: (state, action: PayloadAction<FormData>) => {
             state = action.payload;

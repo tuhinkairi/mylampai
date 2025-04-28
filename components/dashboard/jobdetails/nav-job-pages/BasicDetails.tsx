@@ -4,10 +4,10 @@ import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
 import React, { useState } from "react";
 import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 type FormData = {
-    id:string|null
+    id:string;
     jobTitle: string;
     HiringType: string;
     workplaceType: string;
@@ -17,11 +17,13 @@ type FormData = {
     jobDescription: string;
     employmentType: string;
     expectedStartDate: string;
+     currentState:'Pending'|'Completed'
 };
 
 const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
     console.log(job_data)
     const Data = useSelector((state: RootState) => selectFormData(state));
+    const dispatch = useDispatch()
     const [formData, setFormData] = useState<FormData>({
         id:job_data.id,
         jobTitle: job_data.jobTitle,
@@ -33,6 +35,8 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
         jobDescription: job_data.jobDescription,
         employmentType: "",
         expectedStartDate: "",
+        currentState:"Pending"
+        
     });
     // handel the btn toggle in salary section
     const [btntoggle, setButtonToggle] = useState<boolean>(false)
@@ -61,9 +65,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
         e.preventDefault();
         console.log("Form Data:", formData);
         // setting the form data to store
-        console.log(Data)
-        setFormDataStore(formData)
-        console.log(Data)
+        dispatch(setFormDataStore(formData))
     };
 
 
