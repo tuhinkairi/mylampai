@@ -14,7 +14,7 @@ interface FormData{
     currentState: 'Pending' | 'Completed'
 }
 
-interface JobState {
+export interface JobState {
     id: string ;
     jobTitle: string;
     HiringType: string;

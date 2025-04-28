@@ -1,10 +1,12 @@
 import { configureStore } from '@reduxjs/toolkit';
 import jobReducer from './features/jobSlice/jobSlice';
+import sortReducer from './features/jobSlice/sortSlice';
 
 export const makeStore = () => {
   return configureStore({
     reducer: {
       job: jobReducer.reducer,
+      jobStateSort: sortReducer.reducer  
     },
   });
 };

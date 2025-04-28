@@ -6,6 +6,8 @@ import { getJob } from "@/actions/careerActions"; // Replace with your actual AP
 import RubricList from "./RubricsList";
 import { getRubricsList } from "@/actions/jobs/rubricsGet";
 import LoadingGlobal from "@/components/ui/loading";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
 
 export interface Round {
     id: string;
@@ -28,7 +30,8 @@ interface JobRoundRubric {
     jobRoundId: string;
 }
 export const RoundShow = () => {
-    const { jobProfileId } = useParams<{ jobProfileId: string }>();
+    let activeId = useSelector((state: RootState) => state.job.id);
+    let { jobProfileId } = useParams<{ jobProfileId: string }>();
     const [rounds, setRounds] = useState<Round[] | any>([]);
     const [title, setTitle] = useState<string>("")
     const [loading, setLoading] = useState(true);
@@ -38,9 +41,9 @@ export const RoundShow = () => {
     const [rubricsData, setRubricsData] = useState<JobRoundRubric[]>();
 
     useEffect(() => {
-        if (!jobProfileId) return;
+        // if (!jobProfileId) return;
 
-        getJob(jobProfileId)
+        getJob(jobProfileId || activeId)
             .then((res) => {
                 if (res?.rounds) {
 
@@ -53,7 +56,7 @@ export const RoundShow = () => {
                 console.error("Error fetching rounds:", err);
                 setLoading(false);
             });
-    }, [jobProfileId]);
+    }, [jobProfileId, activeId]);
     
     // console.log(rounds)
     return (

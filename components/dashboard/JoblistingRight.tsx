@@ -6,12 +6,15 @@ import { useUserStore } from '@/utils/userStore';
 import { JobProfile } from '@prisma/client';
 import { getRecruiterJobs } from '@/actions/createJobActions';
 import Loading from '@/app/(protected)/(recruiter)/dashboard/loading';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/lib/store';
 
 function JoblistingRight() {
     const [jobList, setJobs] = useState<JobProfile[] | null>(null);
     const { userData } = useUserStore();
+    // sortdata
+    const sortData = useSelector((state: RootState) => state.jobStateSort.sortBy)   
 
-    // Memoize fetchJobs using useCallback to prevent unnecessary re-creation
     const fetchJobs = useCallback(async () => {
         try {
             if (!userData?.id) return;
@@ -20,26 +23,44 @@ function JoblistingRight() {
             setJobs(jobs);
         } catch (error) {
             console.error("Error fetching jobs:", error);
-            setJobs([]); 
+            setJobs([]);
         }
     }, [userData?.id]);
 
     // useEffect to fetch jobs when userData.id changes
     useEffect(() => {
         fetchJobs();
-    }, [fetchJobs]); 
+    }, [fetchJobs]);
 
+    const joblistcontainser = React.useRef<HTMLDivElement>(null);
+    const joblist_nodes = joblistcontainser.current?.childNodes;
+    console.log(joblist_nodes);
+    
+    if (joblist_nodes) {
+    if (sortData !== "Default") {
+            Array.from(joblist_nodes).forEach((element) => {
+                const status = (element as HTMLDivElement).querySelector("._status")?.textContent;
 
+                if (sortData == "Completed" && status === "Pending") {
+                    (element as HTMLDivElement).classList.add("hidden");
+                } else if (sortData == "Pending" && status === "Completed") {
+                    (element as HTMLDivElement).classList.add("hidden");
+                } else {
+                    (element as HTMLDivElement).classList.remove("hidden");
+                }
+            });
+        }
+    }
     return (
-        <div className='overflow-hidden grid gap-5 text-sm pr-5 pb-32'>
+        <div ref={joblistcontainser} className='overflow-hidden grid gap-5 text-sm pr-5 pb-32'>
             {jobList ? Array.from(jobList).map((element, index) => {
                 return (
                     <JobDrawer key={element.id} job_data={element}>
                         <div className='joblisting overflow-y-auto p-5 border shadow-sm rounded-md flex items-center justify-around '>
                             <div className='grid gap-2 text-start'>
                                 <div className='flex gap-4 items-center justify-between'>
-                                <h1 className='font-semibold text-lg '>{element.jobTitle}</h1>
-                                <span className={`status text-red-500`}>pending</span>
+                                    <h1 className='font-semibold text-lg '>{element.jobTitle}</h1>
+                                    <span className={`_status ${index % 2 == 0 ? "text-red-500" : "text-green-500"}`}>{index % 2 == 0 ? 'Pending' : 'Completed'}</span>
                                 </div>
                                 <p className='description'>{element.jobDescription}</p>
                                 <div className='flex gap-4 items-center justify-start'>
@@ -62,10 +83,10 @@ function JoblistingRight() {
                         </div>
                     </JobDrawer >
                 );
-            }):
-            <>
-            <Loading/>
-            </>}
+            }) :
+                <>
+                    <Loading />
+                </>}
         </div >
     );
 }
