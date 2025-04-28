@@ -101,21 +101,21 @@ const Analysis: React.FC = () => {
   // If you need to track selections separately for each analysis item, use this instead:
   const [selectedLineIndices, setSelectedLineIndices] = useState<Record<number, number | null>>({});
   const [conversationChat, setConversationChat] = useState<any[]>([]);
-  useEffect(() => {
-    console.log("Video URL:", videoUrl);
-  }, [videoUrl]);
+  // useEffect(() => {
+  //   console.log("Video URL:", videoUrl);
+  // }, [videoUrl]);
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
         const response = await axios.get(`/api/interviewer/get_review/${interviewId}`);
         const structuredData = response.data.data;
-        console.log("Structured Analysis Data:", structuredData);
+        // console.log("Structured Analysis Data:", structuredData);
         // Convert structured data to array format based on the interview sections
         const transformedData = Object.keys(structuredData[0])
           .filter((key) => INTERVIEW_SECTIONS.includes(key))
           .map((key) => structuredData[0][key]);
 
-        console.log("Transformed Data:", transformedData);
+        // console.log("Transformed Data:", transformedData);
         setAnalysisData(transformedData);
 
         // Initialize expanded sections state once we have data
@@ -162,7 +162,7 @@ const Analysis: React.FC = () => {
         }
         const data = response?.data;
         setConversationChat(data);
-        console.log("Conversation Data:", data);
+        // console.log("Conversation Data:", data);
       } catch (error) {
         console.error("Error fetching conversation data:", error);
       }

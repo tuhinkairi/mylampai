@@ -192,7 +192,7 @@ export const POST = async (req: NextRequest) => {
 
       // await Promise.all(fetchPromises)
       // Save the analysis result
-      console.log("summary in /resumeAnalysis route: ", summary);
+      // console.log("summary in /resumeAnalysis route: ", summary);
       // Store in DB for future use
       await updateResumeAnalysis({
         resumeId: body.id,

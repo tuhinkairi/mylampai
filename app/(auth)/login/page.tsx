@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/form";
 import { useSession } from "next-auth/react";
 import { useUserStore } from "@/utils/userStore";
-import { useEffect, useState ,Suspense} from "react";
+import { useEffect, useState, Suspense } from "react";
 import { setCookie } from "@/utils/cookieUtils";
 import {
   handleSendOTP,
@@ -57,7 +57,7 @@ function LoginPageContent() {
 
   const searchParams = useSearchParams();
   // console.log(searchParams)
-  const redirecting =searchParams.get("redirect")
+  const redirecting = searchParams.get("redirect")
   // if (redirecting) {
   //   console.log(redirecting)
   // }
@@ -86,7 +86,7 @@ function LoginPageContent() {
           setCookie("accessToken", res.accessToken);
           if (redirecting) {
             router.push(redirecting)
-          }else{
+          } else {
             router.push("/talentmatch");
           }
         } else {
@@ -329,6 +329,6 @@ export default function LoginPage() {
   return (
     <Suspense fallback={<LoadingGlobal text="login" />}>
       <LoginPageContent />
-     </Suspense>
+    </Suspense>
   );
 }

@@ -48,7 +48,7 @@ const SpeechRecognition = ({
     if (isInitialized.current) return;
 
     try {
-      console.log("🎤 Initializing new recording session");
+      // console.log("🎤 Initializing new recording session");
       await setupMicrophone();
       lastVoiceActivity.current = Date.now();
       isInitialized.current = true;
@@ -60,14 +60,14 @@ const SpeechRecognition = ({
 
   useEffect(() => {
     if (!isRecording) {
-      console.log("🔚 Pausing recording session");
+      // console.log("🔚 Pausing recording session");
       pauseMicrophone()
     }
   }, [isRecording])
 
   useEffect(() => {
     if (isMicrophoneStopped) {
-      console.log("🔚 Stopping recording session");
+      // console.log("🔚 Stopping recording session");
       disconnectFromDeepgram();
       // stopMicrophone();
     }
@@ -96,7 +96,7 @@ const SpeechRecognition = ({
 
   useEffect(() => {
     if (microphoneState === MicrophoneState.Ready && isRecording) {
-      console.log("🎙️ Microphone Ready - Connecting to Deepgram");
+      // console.log("🎙️ Microphone Ready - Connecting to Deepgram");
       lastVoiceActivity.current = Date.now();
       connectToDeepgram({
         model: "nova-3",
@@ -107,7 +107,7 @@ const SpeechRecognition = ({
       });
     }
 
-    console.log("🔊 Microphone State:", microphoneState);
+    // console.log("🔊 Microphone State:", microphoneState);
   }, [microphoneState, isRecording]);
 
   useEffect(() => {
@@ -125,7 +125,7 @@ const SpeechRecognition = ({
       // console.log("thisCaption: ",thisTranscript)
       if (thisTranscript.trim() !== "") {
         lastVoiceActivity.current = Date.now();
-        console.log("🗣️ Voice activity detected");
+        // console.log("🗣️ Voice activity detected");
 
         if (isFinal) {
           // console.log("✅ Final Transcript:", thisTranscript);
@@ -156,7 +156,7 @@ const SpeechRecognition = ({
       connectionState === LiveConnectionState.OPEN &&
       isRecording
     ) {
-      console.log("💫 Keeping connection alive");
+      // console.log("💫 Keeping connection alive");
       connection.keepAlive();
 
       keepAliveInterval.current = setInterval(() => {

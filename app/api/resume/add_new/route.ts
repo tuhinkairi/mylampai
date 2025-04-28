@@ -57,7 +57,7 @@ export const POST = async (req: NextRequest) => {
       },
     });
 
-    console.log("checking for existing cv:: ", existingCV);
+    // console.log("checking for existing cv:: ", existingCV);
     if (existingCV) {
       return NextResponse.json({ resume: existingCV, status: 409 });
     }
@@ -74,7 +74,7 @@ export const POST = async (req: NextRequest) => {
       );
     }
     const resumeOriginalName = resumeFile.name;
-    console.log("resumeSize: ", resumeFile.size);
+    // console.log("resumeSize: ", resumeFile.size);
     const newCV = await prisma.resume.create({
       data: {
         userId,
