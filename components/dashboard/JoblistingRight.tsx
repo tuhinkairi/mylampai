@@ -31,28 +31,27 @@ function JoblistingRight() {
     useEffect(() => {
         fetchJobs();
     }, [fetchJobs]);
+    console.log(sortData)
 
     const joblistcontainser = React.useRef<HTMLDivElement>(null);
     const joblist_nodes = joblistcontainser.current?.childNodes;
-    console.log(joblist_nodes);
     
     if (joblist_nodes) {
-    if (sortData !== "Default") {
             Array.from(joblist_nodes).forEach((element) => {
                 const status = (element as HTMLDivElement).querySelector("._status")?.textContent;
 
-                if (sortData == "Completed" && status === "Pending") {
+                if (sortData == "Completed" && status == "PENDING") {
                     (element as HTMLDivElement).classList.add("hidden");
-                } else if (sortData == "Pending" && status === "Completed") {
+                } else if (sortData == "Pending" && status == "COMPLETED") {
                     (element as HTMLDivElement).classList.add("hidden");
                 } else {
                     (element as HTMLDivElement).classList.remove("hidden");
                 }
             });
         }
-    }
     return (
         <div ref={joblistcontainser} className='overflow-hidden grid gap-5 text-sm pr-5 pb-32'>
+            {joblist_nodes?.length==0&&<h1 className='text-center'>No Data Found</h1>}
             {jobList ? Array.from(jobList).map((element, index) => {
                 return (
                     <JobDrawer key={element.id} job_data={element}>
@@ -60,7 +59,7 @@ function JoblistingRight() {
                             <div className='grid gap-2 text-start'>
                                 <div className='flex gap-4 items-center justify-between'>
                                     <h1 className='font-semibold text-lg '>{element.jobTitle}</h1>
-                                    <span className={`_status ${index % 2 == 0 ? "text-red-500" : "text-green-500"}`}>{index % 2 == 0 ? 'Pending' : 'Completed'}</span>
+                                    <span className={`_status ${element.status=="PENDING" ? "text-red-500" : "text-green-500"}`}>{element.status}</span>
                                 </div>
                                 <p className='description'>{element.jobDescription}</p>
                                 <div className='flex gap-4 items-center justify-start'>

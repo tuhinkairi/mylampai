@@ -113,20 +113,20 @@ export const getRecruiterJobs = async (userId: string) => {
       where: {
         userId,
       },
-      select: {
-        id: true,
-        jobTitle: true,
-        jobRole: true,
-        company: true,
-        startDate: true,
-        skills: true,
-        salary: true,
-        location: true,
-        availability: true,
-        jobDescription: true,
-        endDate: true,
-        registrationDeadline: true, 
-      },
+      // select: {
+      //   id: true,
+      //   jobTitle: true,
+      //   jobRole: true,
+      //   company: true,
+      //   startDate: true,
+      //   skills: true,
+      //   salary: true,
+      //   location: true,
+      //   availability: true,
+      //   jobDescription: true,
+      //   endDate: true,
+      //   registrationDeadline: true, 
+      // },
     });
 
     return jobs;

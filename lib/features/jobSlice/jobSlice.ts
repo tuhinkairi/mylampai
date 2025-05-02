@@ -6,7 +6,7 @@ interface FormData{
     HiringType: string;
     workplaceType: string;
     skills: string[];
-    salaryType: string;
+    salaryType:  "FIXED" | "RANGE" | "INCENTIVE";
     salaryFigure: string;
     jobDescription: string;
     employmentType: string;
@@ -20,7 +20,7 @@ export interface JobState {
     HiringType: string;
     workplaceType: string;
     skills: string[];
-    salaryType: string;
+    salaryType: "FIXED" | "RANGE" | "INCENTIVE";
     salaryFigure: string;
     jobDescription: string;
     employmentType: string;
@@ -33,7 +33,7 @@ const initialState: JobState = {
     HiringType: '',
     workplaceType: '',
     skills: [],
-    salaryType: '',
+    salaryType:  "FIXED",
     salaryFigure: '',
     jobDescription: '',
     employmentType: '',

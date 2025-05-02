@@ -2,9 +2,10 @@ import { selectFormData, setFormDataStore, setIdStore } from "@/lib/features/job
 import { RootState } from "@/lib/store";
 import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
 import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
 
 type FormData = {
     id:string;
@@ -12,7 +13,7 @@ type FormData = {
     HiringType: string;
     workplaceType: string;
     skills: string[];
-    salaryType: string;
+    salaryType:  "FIXED" | "RANGE" | "INCENTIVE";
     salaryFigure: string;
     jobDescription: string;
     employmentType: string;
@@ -30,13 +31,12 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
         HiringType: Data.HiringType.length!=0? Data.HiringType : job_data.availability.toString().toLowerCase().replace("_"," "),
         workplaceType: Data.workplaceType.length!=0? Data.workplaceType : job_data.location,
         skills: Data.skills.length!=0 ? Data.skills : job_data.skills,
-        salaryType: Data.salaryType || "",
+        salaryType: Data.salaryType || job_data.salaryType || "",
         salaryFigure: Data.salaryFigure.length!=0?Data.salaryFigure: job_data.salary,
         jobDescription: Data.jobDescription.length? Data.jobDescription :  job_data.jobDescription,
         employmentType: Data.employmentType || "",
         expectedStartDate: Data.expectedStartDate || "",
         currentState: Data.currentState
-        
     });
 
     // update the id in redux
@@ -46,14 +46,15 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
 
     // handel the btn toggle in salary section
     const [btntoggle, setButtonToggle] = useState<boolean>(false)
-    const handleChange = (
+    const handleChange = useCallback((
         e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
     ) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    },[formData]);
 
-    const handleSkillChange = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleSkillChange = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && e.currentTarget.value.trim()) {
+            e.preventDefault();
             const newSkill = e.currentTarget.value.trim();
             setFormData((prev) => ({
                 ...prev,
@@ -61,31 +62,44 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
             }));
             e.currentTarget.value = "";
         }
-    };
+    },[]);
 
-    const handleStartDateSelection = (option: string) => {
+    const handelRemoveSkill = useCallback((indexToRemove: number) => {
+        setFormData((prev) => ({
+            ...prev,
+            skills: prev.skills.filter((_, index) => index !== indexToRemove),
+        }));
+    }, []);
+    
+
+    const handleStartDateSelection = useCallback((option: string) => {
         setFormData((prev) => ({ ...prev, expectedStartDate: option }));
-    };
+    },[]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = useCallback((e: React.FormEvent) => {
         e.preventDefault();
         console.log("Form Data:", formData);
         // setting the form data to store
         formData.currentState = "Completed"
+        toast.success("Job details Publish successfully!")
         dispatch(setFormDataStore(formData))
-    };
-    const handelDraft = () => {
+    },[dispatch,formData]);
+    
+    const handelDraft = useCallback(() => {
         console.log("Draft Data:", formData);
         formData.currentState = "Pending"
         // setting the form data to store
+        toast.success("Job details save as Draft successfully!")
         dispatch(setFormDataStore(formData))
-    }
+    },[formData,dispatch])
 
-
+// admin dashboard
+// empty state
     return (
         <div className="p-2 flex justify-center text-sm min-w-full">
             <form
-                onSubmit={handleSubmit}
+            onSubmit={(e) => e.preventDefault()}
+                
                 className="w-full border p-2 rounded-lg space-y-6"
             >
                 <section className="_part1 grid gap-4  border rounded-lg px-4 py-3">
@@ -173,7 +187,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                         <div className="mt-2 flex flex-wrap gap-2">
                             {formData.skills.map((skill, index) => (
                                 <span key={index} className="px-2 py-1 border rounded-md border-primary flex items-center gap-3">
-                                    {skill} <button><X className="h-3 w-3" /></button>
+                                    {skill} <button type="button" onClick={() => handelRemoveSkill(index)}><X className="h-3 w-3" /></button>
                                 </span>
                             ))}
                         </div>
@@ -184,7 +198,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                         <p className="text-sm mb-2">Expected Start Date*</p>
                         <div className="flex gap-4">
                             {["Less than 7 days", "7-15 days", "After 15+ days"].map((option) => (
-                                <button
+                                <button type="button"
                                     key={option}
                                     onClick={() => handleStartDateSelection(option)}
                                     className={`focus:outline-primary flex items-center px-4 py-2 border rounded-lg transition ${formData.expectedStartDate === option
@@ -218,10 +232,10 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
 
                         <div className="flex flex-wrap gap-4 items-center">
                             <p className="text-sm font-semibold w-full">Salary Type</p>
-                            {["Fixed", "Range", "Fixed + Incentive"].map((type: string) => (
-                                <button
+                            {["FIXED", "RANGE", "INCENTIVE"].map((type) => (
+                                <button type="button"
                                     key={type}
-                                    onClick={() => setFormData((prev) => ({ ...prev, salaryType: type }))}
+                                    onClick={() => setFormData((prev) => ({ ...prev, salaryType: type as "FIXED"|"RANGE"|"INCENTIVE"}))}
                                     className={`px-4 py-2 border rounded-lg transition ${formData.salaryType === type ? "bg-primary text-white" : "bg-inherit"
                                         }`}
                                 >
@@ -270,13 +284,13 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
 
                     {/* Action Buttons */}
                     <div className="flex flex-wrap gap-4">
-                        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
+                        <button type="button" className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
                             🌐 Generate with AI
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
+                        <button type="button" className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
                             📄 Upload PDF
                         </button>
-                        <button className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
+                        <button type="button" className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-primary hover:text-white transition">
                             🔗 Link with existing JD
                         </button>
                     </div>
@@ -285,13 +299,13 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                     <div className="border rounded-lg p-2 ">
                         {/* Toolbar */}
                         <div className="flex gap-3 border-b pb-2">
-                            <button className=" font-semibold hover:text-gray-300">B</button>
-                            <button className=" font-semibold hover:text-gray-300 italic">I</button>
-                            <button className=" font-semibold hover:text-gray-300 underline">U</button>
-                            <button className=" font-semibold hover:text-gray-300"><TextLeft/></button>
-                            <button className=" font-semibold hover:text-gray-300"><TextCenter/></button>
-                            <button className=" font-semibold hover:text-gray-300"><TextRight/></button>
-                            <button className=" font-semibold hover:text-gray-300"><ImageIcon className="w-4"/></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300">B</button>
+                            <button type="button" className=" font-semibold hover:text-gray-300 italic">I</button>
+                            <button type="button" className=" font-semibold hover:text-gray-300 underline">U</button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><TextLeft/></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><TextCenter/></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><TextRight/></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><ImageIcon className="w-4"/></button>
                         </div>
 
                         {/* Text Editor */}
@@ -310,7 +324,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                     <button type="button" onClick={handelDraft} className="border bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-md">
                         Save as Draft
                     </button>
-                    <button type="submit" className=" px-4 py-2 rounded-md border bg-primary text-white hover:bg-primary-dark">
+                    <button type="submit" onSubmit={handleSubmit} className=" px-4 py-2 rounded-md border bg-primary text-white hover:bg-primary-dark">
                         Publish
                     </button>
                 </div>

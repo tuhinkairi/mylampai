@@ -274,7 +274,24 @@ model JobProfile {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   JobCandidate         JobCandidate[]
+  showSalary           Boolean       @default(true)
+  startWithIn          String?        
+  salaryType           SalaryType    @default(FIXED)    
+  status               CurrentJobStatus @default(PENDING)      
 }
+
+// supporting
+enum SalaryType {
+  FIXED
+  RANGE
+  INCENTIVE
+}
+
+enum CurrentJobStatus {
+  PENDING
+  COMPLETED
+}
+
 
 enum Availability {
   FULL_TIME
