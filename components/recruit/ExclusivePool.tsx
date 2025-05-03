@@ -1,10 +1,11 @@
 "use client";
 import Image from "next/image";
 import Link from "next/link";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import LoginComponent from "../global/Login";
 import { ArrowRight } from "lucide-react";
 import { useRoleStore } from "@/utils/loginStore";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export default function ExclusivePool() {
   const { role, setRole } = useRoleStore();
@@ -38,6 +39,11 @@ export default function ExclusivePool() {
                 </div>
               </DialogTrigger>
               <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+              <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
                 <LoginComponent />
               </DialogContent>
             </Dialog>

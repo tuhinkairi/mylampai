@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { addProfiles, addSkills, createEducation, createEmployments, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
+import { addProfiles, addSkills, createEducation, createExperiences, createManualProfile, createTalentProfile, updateBio, updateProfile, updateTitle } from "@/actions/setupProfileActions";
 import { Check, Clock9 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { JobCategoriesSelector } from "@/components/create-profile/job-specialites";
@@ -29,11 +29,26 @@ import { PersonalDetailsForm } from "@/components/create-profile/personal-detail
 import { useState, useRef, useCallback, DragEvent, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useUserStore } from "@/utils/userStore";
-import { useProfileStore } from "@/utils/profileStore";
 import * as pdfjsLib from "pdfjs-dist/webpack";
 import { generateSasToken } from "@/actions/azureActions";
 import { IoCloudUploadOutline, IoDocumentAttach } from "react-icons/io5";
 import { useRouter } from 'next/navigation';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks';
+import {
+  setId,
+  setResumeUrl,
+  setTitle,
+  setBio,
+  setRate,
+  setSkills,
+  setProfiles,
+  setHours,
+  setExperiences,
+  setEducations,
+  setLanguages,
+} from '@/lib/features/talent_profile/talentProfileSlice';
+import CreateProfileDialog from "./createProfileDialog";
+
 
 
 const formSchema = z.object({
@@ -41,7 +56,7 @@ const formSchema = z.object({
 });
 
 // const baseUrl = "https://optim-cv-judge.onrender.com";
-const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT;
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
 
 
 function generateFileName(originalFileName: string, filetype: string) {
@@ -50,10 +65,11 @@ function generateFileName(originalFileName: string, filetype: string) {
   return `${timestamp}_${filetype}.${fileExtension}`;
 }
 
-interface EmploymentData {
+interface ExperiencesData {
   company: string;
   position: string;
   location?: string;
+  skills: string[];
   startDate?: Date;
   endDate?: Date;
   description: string;
@@ -65,7 +81,8 @@ interface EducationData {
   degree: string;
   field?: string;
   grade?: string;
-  startDate?: Date;
+  skills: string[];
+  startDate: Date;
   endDate?: Date;
   description?: string;
 };
@@ -84,7 +101,7 @@ interface StructuredResult {
   profiles: string[];
   skills: string[];
   jobRole: string;
-  experience: EmploymentData[];
+  experience: ExperiencesData[];
   education: EducationData[];
   bio: string;
 }
@@ -102,14 +119,17 @@ interface UserInfo {
 }
 
 export default function CreateProfile() {
-  const { id, setId, setResumeUrl } = useProfileStore();
-  const { userData} = useUserStore();
+  const { userData, token } = useUserStore();
   const [step, setStep] = useState(1);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isResumeUploaded, setIsResumeUploaded] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analysing, setAnalysing] = useState(false)
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const profile = useAppSelector((state) => state.talentProfile);
+  const id = profile?.id
+  const [resumeText, setResumeText] = useState<string>("")
   // const [userInfo, setuserInfo] = useState<UserInfo>({
   //   name: "",
   //   first_name: "",
@@ -125,7 +145,7 @@ export default function CreateProfile() {
   // const [profiles, setProfiles] = useState<string[]>([])
   // const [skills, setSkills] = useState<string[]>([])
   // const [jobTitle, setJobTitle] = useState<string>("")
-  // const [experiences, setExperiences] = useState<EmploymentData[]>([])
+  // const [experiences, setExperiences] = useState<ExperienceData[]>([])
   // const [educations, setEducations] = useState<EducationData[]>([])
   // const [userBio, setUserBio] = useState<string>("")
   // const user = await auth();
@@ -150,9 +170,6 @@ export default function CreateProfile() {
   const handleDrop = async (event: DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     const file = event.dataTransfer.files[0];
-
-    setUploading(true);
-
     await processResume(file)
   };
 
@@ -170,55 +187,71 @@ export default function CreateProfile() {
     }
   }
 
-  const processResume = async (file: Blob) => {
+  const extractTextFromPDF = useCallback((file: File): Promise<string> => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function (event) {
+        const typedArray = new Uint8Array(event.target?.result as ArrayBuffer);
+
+        if (typeof window !== "undefined") {
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          let text = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(" ");
+            text += ` ${pageText}`;
+          }
+          resolve(text.trim());
+        } else {
+          reject(
+            new Error("pdfjs-dist is not available in the server environment")
+          );
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
+
+
+
+  const processResume = async (file: File) => {
+
+    // Reset states for new upload
+    setUploading(false);
+    setAnalysing(false);
+    setIsResumeUploaded(false);
+
     if (file && file.type !== "application/pdf") {
       toast.error("Please upload a PDF file");
       return;
     }
-  
+
     if (!userData) {
       toast.error("Unknown error occurred");
       return;
     }
-  
+
     if (file && file.type === "application/pdf") {
       if (file.size > 1 * 1024 * 1024) {
         toast.error("File size should be less than 1MB");
-        setUploading(false);
         return;
       }
+
       setUploading(true);
-  
-      // Calling createTalentProfile
-      const data = new FormData();
-      data.append("resume", file);
-      let newTalentProfileId=null
-      try {
-        const res = await createTalentProfile(data, userData.id);
-  
-        if (res.status !== 200) {
-          toast.error(res.error);
-        } else {
-          if (res.data) {
-            console.log("Result from createTalentProfile:: ", res.data.id);
-            newTalentProfileId=res.data.id
-            setResumeUrl(res.data?.resumeUrl ?? '');
-            setId(res.data.id);
-          }
-        }
-      } catch (error) {
-        toast.error("Failed to upload resume");
-      }
-  
+
       const blobName = generateFileName("resume.pdf", "cv");
       const sasUrl = await generateSasToken(blobName);
-  
+
       if (!sasUrl) {
         toast.error("Error uploading resume");
         setUploading(false);
         return;
       }
-  
+
       try {
         const uploadResponse = await fetch(sasUrl, {
           method: "PUT",
@@ -227,80 +260,101 @@ export default function CreateProfile() {
           },
           body: file,
         });
-  
+
         if (!uploadResponse.ok) {
           toast.error("Resume Upload Failed");
-        } else {
-          console.log(uploadResponse);
+          setUploading(false); // Reset upload state on failure
+          return;
         }
       } catch (error) {
         console.error(error);
         toast.error("Error during resume upload");
-      } finally {
         setUploading(false);
       }
-  
+
+      setUploading(false);
+
       // Start analysing
       setAnalysing(true);
-  
-      const fileReader = new FileReader();
-      let extractedText = "";
-  
-      fileReader.onload = async function () {
-        const typedArray = new Uint8Array(this.result as ArrayBuffer);
-  
-        // Load the PDF document
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-  
-        // Loop through each page
-        for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
-          const page = await pdf.getPage(pageNumber);
-          const textContent = await page.getTextContent();
-  
-          // Extract text
-          const pageText = textContent.items
-            .map((item: any) => item.str)
-            .join(" ");
-          extractedText += pageText + "\n";
-        }
-  
-        // Convert the file to base64
-        const base64Reader = new FileReader();
-        base64Reader.onloadend = async () => {
-          const base64String = base64Reader.result?.toString().split(",")[1];
-  
-          if (base64String && extractedText) {
-            try {
-              const structuredDataResult = await extractStructuredData(
-                extractedText
-              );
-  
-              // Check if structuredDataResult and structuredDataResult.message exist before accessing
 
-              if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
-                console.log("userId::",userData.id," talentProfileId:: ",newTalentProfileId)
-                await processAndSaveData(
-                  structuredDataResult,
-                  userData?.id,
-                  newTalentProfileId
-                );
-                setIsResumeUploaded(true);
-              } else {
-                toast.error("Failed to extract structured data");
-              }
-            } catch (err) {
-              toast.error("Failed to process the PDF");
-              console.error("Error:", err);
-            }
-          } else {
-            toast.error("Error converting file to base64 or extracting text");
-          }
+      const extractedText = await extractTextFromPDF(file)
+
+      try {
+        const structuredDataResult = await extractStructuredData(
+          extractedText
+        );
+
+        if (!structuredDataResult) {
+          toast.error("Failed to extract structured data");
           setAnalysing(false);
-        };
-  
-        base64Reader.readAsDataURL(file); // Start reading the file as a data URL
-      };
-      fileReader.readAsArrayBuffer(file);
+          return;
+        }
+
+        let newTalentProfileId = null
+        try {
+          const formData = new FormData();
+          formData.append("resumeFile", file);
+          formData.append("resumeFileText", JSON.stringify(structuredDataResult.message))
+          const response = await fetch("/api/resume/add_new", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            body: (formData),
+          });
+
+          const result = await response.json();
+
+          if (result.status === 409 || result.status === 200) {
+            dispatch(setResumeUrl(result.resume.resumeUrl))
+            dispatch(setId(result.resume.id))
+          } else {
+            toast.error("Failed to save resume information");
+            setAnalysing(false);
+            return;
+          }
+
+          const res = await createTalentProfile(result.resume.resumeUrl, userData.id);
+
+          if (res.status !== 200) {
+            toast.error(res.error);
+            setAnalysing(false);
+            return;
+          } else {
+            if (res.data) {
+              newTalentProfileId = res.data.id;
+              dispatch(setResumeUrl(res.data?.resumeUrl ?? ''));
+              dispatch(setId(res.data.id));
+            } else {
+              toast.error("Failed to create talent profile");
+              setAnalysing(false);
+              return;
+            }
+          }
+        } catch (error) {
+          toast.error("Failed to upload resume");
+          setAnalysing(false);
+          return;
+        }
+        // Check if structuredDataResult and structuredDataResult.message exist before accessing
+
+        if (structuredDataResult && structuredDataResult.message && newTalentProfileId) {
+          // console.log("userId::", userData.id, " talentProfileId:: ", newTalentProfileId)
+          await processAndSaveData(
+            structuredDataResult,
+            userData?.id,
+            newTalentProfileId
+          );
+          setIsResumeUploaded(true);
+        } else {
+          toast.error("Failed to extract structured data");
+        }
+      } catch (err) {
+        toast.error("Failed to process the PDF");
+        console.error("Error:", err);
+      } finally {
+        setAnalysing(false);
+      }
     } else {
       toast.error("Please upload a PDF file");
       setUploading(false);
@@ -317,16 +371,13 @@ export default function CreateProfile() {
       toast.error("No file selected");
       return;
     }
-    // Reset states for new upload
-    setUploading(false);
-    setAnalysing(false);
-    setIsResumeUploaded(false);
+
     await processResume(file);
   };
 
   const extractStructuredData = useCallback(async (text: string) => {
     try {
-      console.log("debug in extractSD")
+      // console.log("debug in extractSD")
       const response = await fetch(`${baseUrl}/extract_profile_data`, {
         method: "POST",
         headers: {
@@ -337,8 +388,8 @@ export default function CreateProfile() {
 
       const result = await response.json();
       if (response.ok) {
-        setIsResumeUploaded(true);
-        toast.success("Resume uploaded successfully");
+        // setIsResumeUploaded(true);
+        // toast.success("Resume uploaded successfully");
         return result;
       }
       toast.error("Error extracting structured data from resume");
@@ -354,8 +405,8 @@ export default function CreateProfile() {
     try {
       if (!id) return;
       const res = await addSkills(values.skills, id);
-
       if (res.status === 200) {
+        dispatch(setSkills(values.skills))
         setStep(4);
       } else {
         console.error("Error adding skills:", res.error);
@@ -377,20 +428,20 @@ export default function CreateProfile() {
 
   //manual createTalentProfile without resume
 
-  const handleManualCreateProfile=async()=>{
+  const handleManualCreateProfile = async () => {
     try {
       if (!userData) {
         toast.error("Unknown error occurred");
         return;
       }
-      const res=await createManualProfile(userData?.id)
+      const res = await createManualProfile(userData?.id)
       if (res.status !== 200) {
         toast.error(res.error);
       } else {
         if (res.data) {
-          console.log("Result from createTalentProfile:: ", res.data.id);
-          setId(res.data.id);
-          handleIncStep(step+1);
+          // console.log("Result from createTalentProfile:: ", res.data.id);
+          dispatch(setId(res.data.id));
+          handleIncStep(step + 1);
         }
       }
     } catch (error) {
@@ -420,7 +471,7 @@ export default function CreateProfile() {
 
 
 
-    const employmentData = experience.map((exp: EmploymentData): EmploymentData => ({
+    const experienceData = experience.map((exp: ExperiencesData): ExperiencesData => ({
       ...exp,
       startDate: exp.startDate ? new Date(exp.startDate) : undefined,
       endDate: exp.endDate ? new Date(exp.endDate) : undefined
@@ -428,17 +479,17 @@ export default function CreateProfile() {
 
     const educationData = education.map((edu: EducationData): EducationData => ({
       ...edu,
-      startDate: edu.startDate ? new Date(edu.startDate) : undefined,
+      startDate: new Date(edu.startDate),
       endDate: edu.endDate ? new Date(edu.endDate) : undefined
     }))
 
     // Define update functions
-    console.log("updating details for : ", talentProfileId, "userId: ", userId)
+    // console.log("updating details for : ", talentProfileId, "userId: ", userId)
     const updateUserInfo = () => updateProfile(userInfo, userId);
     const updateUserProfiles = () => addProfiles(profiles, talentProfileId);
     const updateUserSkills = () => addSkills(skills, talentProfileId);
     const updateUserJobTitle = () => updateTitle(jobRole, talentProfileId);
-    const updateUserExperiences = () => createEmployments(employmentData, talentProfileId);
+    const updateUserExperiences = () => createExperiences(experienceData, talentProfileId);
     const updateUserEducations = () => createEducation(educationData, talentProfileId);
     const updateUserBio = () => updateBio(bio, talentProfileId);
 
@@ -466,7 +517,21 @@ export default function CreateProfile() {
       const allFulfilled = results.every((result) => result.status === "fulfilled")
 
       if (allFulfilled) {
-        console.log("All updates succeeded. Redirecting to /talentmatch...");
+        dispatch(setBio(bio))
+        dispatch(setTitle(jobRole))
+        dispatch(setEducations(educationData.map((edu: any) => ({
+          ...edu,
+          startDate: edu.startDate.toISOString(),
+          endDate: edu.endDate ? edu.endDate.toISOString() : undefined
+        }))))
+        dispatch(setExperiences(experienceData.map((exp: any) => ({
+          ...exp,
+          startDate: exp.startDate.toISOString(),
+          endDate: exp.endDate ? exp.endDate.toISOString() : undefined
+        })
+        )))
+        dispatch(setProfiles(profiles))
+        // console.log("All updates succeeded. Redirecting to /talentmatch...");
         router.push("/talentmatch");
       } else {
         console.error("Some updates failed. Please check the logs.");
@@ -484,51 +549,81 @@ export default function CreateProfile() {
 
 
   return (
-    <div className="relative">
-      <Link href="/" className="absolute top-2 left-4 max-w-[110px]">
-        <Image
-          src={"/home/navbar/wizelogo.svg"}
-          width={180}
-          height={100}
-          alt="logo"
-          className="w-full h-auto drop-shadow-md"
-        />
-      </Link>
-      <ScrollArea className="h-[calc(100vh-96px)]">
-        <section
-          className={`${step === 1 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="flex text-sm gap-4">
-            <span>1/10 &nbsp; Create your profile</span>{" "}
-            <span className="flex items-center">
-              <Clock9 className="w-4 h-4" /> &nbsp; 5-10 min
-            </span>
+    <div className="relative h-screen w-screen bg-white/25 flex flex-col items-center justify-center">
+      <div className="w-full max-w-4xl p-8 bg-primary/10 rounded-lg shadow-lg z-50 flex flex-col md:flex-row gap-8">
+        {/* Left column */}
+        <div className="flex-1">
+          <div className="flex items-center mb-6">
+            <Link href="/" className="relative">
+              <Image
+                src="/home/navbar/wizelogo.svg"
+                width={120}
+                height={40}
+                alt="Wize Logo"
+                className="h-10 w-auto drop-shadow-md"
+              />
+            </Link>
           </div>
-          <h2 className="text-2xl font-medium my-4">
-            How would you like to tell us about yourself?
-          </h2>
-          <p className="mb-8">
-            We need to get a sense of your education, experience and skills.
-            It&apos;s quickest to import your information — you can edit it
-            before your profile goes live.
+
+          <h1 className="text-2xl font-bold mb-4 text-gray-800">
+            Create New Profile
+          </h1>
+
+          <p className="text-gray-600 mb-6">
+            Complete your profile to get matched with the perfect opportunities for your skills and experience.
           </p>
 
-          {/* Similar cv uploader like cv reviewer */}
-          <div className="flex gap-4 justify-center items-center">
-            <div>
+          {/* <div className="flex justify-start mb-8">
+            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+          </div> */}
 
-              <div className="flex text-center mb-4 mt-3 w-full text-2xl font-bold text-gray-800">
+          <div className="space-y-4 mb-6">
+            <div className="flex items-center text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Get personalized talent matching</span>
+            </div>
+            <div className="flex items-center text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Showcase your skills to employers</span>
+            </div>
+            <div className="flex items-center text-gray-700">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>Get detailed CV analysis</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Right column - Upload area */}
+        <div className="flex-1 border-l pl-8 hidden md:block">
+          <div className="flex flex-col items-center justify-center h-full">
+            <p className="mb-6 text-center">
+              We need to get a sense of your education, experience and skills.
+              It's quickest to import your information — you can edit it
+              before your profile goes live.
+            </p>
+
+            <div className="w-full max-w-md">
+              <div className="text-center mb-4 w-full text-xl font-bold text-gray-800">
                 Upload your latest CV/Resume
               </div>
 
-              <div className="bg-white py-4 px-8 rounded-3xl w-full md:max-w-[350px] lg:max-w-[400px] shadow-lg text-center">
-                <div className="flex items-center justify-center text-primary mb-2 relative top-0 text-3xl">
+              <div className="bg-white py-6 px-6 rounded-xl w-full shadow-md text-center">
+                <div className="flex items-center justify-center text-primary mb-4 text-3xl">
                   <IoDocumentAttach />
                 </div>
 
                 <div
-                  className="border-dashed border-2 border-slate-500 rounded-xl p-2 flex flex-col items-center justify-center"
+                  className="border-dashed border-2 border-slate-400 rounded-xl p-6 flex flex-col items-center justify-center"
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
                 >
@@ -538,7 +633,7 @@ export default function CreateProfile() {
                     className="text-gray-500 cursor-pointer text-sm"
                   >
                     Click to{" "}
-                    <span className="font-semibold text-primary ">
+                    <span className="font-semibold text-primary">
                       Upload Resume
                     </span>
                   </label>
@@ -551,258 +646,129 @@ export default function CreateProfile() {
                     onChange={handleFileChange}
                   />
 
-                  <div className="text-4xl mt-3 text-slate-500">
+                  <div className="text-4xl mt-4 text-slate-500">
                     <IoCloudUploadOutline />
                   </div>
 
-                  <p className="text-slate-500 text-sm mt-2">
+                  <p className="text-slate-500 text-sm mt-3">
                     Supported file format: .PDF File size limit 1MB.
                   </p>
                 </div>
 
-                <div className="flex justify-center mt-4">
+                <div className="flex justify-center mt-6">
                   <button
-                    className="bg-primary text-base px-8 relative text-white font-semibold py-[6px] rounded-xl hover:bg-primary focus:ring-4 focus:ring-primary-foreground transition"
+                    className="bg-primary text-base px-8 text-white font-semibold py-2 rounded-lg hover:bg-primary/90 focus:ring-4 focus:ring-primary/30 transition"
                     onClick={handleResumeUpload}
                   >
                     {isResumeUploaded
-                      ? (<div className="flex gap-2"><Check />Upload again</div>)
+                      ? (<div className="flex items-center gap-2"><Check className="w-4 h-4" />Upload again</div>)
                       : uploading
                         ? "Uploading..."
-                        : analysing ? (<div className='flex space-x-2 justify-center items-center dark:invert'>
-                          <span className=''>AI Analysing</span>
-                          <div className="flex gap-1 item-center">
-                            <div className='h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.3s]'></div>
-                            <div className='h-2 w-2 bg-black rounded-full animate-bounce [animation-delay:-0.15s]'></div>
-                            <div className='h-2 w-2 bg-black rounded-full animate-bounce'></div>
+                        : analysing ? (
+                          <div className="flex space-x-2 justify-center items-center">
+                            <span>AI Analysing</span>
+                            <div className="flex gap-1 items-center">
+                              <div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                              <div className="h-2 w-2 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                              <div className="h-2 w-2 bg-white rounded-full animate-bounce"></div>
+                            </div>
                           </div>
-                        </div>) : "Upload Resume"}
+                        ) : "Upload Resume"}
                   </button>
                 </div>
               </div>
-            </div>
-            <div>
-              OR
-            </div>
-            <div className="items-center justify-center">
-              <span>Don&apos;t have Resume? </span>
-              <Button
-                type="button"
-                className="bg-white text-primary border border-primary hover:bg-primary mt-3 hover:text-white"
-                onClick={async() =>(await handleManualCreateProfile())}
-              >
-                Manually enter details
-              </Button>
+
+              {/* <div className="text-center mt-6">
+                <span className="text-gray-500">Don&apos;t have Resume? </span>
+                <button
+                  type="button"
+                  className="text-primary font-medium hover:underline mt-2"
+                  onClick={async () => (await handleManualCreateProfile())}
+                >
+                  Manually enter details
+                </button>
+              </div> */}
             </div>
           </div>
-        </section>
+        </div>
 
-        <section
-          className={`${step === 2 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-4xl mx-auto flex flex-col justify-center overflow-scroll scrollbar-hide`}
-        >
-          <div className="text-sm">2/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Great, so what kind of work are you here to do?
-          </h2>
-          <p className="mb-8">
-            Don&apos;t worry, you can change these choices later on.
-          </p>
-          <JobCategoriesSelector setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 3 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">3/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Nearly there! What work are you here to do?
-          </h2>
-          <p className="mb-8">
-            Your skills show clients what you can offer, and help us choose
-            which jobs to recommend to you. Add or remove the ones we&apos;ve
-            suggested, or start typing to pick more. It&apos;s up to you.
+        {/* Mobile version of upload area */}
+        <div className="md:hidden w-full mt-6 border-t pt-6">
+          <p className="mb-6 text-center">
+            We need to get a sense of your education, experience and skills.
+            It's quickest to import your information.
           </p>
 
-          <Form {...form}>
-            <form
-              onSubmit={form.handleSubmit(onSubmit)}
-              className="space-y-4 max-w-3xl"
+          <div className="bg-white py-4 px-4 rounded-xl w-full shadow-md text-center">
+            <div className="flex items-center justify-center text-primary mb-2 text-2xl">
+              <IoDocumentAttach />
+            </div>
+
+            <div
+              className="border-dashed border-2 border-slate-400 rounded-xl p-4 flex flex-col items-center justify-center"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
             >
-              <FormField
-                control={form.control}
-                name="skills"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Skills</FormLabel>
-                    <FormDescription>
-                      Press &quot;enter&quot; key to add skills
-                    </FormDescription>
-                    <FormControl>
-                      <ArrayInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="Enter skills required"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+              <div className="text-gray-500 text-sm">Drag & Drop or</div>
+              <label
+                htmlFor="resumeUploadMobile"
+                className="text-gray-500 cursor-pointer text-sm"
+              >
+                Click to{" "}
+                <span className="font-semibold text-primary">
+                  Upload Resume
+                </span>
+              </label>
+              <input
+                id="resumeUploadMobile"
+                type="file"
+                accept=".doc,.docx,.pdf"
+                className="hidden"
+                onChange={handleFileChange}
               />
 
-              <Button
-                type="submit"
-                className="hover:bg-primary-dark"
-                disabled={form.formState.isSubmitting}
+              <div className="text-3xl mt-2 text-slate-500">
+                <IoCloudUploadOutline />
+              </div>
+
+              <p className="text-slate-500 text-xs mt-2">
+                Supported file format: .PDF File size limit 1MB.
+              </p>
+            </div>
+
+            <div className="flex justify-center mt-4">
+              <button
+                className="bg-primary text-sm px-6 text-white font-semibold py-2 rounded-lg hover:bg-primary/90 transition"
+                onClick={handleResumeUpload}
               >
-                Submit
-              </Button>
-            </form>
-          </Form>
-        </section>
+                {isResumeUploaded
+                  ? (<div className="flex items-center gap-1"><Check className="w-3 h-3" />Upload again</div>)
+                  : uploading
+                    ? "Uploading..."
+                    : analysing ? (
+                      <div className="flex space-x-1 justify-center items-center">
+                        <span>AI Analysing</span>
+                        <div className="flex gap-1 items-center">
+                          <div className="h-1 w-1 bg-white rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                          <div className="h-1 w-1 bg-white rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                          <div className="h-1 w-1 bg-white rounded-full animate-bounce"></div>
+                        </div>
+                      </div>
+                    ) : "Upload Resume"}
+              </button>
+            </div>
+          </div>
 
-        <section
-          className={`${step === 4 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">4/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Got it. Now, add a title to tell the world what you do.
-          </h2>
-          <p className="mb-8">
-            It&apos;s the very first thing clients see, so make it count. Stand
-            out by describing your expertise in your own words.
-          </p>
-          <ProfessionalRole setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 5 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">5/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            If you have relevant work experience, add it here.
-          </h2>
-          <p className="mb-8">
-            Freelancers who add their experience are twice as likely to win
-            work. But if you&apos;re just starting out, you can still create a
-            great profile. Just head on to the next page.
-          </p>
-          <WorkExperiences setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 6 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">6/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Clients like to know what you know - add your education here.
-          </h2>
-          <p className="mb-8">
-            You don&apos;t have to have a degree. Adding any relevant education
-            helps make your profile more visible.
-          </p>
-          <EducationDetails setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 7 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">7/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Looking good. Next, tell us which languages you speak.
-          </h2>
-          <p className="mb-8">
-            Upwork is global, so clients are often interested to know what
-            languages you speak. English is a must, but do you speak any other
-            languages?
-          </p>
-          <LanguageSelector setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 8 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">8/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Great. Now write a bio to tell the world about yourself.
-          </h2>
-          <p className="mb-8">
-            Help people get to know you at a glance. What work do you do best?
-            Tell them clearly, using paragraphs or bullet points. You can always
-            edit later; just make sure you proofread now?
-          </p>
-          <BioDetails setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 9 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-3xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">9/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            Now, let&apos;s set your hourly rate.
-          </h2>
-          <p className="mb-8">
-            Clients will see this rate on your profile and in search results
-            once you publish your profile. You can adjust your rate every time
-            you submit a proposal.
-          </p>
-          <HourlyRate setStep={setStep} />
-        </section>
-
-        <section
-          className={`${step === 10 ? "flex" : "hidden"
-            } h-[calc(100vh-96px)] max-w-6xl mx-auto flex flex-col justify-center`}
-        >
-          <div className="text-sm">10/10</div>
-
-          <h2 className="text-2xl font-medium my-4">
-            A few last details, then you can check and publish your profile.
-          </h2>
-          <p className="mb-8">
-            A professional photo helps you build trust with your clients. To
-            keep things safe and simple, they&apos;ll pay you through us - which
-            is why we need your personal information.
-          </p>
-          <PersonalDetailsForm setStep={setStep} />
-        </section>
-      </ScrollArea>
-      <div className="relative h-24 flex items-center">
-        <div className="absolute top-0 bg-gray-300 h-1 w-full">
-          <div
-            className="h-1 rounded-r-lg bg-primary transition-all"
-            style={{
-              width: `${step * 10}%`,
-            }}
-          ></div>
-        </div>
-        <div className="px-8 flex justify-between w-full">
-          <Button
-            onClick={() => handleDecStep(step - 1)}
-            className={`${step === 1 ? "hidden" : "bg-white border border-primary text-primary px-8"}`}
-          >
-            Back
-          </Button>{" "}
-          <Button
-            onClick={() => handleIncStep(step + 1)}
-            className={`${(step === 1 || step === 10) ? "hidden" : "bg-white border border-primary text-primary hover:bg-primary hover:text-white px-8"}`}
-          >
-            Next
-          </Button>
+          {/* <div className="text-center mt-4">
+            <span className="text-gray-500 text-sm">Don&apos;t have Resume?  </span>
+            <button
+              type="button"
+              className="text-primary text-sm font-medium hover:underline"
+              onClick={async () => (await handleManualCreateProfile())}
+            >
+              Manually enter details
+            </button>
+          </div> */}
         </div>
       </div>
     </div>

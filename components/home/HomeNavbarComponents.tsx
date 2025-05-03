@@ -17,7 +17,7 @@ export function TalentComponent() {
               </div>
               <div className="text-left">
                 <h3 className="font-medium">Talent Match</h3>
-                <h4 className="font-light">Lorem ipsum dolor sit.</h4>
+                <h4 className="font-light">V1-beta1.21 Lorem ipsum dolor sit.</h4>
               </div>
             </li>
             <li className="py-2 px-6 w-full flex items-center gap-4 text-center">

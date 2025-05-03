@@ -8,7 +8,7 @@ export const POST = async (req: NextRequest) => {
         const body = await req.json();
         const { emails, subject, content, date, time, frequency } = body;
 
-        console.log(body);
+        // console.log(body);
 
         if (!emails || !subject || !content || !date) {
             return NextResponse.json(
@@ -46,7 +46,7 @@ export const POST = async (req: NextRequest) => {
             const task = cronJob.schedule(cronExp, async () => {
                 try {
                     const res = await sendEmail(EmailsMailString, subject, content);
-                    console.log(res);
+                    // console.log(res);
                     task.stop();
                     resolve(res);
                 } catch (err) {

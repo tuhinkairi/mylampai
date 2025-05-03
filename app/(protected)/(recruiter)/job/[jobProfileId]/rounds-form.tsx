@@ -92,7 +92,7 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
       });
       if (response.ok) {
         const result = await response.json();
-        console.log("rubrics", result.result);
+        // console.log("rubrics", result.result);
         return result.result;
       }
     } catch (error) {
@@ -116,7 +116,7 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
 
         if (response.ok) {
           const result = await response.json();
-          console.log("rubrics", result);
+          // console.log("rubrics", result);
           return result;
         }
       }
@@ -140,7 +140,7 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
           }
         })
       );
-      console.log(createdRounds)
+      // console.log(createdRounds)
       return { status: "success", data: createdRounds };
     } catch (error: any) {
       console.error("❌ Error adding rounds:", error);
@@ -162,7 +162,7 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
         if (result.data) {
           setRound(result.data)
           addRubicsToRounds(result.data)
-          console.log("this is round data", round)
+          // console.log("this is round data", round)
           form.reset();
           toast.success("Rounds added successfully");
           router.push(`/job/${jobProfileId}/evaluation`)
@@ -326,7 +326,6 @@ export function RoundsForm({ jobProfileId }: { jobProfileId: string }) {
               </form>
             </Form>
           )
-
       }
     </>
 

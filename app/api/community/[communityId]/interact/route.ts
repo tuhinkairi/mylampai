@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 export const POST = async (
   req: NextRequest,
-  { params }: { params: { communityId: string } }
+  { params }: { params: Promise<{ communityId: string }> }
 ) => {
   try {
     // const authHeader = req.headers.get("Authorization");

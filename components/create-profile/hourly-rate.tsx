@@ -13,15 +13,18 @@ import * as z from "zod";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useProfileStore } from "@/utils/profileStore";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { updateHourlyRate } from "@/actions/setupProfileActions";
+import { setRate } from "@/lib/features/talent_profile/talentProfileSlice";
 
 const formSchema = z.object({
   rate: z.string().min(1, "Hourly rate is required"),
 });
 
 export function HourlyRate({ setStep }: { setStep: (step: number) => void }) {
-  const { id, setRate } = useProfileStore();
+  const dispatch=useAppDispatch()
+  const profile=useAppSelector((state)=>state.talentProfile)
+  const id=profile.id
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,7 +41,7 @@ export function HourlyRate({ setStep }: { setStep: (step: number) => void }) {
       const res = await updateHourlyRate(values.rate, id);
 
       if (res.status === 200) {
-        setRate(values.rate);
+        dispatch(setRate(values.rate));
         setStep(10);
       } else {
         toast.error("Failed to update hourly rate");

@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <>
-    <Suspense fallback={<LoadingGlobal text=""/>}>
+    <Suspense fallback={<LoadingGlobal text= "" />}>
       <HomeNavbar />
       <RecruiterNavbar />
 

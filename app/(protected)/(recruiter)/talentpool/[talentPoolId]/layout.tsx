@@ -7,7 +7,7 @@ export default async function TalentPoolLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { talentPoolId: string };
+  params: Promise<{ talentPoolId: string }>;
 }) {
     const { talentPoolId } = await params;
   return (

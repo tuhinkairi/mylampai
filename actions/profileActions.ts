@@ -22,7 +22,7 @@ type EducationType = {
   degree?: string;
   field?: string;
   grade?: string;
-  startDate?: Date;
+  startDate: Date;
   endDate?: Date;
   description?: string;
   skills: string[];

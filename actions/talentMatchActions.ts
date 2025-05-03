@@ -1,33 +1,59 @@
+//All actions belongs to  /talentmatch router should be in this file
+
 "use server";
 import prisma from "@/lib";
-import { generateSasToken } from "./azureActions";
 import { auth } from "@/lib/authlib";
 
+
+type Rubrics = {
+  parameter: string;
+  description: string;
+  weightage: number;
+};
+
 type TalentPoolProfileType = {
-  resumeUrl: string;
+  resumeId: string;
   role: string;
-  skills:string[];
+  skills: string[];
   availability: string;
-  targetFor:string;
+  targetFor: string;
   interviewDate: Date;
-  interviewStatus: string;
-  talentProfileId:string;
+  talentProfileId: string;
 };
 
 export const createTalentPoolProfile = async (
-  talentPoolProfileData: TalentPoolProfileType
+  talentPoolProfileData: TalentPoolProfileType,
+  rubrics: Rubrics[]
 ) => {
   try {
-    await prisma.talentPoolProfile.create({
+    const res = await prisma.talentPoolProfile.create({
       data: {
         ...talentPoolProfileData,
-        interviewStatus: talentPoolProfileData.interviewStatus || ""
-      }
+      },
+      include: {
+        resume: true,
+      },
+    });
+
+    const interview = await prisma.interview.create({
+      data: {
+        talentPoolProfileId: res.id,
+        interviewDate: talentPoolProfileData.interviewDate,
+        interviewState: "Scheduled",
+        rubrics: {
+          createMany: {
+            data: rubrics.map((rubric) => ({
+              ...rubric,
+            })),
+          },
+        },
+      },
     });
 
     return {
       message: "Profile created successfully",
       status: "success",
+      data: { ...res, interviewId: interview.id, rubrics: rubrics },
     };
   } catch (error) {
     console.error(error);
@@ -44,12 +70,12 @@ export const getTalentMatches = async (userId: string) => {
       where: {
         talentId: userId,
       },
-      select:{
-        talentPool:true,
-        id:true,
-        isMatched:true,
-        isHired:true
-      }
+      select: {
+        talentPool: true,
+        id: true,
+        isMatched: true,
+        isHired: true,
+      },
     });
     return talentMatches;
   } catch (error) {
@@ -90,8 +116,8 @@ type ProfileData = {
   profiles: string[];
   certifications: string[];
   expectedSalary: string;
-  locationPref: "onsite" | "remote" | "hybrid";
-  availability: "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT";
+  locationPref: "Onsite" | "Remote" | "Hybrid";
+  availability: "FULL_TIME" | "PART_TIME" | "FREELANCE";
   experienceYears: string;
   userName: string;
 };
@@ -127,146 +153,150 @@ export const getTalentPoolProfiles = async (talentProfileId: string) => {
       where: {
         talentProfileId,
       },
-    });
-
-    return talentProfile;
-  } catch (error) {
-    console.error(error);
-    null;
-  }
-};
-
-export const getResumeAndInterviewIds = async (userId: string) => {
-  try {
-    const cvIds = await prisma.cV.findMany({
-      where: {
-        userId,
-      },
       select: {
         id: true,
-      },
-    });
-
-    const interviewIds = await prisma.interview.findMany({
-      where: {
-        userId,
-      },
-      select: {
-        id: true,
+        resumeId: true,
+        role: true,
+        targetFor: true,
+        skills: true,
+        availability: true,
+        locationPref: true,
+        interviewDate: true,
+        interviewState: true,
+        resume: true,
+        interview: {
+          select: {
+            id: true,
+            rubrics: {
+              select: {
+                parameter: true,
+                description: true,
+                weightage: true,
+              },
+            },
+            interviewState: true,
+          },
+        },
       },
     });
 
     return {
-      status: "success",
-      cvIds,
-      interviewIds,
+      status: 200,
+      data: talentProfile,
     };
   } catch (error) {
     console.error(error);
-    return {
-      status: "failed",
-      cvIds: [],
-      interviewIds: [],
-    };
+    true;
   }
 };
 
-export const uploadResumeToAzure = async (formData: FormData) => {
+// export const getResumeAndInterviewIds = async (userId: string) => {
+//   try {
+//     const resumeIds = await prisma.resume.findMany({
+//       where: {
+//         userId,
+//       },
+//       select: {
+//         id: true,
+//       },
+//     });
+
+//     const interviewIds = await prisma.mockInterview.findMany({
+//       where: {
+//         userId,
+//       },
+//       select: {
+//         id: true,
+//       },
+//     });
+
+//     return {
+//       status: "success",
+//       resumeIds,
+//       interviewIds,
+//     };
+//   } catch (error) {
+//     console.error(error);
+//     return {
+//       status: "failed",
+//       resumeIds: [],
+//       interviewIds: [],
+//     };
+//   }
+// };
+
+// export const uploadResumeToAzure = async (formData: FormData) => {
+//   try {
+//     const user = await auth();
+
+//     if (!user) {
+//       return {
+//         status: "failed",
+//         message: "User not authenticated",
+//       };
+//     }
+
+//     const date = new Date().toISOString();
+//     const fileName = `cv-${date}-${user.id}.pdf`;
+
+//     const sasUrl = await generateSasToken(fileName);
+
+//     if (!sasUrl) {
+//       return {
+//         status: "failed",
+//         message: "Failed to upload Resume",
+//       };
+//     }
+
+//     const file = formData.get("file") as File;
+//     const response = await fetch(sasUrl, {
+//       method: "PUT",
+//       headers: {
+//         "x-ms-blob-type": "BlockBlob",
+//       },
+//       body: file,
+//     });
+
+//     if (!response.ok) {
+//       return {
+//         status: "failed",
+//         message: "Failed to upload CV",
+//       };
+//     }
+
+//     const resumeUrl = sasUrl.split("?")[0];
+
+//     await prisma.resume.create({
+//       data: {
+//         userId: user.id,
+//         resumeUrl,
+//         resumeName: file.name,
+//       },
+//     });
+
+//     return {
+//       status: "success",
+//       message: "CV uploaded successfully",
+//     };
+//   } catch (error) {
+//     console.error(error);
+//     return {
+//       status: "failed",
+//       message: "Error uploading CV",
+//     };
+//   }
+// };
+
+//Functions to handle Bio
+export const updateTalentBio = async (talentProfileId: string, bio: string) => {
   try {
-    const user = await auth();
-
-    if (!user) {
-      return {
-        status: "failed",
-        message: "User not authenticated",
-      };
-    }
-
-    const date = new Date().toISOString();
-    const fileName = `cv-${date}-${user.id}.pdf`;
-
-    const sasUrl = await generateSasToken(fileName);
-
-    if (!sasUrl) {
-      return {
-        status: "failed",
-        message: "Failed to upload Resume",
-      };
-    }
-
-    const file = formData.get("file") as File;
-    const response = await fetch(sasUrl, {
-      method: "PUT",
-      headers: {
-        "x-ms-blob-type": "BlockBlob",
+    await prisma.talentProfile.update({
+      where: {
+        id: talentProfileId,
       },
-      body: file,
-    });
-
-    if (!response.ok) {
-      return {
-        status: "failed",
-        message: "Failed to upload CV",
-      };
-    }
-
-    const resumeUrl = sasUrl.split("?")[0];
-
-    await prisma.resume.create({
       data: {
-        userId: user.id,
-        resumeUrl,
+        bio,
       },
-    });
-
-    return {
-      status: "success",
-      message: "CV uploaded successfully",
-    };
-  } catch (error) {
-    console.error(error);
-    return {
-      status: "failed",
-      message: "Error uploading CV",
-    };
-  }
-};
-
-export const getProfileEmployments = async (talentProfileId: string) => {
-  try {
-    const employments = await prisma.employment.findMany({
-      where: {
-        talentProfileId,
-      },
-    });
-
-    return employments;
-  } catch (error) {
-    console.error(error);
-    return [];
-  }
-};
-
-type EmploymentType = {
-  company: string;
-  position: string;
-  location?: string;
-  startDate: Date;
-  endDate?: Date;
-  description?: string;
-  skills: string[];
-};
-
-export const updateEmployment = async (
-  employmentData: EmploymentType,
-  id: string
-) => {
-  try {
-    await prisma.employment.update({
-      where: {
-        id,
-      },
-      data: employmentData,
     });
 
     return "success";
@@ -276,7 +306,207 @@ export const updateEmployment = async (
   }
 };
 
+// Functions to handle Education
+type EducationData = {
+  school: string;
+  degree?: string;
+  field?: string;
+  grade?: string;
+  startDate: Date;
+  endDate?: Date;
+  description?: string;
+  skills: string[];
+};
+export const getProfileEducations = async (talentProfileId: string) => {
+  try {
+    const educations = await prisma.education.findMany({
+      where: {
+        talentProfileId,
+      },
+    });
 
+    return educations;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const createTalentEducation = async (
+  educationData: EducationData,
+  talentProfileId: string
+) => {
+  try {
+    const res = await prisma.education.create({
+      data: { ...educationData, talentProfileId },
+      select: {
+        id: true,
+        school: true,
+        degree: true,
+        field: true,
+        grade: true,
+        skills: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+      },
+    });
+
+    return {
+      response: res,
+      message: "Education added successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error("Error adding education:", error);
+    return {
+      error: "Error adding education",
+      status: 500,
+    };
+  }
+};
+
+export const updateTalentEducation = async (
+  educationData: EducationData,
+  id: string
+) => {
+  try {
+    await prisma.education.update({
+      where: {
+        id,
+      },
+      data: educationData,
+    });
+
+    return "success";
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+export const deleteTalentEducation = async (id: string) => {
+  try {
+    await prisma.education.delete({
+      where: {
+        id: id,
+      },
+    });
+    return {
+      message: "Education deleted successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+//Functions to handle Experiences
+
+type ExperiencesData = {
+  company: string;
+  position: string;
+  location?: string;
+  startDate: Date;
+  endDate?: Date;
+  description?: string;
+  skills: string[];
+};
+export const getProfileExperiences = async (talentProfileId: string) => {
+  try {
+    const experiences = await prisma.experience.findMany({
+      where: {
+        talentProfileId,
+      },
+    });
+
+    return experiences;
+  } catch (error) {
+    console.error(error);
+    return [];
+  }
+};
+
+export const createTalentExperience = async (
+  experienceData: ExperiencesData,
+  talentProfileId: string
+) => {
+  try {
+    const res = await prisma.experience.create({
+      data: { ...experienceData, talentProfileId },
+      select: {
+        id: true,
+        company: true,
+        position: true,
+        location: true,
+        skills: true,
+        startDate: true,
+        endDate: true,
+        description: true,
+      },
+    });
+
+    return {
+      response: res,
+      message: "Experience added successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error("Error adding experience:", error);
+    return {
+      error: "Error adding experience",
+      status: 500,
+    };
+  }
+};
+
+export const updateTalentExperience = async (
+  experienceData: ExperiencesData,
+  id: string
+) => {
+  try {
+    await prisma.experience.update({
+      where: {
+        id,
+      },
+      data: experienceData,
+    });
+
+    return "success";
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+export const deleteTalentExperience = async (id: string) => {
+  try {
+    await prisma.experience.delete({
+      where: {
+        id: id,
+      },
+    });
+    return {
+      message: "Experience deleted successfully",
+      status: 200,
+    };
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+// Functions to handle Projects
+type ProjectDataType = {
+  title: string;
+  description: string;
+  role?: string;
+  url?: string;
+  startDate?: Date;
+  endDate?: Date;
+  skills: string[];
+};
 export const getProfileProjects = async (talentProfileId: string) => {
   try {
     const projects = await prisma.project.findMany({
@@ -292,38 +522,38 @@ export const getProfileProjects = async (talentProfileId: string) => {
   }
 };
 
-type ProjectType = {
-  title: string;
-  description: string;
-  role?: string;
-  url?: string;
-  skills: string[];
-  talentProfileId: string;
-};
-
-export const createTalentProject = async (projectData: ProjectType) => {
+export const createTalentProject = async (
+  projectData: ProjectDataType,
+  talentProfileId: string
+) => {
   try {
-    await prisma.project.create({
-      data: projectData,
+    const res = await prisma.project.create({
+      data: { ...projectData, talentProfileId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        role: true,
+        url: true,
+        startDate: true,
+        endDate: true,
+        skills: true,
+      },
     });
 
-    return "success";
+    return {
+      response: res,
+      message: "Project added successfully",
+      status: 200,
+    };
   } catch (error) {
     console.error(error);
     return "failed";
   }
 };
 
-type ProjectUpdateType = {
-  title: string;
-  description: string;
-  role?: string;
-  url?: string;
-  skills: string[];
-};
-
 export const updateTalentProject = async (
-  projectData: ProjectUpdateType,
+  projectData: ProjectDataType,
   id: string
 ) => {
   try {
@@ -335,6 +565,23 @@ export const updateTalentProject = async (
     });
 
     return "success";
+  } catch (error) {
+    console.error(error);
+    return "failed";
+  }
+};
+
+export const deleteTalentProject = async (id: string) => {
+  try {
+    await prisma.project.delete({
+      where: {
+        id: id,
+      },
+    });
+    return {
+      message: "Project deleted successfully",
+      status: 200,
+    };
   } catch (error) {
     console.error(error);
     return "failed";

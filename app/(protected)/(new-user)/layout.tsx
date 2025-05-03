@@ -1,4 +1,5 @@
 "use client"
+import StoreProvider from "@/app/StoreProvider";
 import { useUserStore } from "@/utils/userStore";
 import React from "react";
 

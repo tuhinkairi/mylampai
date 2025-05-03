@@ -91,9 +91,9 @@ const EvaluationPage = () => {
         <p>No rubrics found.</p>
       ) : (
         <ul className="space-y-4">
-          {rubrics.map((rubric) => (
+          {rubrics.map((rubric,index) => (
             <li
-              key={rubric.id}
+              key={index}
               className="p-4 border rounded-lg bg-gray-50 shadow-sm"
             >
               {/* {editingRubric?.id === rubric.id ? (

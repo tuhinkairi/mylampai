@@ -42,10 +42,10 @@ const withAuth = <P extends object>(
         return;
       }
 
-      console.log(token);
+      // console.log(token);
       const decoded = decodeToken(token);
 
-      console.log(decoded);
+      // console.log(decoded);
 
       if (!decoded) {
         router.push("/login");

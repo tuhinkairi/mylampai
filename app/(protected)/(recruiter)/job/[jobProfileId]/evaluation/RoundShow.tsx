@@ -112,6 +112,7 @@ export const RoundShow = () => {
           <div className="mt-4 text-gray-700 text-sm leading-relaxed">
             {round.details}
           </div>
+
         </div>
       ))}
     </div>

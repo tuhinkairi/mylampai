@@ -16,7 +16,7 @@ export function POST(req, res) {
 
   // Handle new WebSocket connection
   wss.on('connection', (ws) => {
-    console.log('Client connected via WebSocket');
+    // console.log('Client connected via WebSocket');
 
     // Create a Google Cloud Speech client
     const client = new SpeechClient();
@@ -55,7 +55,7 @@ export function POST(req, res) {
     // Close WebSocket connection when done
     ws.on('close', () => {
       mic.stopRecording();
-      console.log('Client disconnected');
+      // console.log('Client disconnected');
     });
 
     // End WebSocket connection when POST request is complete

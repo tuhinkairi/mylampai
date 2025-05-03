@@ -2,12 +2,36 @@
 import prisma from "@/lib";
 import { NextRequest, NextResponse } from "next/server";
 
-export const getInterviews = async (userId: string) => {
+export const getMockInterviews = async (talentProfileId: string) => {
   try {
-    if (!userId) return [];
+    if (!talentProfileId) return [];
+
+    const interviews = await prisma.mockInterview.findMany({
+      where: { talentProfileId },
+      select: {
+        id: true,
+        interviewState: true,
+        interviewFeedback: true,
+        analysis: true,
+        messages: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return interviews;
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+  return [];
+};
+
+export const getInterviews = async (talentPoolProfileId: string) => {
+  try {
+    if (!talentPoolProfileId) return [];
 
     const interviews = await prisma.interview.findMany({
-      where: { userId },
+      where: { talentPoolProfileId },
       select: {
         id: true,
       },
@@ -20,17 +44,21 @@ export const getInterviews = async (userId: string) => {
   return [];
 };
 
-export const createInterview = async (userId: string) => {
+export const createInterview = async (
+  talentProfileId?: string,
+  talentPoolProfileId?: string
+) => {
   try {
-    if (!userId)
+    if (!talentProfileId && !talentPoolProfileId) {
       return {
         status: "failed",
-        message: "User not found",
+        message: "TalentProfileId or TalentPoolProfileId is required",
       };
+    }
 
     // const user = await prisma.user.findUnique({
     //   where: {
-    //     id: userId,
+    //     id: talentProfileId,
     //   },
     // });
 
@@ -50,20 +78,44 @@ export const createInterview = async (userId: string) => {
     //   };
     // }
 
-    const interview = await prisma.interview.create({
-      data: {
-        userId,
-      },
-    });
+    let interview;
+    // Create interview (ensures only one of the two IDs is set)
+
+    if (talentProfileId) {
+      interview = await prisma.mockInterview.create({
+        data: {
+          talentProfileId: talentProfileId,
+        },
+      });
+    } else if (talentPoolProfileId) {
+      // interview = await prisma.interview.create({
+      //   data: {
+      //     talentPoolProfileId: talentPoolProfileId,
+      //   },
+      // });
+    } else {
+      return {
+        status: "failed",
+        message:
+          "Only one of talentProfileId or talentPoolProfileId should be required",
+      };
+    }
 
     // await prisma.user.update({
     //   where: {
-    //     id: userId,
+    //     id: talentProfileId,
     //   },
     //   data: {
     //     credits: credits - 100,
     //   },
     // });
+
+    if (!interview) {
+      return {
+        status: "failed",
+        message: "Interview not created",
+      };
+    }
 
     return {
       status: "success",
@@ -78,25 +130,67 @@ export const createInterview = async (userId: string) => {
   };
 };
 
+export const handleInterviewState = async (
+  interviewId: string,
+  state: string,
+  interviewType: string
+) => {
+  try {
+    if (!interviewId) {
+      return {
+        status: "failed",
+        message: "Interview Id is required",
+      };
+    }
+
+    if (interviewType === "talent") {
+      await prisma.interview.update({
+        where: { id: interviewId },
+        data: {
+          interviewState: state,
+        },
+      });
+    } else {
+      await prisma.mockInterview.update({
+        where: { id: interviewId },
+        data: {
+          interviewState: state,
+        },
+      });
+    }
+    return {
+      status: "success",
+      message: "Interview State Updated",
+    };
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+
+  return {
+    status: "failed",
+    message: "Internal Server Error",
+  };
+};
+
 export const handleCVUpload = async ({
-  cvText,
+  resumeText,
   interviewId,
 }: {
-  cvText: string;
+  resumeText: string;
   interviewId: string;
 }) => {
   try {
-    if (!interviewId || !cvText) {
+    if (!interviewId || !resumeText) {
       return {
         status: "failed",
         message: "CV or User not found",
       };
     }
 
-    const interview = await prisma.interview.update({
+    const interview = await prisma.mockInterview.update({
       where: { id: interviewId },
       data: {
-        cvText,
+        resumeText,
       },
     });
 
@@ -130,7 +224,7 @@ export const handleJDTextUpload = async ({
       };
     }
 
-    await prisma.interview.update({
+    await prisma.mockInterview.update({
       where: { id: interviewId },
       data: {
         jdText,
@@ -151,64 +245,78 @@ export const handleJDTextUpload = async ({
   };
 };
 
-export const updateInterviewStarted = async (interviewId: string) => {
-  try {
-    console.log("helo1")
-    if (!interviewId) {
-      return {
-        status: "failed",
-        message: "Interview Id is required",
-      };
-    }
-    console.log("helo11")
+// export const updateInterviewStarted = async (interviewId: string) => {
+//   try {
+//     console.log("helo1");
+//     if (!interviewId) {
+//       return {
+//         status: "failed",
+//         message: "Interview Id is required",
+//       };
+//     }
+//     console.log("helo11");
 
-    await prisma.interview.update({
-      where: {
-        id: interviewId,
-      },
-      data: {
-        isStarted: true,
-      },
-    });
+//     await prisma.mockInterview.update({
+//       where: {
+//         id: interviewId,
+//       },
+//       data: {
+//         isStarted: true,
+//       },
+//     });
 
-    console.log("helo111")
+//     console.log("helo111");
 
+//     return {
+//       status: "success",
+//     };
+//   } catch (error) {
+//     console.log("Error: ", error);
+//   }
 
-    return {
-      status: "success",
-    };
-  } catch (error) {
-    console.log("Error: ", error);
-  }
-
-  return {
-    status: "failed",
-    message: "Internal Server Error",
-  };
-};
+//   return {
+//     status: "failed",
+//     message: "Internal Server Error",
+//   };
+// };
 
 export const verifyInterview = async ({
   interviewId,
-  userId,
+  talentProfileId,
+  talentPoolProfileId,
+  interviewType,
 }: {
   interviewId: string;
-  userId: string;
+  talentProfileId?: string;
+  talentPoolProfileId?: string;
+  interviewType: string;
 }) => {
   try {
-    if (!interviewId || !userId) {
+    if (!interviewId || !talentProfileId) {
       return {
         code: 0,
         status: "failed",
-        message: "Both interviewId and userId is required",
+        message: "Both interviewId and talentProfileId is required",
       };
     }
 
-    const interview = await prisma.interview.findUnique({
-      where: {
-        id: interviewId,
-        userId,
-      },
-    });
+    let interview;
+
+    if (interviewType === "talent") {
+      interview = await prisma.interview.findUnique({
+        where: {
+          id: interviewId,
+          talentPoolProfileId,
+        },
+      });
+    } else {
+      interview = await prisma.mockInterview.findUnique({
+        where: {
+          id: interviewId,
+          talentProfileId,
+        },
+      });
+    }
 
     if (!interview) {
       return {
@@ -216,17 +324,10 @@ export const verifyInterview = async ({
         status: "failed",
         message: "Interview not found",
       };
-    }
-
-    if (interview.isStarted)
-      return {
-        code: 2,
-        status: "failed",
-        message: "Interview already started before",
-      };
-    else {
+    } else {
       return {
         status: "success",
+        data: interview,
       };
     }
   } catch (error) {
@@ -250,6 +351,13 @@ type MessageData = {
 
 export const handleMessageUpload = async (messageData: MessageData) => {
   try {
+    if (!messageData.interviewId) {
+      return {
+        status: "failed",
+        message: "Interview Id is required",
+      };
+    }
+
     await prisma.interviewMessage.create({
       data: messageData,
     });
@@ -324,7 +432,7 @@ export const submitanalysis = async (req: NextRequest) => {
         { status: 400 }
       );
     }
-    const response = await prisma.analysis.create({
+    const response = await prisma.interviewAnalysis.create({
       data: {
         Introduction,
         Project,
@@ -351,11 +459,124 @@ export const getanalysis = async (interviewId: string) => {
   try {
     if (!interviewId) return [];
 
-    const interviews = await prisma.analysis.findMany({
+    const interviews = await prisma.interviewAnalysis.findMany({
       where: { interviewId },
     });
 
     return interviews;
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+  return [];
+};
+
+export const getInterviewVideo = async (
+  interviewId: string,
+  interviewType: string
+) => {
+  try {
+    if (!interviewId)
+      return {
+        status: "failed",
+        message: "Interview Id is required",
+      };
+
+    if (!interviewType)
+      return {
+        status: "failed",
+        message: "Interview Type is required",
+      };
+
+    let interview;
+    if (interviewType === "talent") {
+      interview = await prisma.interview.findUnique({
+        where: { id: interviewId },
+        select: {
+          videoUrl: true,
+          createdAt: true,
+        },
+      });
+    } else {
+      interview = await prisma.mockInterview.findUnique({
+        where: { id: interviewId },
+        select: {
+          videoUrl: true,
+          createdAt: true,
+        },
+      });
+    }
+    if (!interview) {
+      return {
+        status: "failed",
+        message: "Interview not found",
+      };
+    }
+    return {
+      status: 200,
+      data: interview,
+      message: "Interview found",
+    };
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+  return [];
+};
+
+export const updateInterviewVideo = async (
+  interviewId: string,
+  videoUrl: string,
+  interviewType: string
+) => {
+  try {
+    if (!interviewId) return [];
+
+    if (!interviewType) return [];
+
+    if (interviewType === "talent") {
+      await prisma.interview.update({
+        where: { id: interviewId },
+        data: {
+          videoUrl,
+        },
+      });
+    } else {
+      await prisma.mockInterview.update({
+        where: { id: interviewId },
+        data: {
+          videoUrl,
+        },
+      });
+    }
+
+    return {
+      status: 200,
+      message: "Interview video updated",
+    };
+  } catch (error) {
+    console.log("Error: ", error);
+  }
+};
+
+export const getConversation = async (interviewId: string) => {
+  try {
+    if (!interviewId) return [];
+
+    const interviews = await prisma.interviewMessage.findMany({
+      where: { interviewId },
+      select: {
+        id: true,
+        type: true,
+        sender: true,
+        response: true,
+        createdAt: true,
+      },
+    });
+
+    return {
+      status: 200,
+      data: interviews,
+      message: "Conversation found",
+    };
   } catch (error) {
     console.log("Error: ", error);
   }

@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { Bookmark, BookmarkMinus, LucideBriefcaseBusiness } from "lucide-react";
+import { Bookmark, BookmarkMinus, LucideBriefcaseBusiness,BookCheck, BookCheckIcon } from "lucide-react";
 import {
   House,
   HouseFill,
@@ -102,6 +102,19 @@ const items = [
       { title: "Limits", url: "#" },
     ],
   },
+  {
+    title: "Cv Sorting",
+    url: "/cv-sorting",
+    view: "recruiter",
+    icons: [BookCheck,BookCheckIcon],
+    items: [
+      { title: "General", url: "#" },
+      { title: "Team", url: "#" },
+      { title: "Billing", url: "#" },
+      { title: "Limits", url: "#" },
+    ],
+  },
+
 ];
 
 const uniKey = () => { return Math.random().toString(36).substr(2, 9) };

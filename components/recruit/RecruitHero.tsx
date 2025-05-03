@@ -7,13 +7,14 @@ import Globe from "@/components/ui/globe";
 import { useSession } from "next-auth/react";
 import { nextAuthLogin } from "@/actions/authActions";
 import { signOut } from "next-auth/react";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { setCookie } from "@/utils/cookieUtils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useRoleStore } from "@/utils/loginStore";
 import { useUserStore } from "@/utils/userStore";
 import LoginComponent from "../global/Login";
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 
 export default function RecruitHero() {
   const router = useRouter();
@@ -88,6 +89,11 @@ export default function RecruitHero() {
                   </div>
                 </DialogTrigger>
                 <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                  <VisuallyHidden>
+                                  <DialogTitle>
+                                    hidden title
+                                  </DialogTitle>
+                                </VisuallyHidden>
                   <LoginComponent />
                 </DialogContent>
               </Dialog>
@@ -108,6 +114,11 @@ export default function RecruitHero() {
                   </div>
                 </DialogTrigger>
                 <DialogContent className="bg-transparent border-none max-w-3xl shadow-none">
+                <VisuallyHidden>
+                <DialogTitle>
+                  hidden title
+                </DialogTitle>
+              </VisuallyHidden>
                   <LoginComponent />
                 </DialogContent>
               </Dialog>

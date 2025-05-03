@@ -35,9 +35,11 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useProfileStore } from "@/utils/profileStore";
-import { createEmployments } from "@/actions/setupProfileActions";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { createExperiences } from "@/actions/setupProfileActions";
 import { toast } from "sonner";
+import { setExperiences } from "@/lib/features/talent_profile/talentProfileSlice";
+import { ArrayInput } from "../misc/ArrayInput";
 
 const formSchema = z.object({
   company: z.string().min(1, "Company name is required"),
@@ -48,7 +50,10 @@ const formSchema = z.object({
   }),
   endDate: z.date().optional(),
   description: z.string().optional(),
+  skills: z.array(z.string()).default([])
 });
+
+
 
 type WorkExperience = z.infer<typeof formSchema>;
 
@@ -57,7 +62,9 @@ export function WorkExperiences({
 }: {
   setStep: (step: number) => void;
 }) {
-  const { id, setExperiences } = useProfileStore();
+  const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile)
+  const id = profile.id
 
   const [prevExperiences, setPrevExperiences] = React.useState<
     WorkExperience[]
@@ -70,6 +77,8 @@ export function WorkExperiences({
       company: "",
       position: "",
       description: "",
+      skills: [],
+      location: ""
     },
   });
 
@@ -82,11 +91,23 @@ export function WorkExperiences({
   const handleSubmit = async () => {
     try {
       if (!id) return;
-      
-      const res = await createEmployments(prevExperiences, id);
+
+      const res = await createExperiences(prevExperiences, id);
 
       if (res.status === 200) {
-        setExperiences(prevExperiences);
+        // console.log(res)
+        if (res.response && Array.isArray(res.response)) {
+          dispatch(setExperiences(res.response.map(exp => ({
+            ...exp,
+            startDate: exp.startDate ? new Date(exp.startDate).toISOString() : "",
+            endDate: exp.endDate ? new Date(exp.endDate).toISOString() : undefined,
+            description: exp.description || "",
+            location: exp.location || "",
+            skills: exp.skills || []
+          }))));
+        } else {
+          toast.error("Invalid response format");
+        }
         setStep(6);
       } else {
         toast.error("Error adding experiences");
@@ -166,7 +187,7 @@ export function WorkExperiences({
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>Start Date</FormLabel>
-                        <Popover>
+                        <Popover modal={true}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
@@ -208,7 +229,7 @@ export function WorkExperiences({
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
                         <FormLabel>End Date (Optional)</FormLabel>
-                        <Popover>
+                        <Popover modal={true}>
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
@@ -259,6 +280,26 @@ export function WorkExperiences({
                           placeholder="Describe your responsibilities and achievements"
                           className="resize-none"
                           {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="skills"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Skills</FormLabel>
+                      <FormDescription>
+                        Press &quot;enter&quot; key to add skills
+                      </FormDescription>
+                      <FormControl>
+                        <ArrayInput
+                          value={field?.value || []}
+                          onChange={field.onChange}
+                          placeholder="Enter skills"
                         />
                       </FormControl>
                       <FormMessage />

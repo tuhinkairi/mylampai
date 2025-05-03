@@ -10,9 +10,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useProfileStore } from "@/utils/profileStore";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
 import { updateTitle } from "@/actions/setupProfileActions";
 import { toast } from "sonner";
+import { setTitle } from "@/lib/features/talent_profile/talentProfileSlice";
 
 const formSchema = z.object({
   role: z.string().min(1, "Job title is required"),
@@ -23,7 +24,9 @@ export function ProfessionalRole({
 }: {
   setStep: (step: number) => void;
 }) {
-  const { id, setTitle } = useProfileStore();
+  const dispatch=useAppDispatch()
+  const profile=useAppSelector((state)=>state.talentProfile)
+  const id=profile.id
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -40,7 +43,7 @@ export function ProfessionalRole({
       const res = await updateTitle(values.role, id);
 
       if (res.status === 200) {
-        setTitle(values.role);
+        dispatch(setTitle(values.role));
         setStep(5);
       } else {
         toast.error("Failed to update job title");
