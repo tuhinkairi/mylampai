@@ -6,34 +6,38 @@ import { useUserStore } from '@/utils/userStore';
 import { JobProfile } from '@prisma/client';
 import { getRecruiterJobs } from '@/actions/createJobActions';
 import Loading from '@/app/(protected)/(recruiter)/dashboard/loading';
-import { useSelector } from 'react-redux';
 import { RootState } from '@/lib/store';
 import { toast } from 'sonner';
 import LoadingGlobal from '../ui/loading';
-import { SheetTrigger } from '../ui/sheet';
+import { useAppDispatch, useAppSelector } from '@/lib/hooks';
+import { setJobProfiles } from '@/lib/features/jobSlice/jobListSlice';
 
 function JoblistingRight() {
     const [jobList, setJobs] = useState<JobProfile[] | null>(null);
     const { userData } = useUserStore();
     // sortdata
-    const sortData = useSelector((state: RootState) => state.jobStateSort.sortBy)
-
+    const sortData = useAppSelector((state) => state.jobStateSort.sortBy)
+    const jobListData = useAppSelector((state) => state.joblist.list)
+    const dispatch = useAppDispatch()
     const fetchJobs = useCallback(async () => {
         try {
             if (!userData?.id) return;
             const jobs = await getRecruiterJobs(userData.id) as JobProfile[];
-            console.log("Fetched jobs:", jobs[0].jobDescription);
+            // console.log("Fetched jobs:", jobs[0].jobDescription);
             setJobs(jobs);
+            dispatch(setJobProfiles(jobs))
         } catch (error) {
             console.error("Error fetching jobs:", error);
             setJobs([]);
         }
-    }, [userData?.id]);
+    }, [userData?.id, dispatch]);
 
     // useEffect to fetch jobs when userData.id changes
     useEffect(() => {
-        fetchJobs();
-    }, [fetchJobs]);
+        if (jobListData.length==0) {
+            fetchJobs();
+        }
+    }, [fetchJobs,jobListData]);
     console.log(sortData)
 
     // share jobs
@@ -61,7 +65,7 @@ function JoblistingRight() {
     return (
         <div ref={joblistcontainser} className='overflow-hidden grid gap-5 text-sm pr-5 pb-32'>
             {joblist_nodes?.length == 0 && <h1 className='text-center'>No Data Found</h1>}
-            {jobList ? Array.from(jobList).map((element, index) => {
+            {jobListData || jobList ? Array.from(jobList || jobListData).map((element, index) => {
                 return (
                     <div key={element.id} className='joblisting overflow-y-auto p-5 border shadow-sm rounded-md flex items-center justify-around '>
                         <div className='grid gap-2 text-start'>

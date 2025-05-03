@@ -5,6 +5,7 @@ import {
     setFormDataStore,
     setIdStore,
 } from "@/lib/features/jobSlice/jobSlice";
+import { useAppSelector } from "@/lib/hooks";
 import { RootState } from "@/lib/store";
 import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
@@ -36,7 +37,7 @@ export type FormData = {
 
 const BasicDetails = ({ job_data }: { job_data: JobProfile }) => {
     const [loading, setLoading] = useState<boolean>(false)
-    const Data = useSelector((state: RootState) => selectFormData(state));
+    const Data = useAppSelector((state) => state.job);
     const dispatch = useDispatch();
 
     const [formData, setFormData] = useState<FormData>({
@@ -50,7 +51,7 @@ const BasicDetails = ({ job_data }: { job_data: JobProfile }) => {
         skills: Data.skills.length ? Data.skills : job_data?.skills || [],
         salaryType: (Data.salaryType as "FIXED" | "RANGE" | "INCENTIVE") || (job_data?.salaryType as "FIXED" | "RANGE" | "INCENTIVE") || "",
         salaryFigure: Data.salaryFigure || job_data?.salary || "",
-        showSalary: Data.showSalary ?? job_data?.showSalary ?? false,
+        showSalary: job_data?.showSalary ,
         jobDescription: Data.jobDescription || job_data?.jobDescription || "",
         expectedStartDate: Data.expectedStartDate || job_data.startWithIn || "",
         currentState: Data.currentState || job_data.status,
@@ -58,6 +59,7 @@ const BasicDetails = ({ job_data }: { job_data: JobProfile }) => {
 
     useEffect(() => {
         if (job_data?.id) dispatch(setIdStore(job_data.id));
+        
     }, [dispatch, job_data?.id]);
 
     const handleChange = useCallback(
@@ -109,16 +111,17 @@ const BasicDetails = ({ job_data }: { job_data: JobProfile }) => {
         async (e: FormEvent) => {
             e.preventDefault();
             const updatedData: FormData = { ...formData, currentState: "COMPLETED" };
-            console.log(updatedData)
+            // console.log(updatedData)
             dispatch(setFormDataStore(updatedData));
             setLoading(true)
             const data = await updateJobDetails(formData.id, updatedData)
+            console.log(data)
             if (data) {
                 setLoading(false)
                 toast.success("Job details published successfully!");
             } else {
                 setLoading(false)
-                toast.error("Job details published successfully!")
+                toast.error("Job details published faild!")
             }
         },
         [dispatch, formData]
