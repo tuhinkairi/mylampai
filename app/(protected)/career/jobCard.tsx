@@ -10,29 +10,15 @@ import { CalendarIcon, MapPinIcon, ClockIcon, Dot, Share, Share2 } from "lucide-
 import Link from "next/link";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { JobProfile } from "@prisma/client";
 
 
-interface JobProps {
-  job: {
-    id: string;
-    jobTitle: string;
-    jobDescription: string;
-    company: string;
-    startDate: Date;
-    endDate: Date | null;
-    registrationDeadline: Date;
-    skills: string[];
-    salary: string;
-    location: string;
-    availability: string;
-  };
-}
-
-export function Job({ job }: JobProps) {
+export function Job( {job} : {job:JobProfile}) {
   const handelShare = () => {
     navigator.clipboard.writeText(`${window.location.host}/login?redirect=/career/${job.id}`)
     toast.success("copy to clipboard");
   }
+  console.log("hjhjhh",job.showSalary)
   return (
     <div className="inline-block">
       <Card className="flex flex-col h-full">
@@ -76,7 +62,8 @@ export function Job({ job }: JobProps) {
           </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center">
-          <p className="text-sm font-semibold">Salary: ${job.salary}</p>
+          {/* show salary is like 1s complement */}
+          {job.showSalary && <p className="text-sm font-semibold">Salary: ${job.salary} {job.showSalary}</p>} 
           <p className="text-xs text-muted-foreground">
             Apply by:{" "}
             {job.registrationDeadline

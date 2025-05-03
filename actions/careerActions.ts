@@ -58,20 +58,7 @@ export const getJobs = async (page: number) => {
       take: 10,
       orderBy: {
         createdAt: "desc",
-      },
-      select: {
-        id: true,
-        jobTitle: true,
-        company: true,
-        startDate: true,
-        endDate: true,
-        registrationDeadline: true,
-        jobDescription: true,
-        location: true,
-        skills: true,
-        availability: true,
-        salary: true,
-      },
+      }
     });
 
     return jobs;

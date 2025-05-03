@@ -290,7 +290,7 @@ const BasicDetails = ({ job_data }: { job_data: JobProfile }) => {
                             <p className="text-sm font-semibold text-end">Hide Salary from candidates</p>
                             <label className="relative inline-flex items-center cursor-pointer justify-center">
                                 <input type="checkbox" className="sr-only peer" onClick={() => handelSalaryShow(formData.showSalary)} />
-                                <div className={`w-9 h-[20px] bg-primary-dark rounded-full flex items-center px-1 transition-all ${formData.showSalary ? "justify-end" : "justify-start"}`}>
+                                <div className={`w-9 h-[20px] bg-primary-dark rounded-full flex items-center px-1 transition-all ${!formData.showSalary ? "justify-end" : "justify-start"}`}>
                                     <span className="w-3 h-3 bg-primary-foreground inline-block rounded-full "></span>
                                 </div>
                             </label>
