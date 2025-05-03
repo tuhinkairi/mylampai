@@ -8,10 +8,10 @@ interface FormData{
     skills: string[];
     salaryType:  "FIXED" | "RANGE" | "INCENTIVE";
     salaryFigure: string;
+    showSalary:boolean;
     jobDescription: string;
-    employmentType: string;
     expectedStartDate: string;
-    currentState: 'Pending' | 'Completed'
+    currentState: 'PENDING' | 'COMPLETED'
 }
 
 export interface JobState {
@@ -22,10 +22,10 @@ export interface JobState {
     skills: string[];
     salaryType: "FIXED" | "RANGE" | "INCENTIVE";
     salaryFigure: string;
+    showSalary:boolean;
     jobDescription: string;
-    employmentType: string;
     expectedStartDate: string;
-    currentState:"Pending" | "Completed"
+    currentState:'PENDING' | 'COMPLETED'
 }
 const initialState: JobState = {
     id:'',
@@ -35,10 +35,10 @@ const initialState: JobState = {
     skills: [],
     salaryType:  "FIXED",
     salaryFigure: '',
+    showSalary:false,
     jobDescription: '',
-    employmentType: '',
     expectedStartDate: '',
-    currentState:"Completed"
+    currentState:"PENDING"
 };
 
 

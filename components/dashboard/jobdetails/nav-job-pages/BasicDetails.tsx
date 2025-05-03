@@ -1,58 +1,79 @@
-import { selectFormData, setFormDataStore, setIdStore } from "@/lib/features/jobSlice/jobSlice";
+import { updateJobDetails } from "@/actions/createJobActions";
+import Loading from "@/app/(protected)/(recruiter)/dashboard/loading";
+import {
+    selectFormData,
+    setFormDataStore,
+    setIdStore,
+} from "@/lib/features/jobSlice/jobSlice";
 import { RootState } from "@/lib/store";
 import { JobProfile } from "@prisma/client";
 import { CalendarIcon, ImageIcon, X } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useState,
+    FormEvent,
+    ChangeEvent,
+    KeyboardEvent,
+} from "react";
 import { TextCenter, TextLeft, TextRight } from "react-bootstrap-icons";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 
-type FormData = {
-    id:string;
+export type FormData = {
+    id: string;
     jobTitle: string;
     HiringType: string;
     workplaceType: string;
     skills: string[];
-    salaryType:  "FIXED" | "RANGE" | "INCENTIVE";
+    salaryType: "FIXED" | "RANGE" | "INCENTIVE";
     salaryFigure: string;
+    showSalary: boolean;
     jobDescription: string;
-    employmentType: string;
     expectedStartDate: string;
-     currentState:'Pending'|'Completed'
+    currentState: 'PENDING' | 'COMPLETED';
 };
 
-const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
+const BasicDetails = ({ job_data }: { job_data: JobProfile }) => {
+    const [loading, setLoading] = useState<boolean>(false)
     const Data = useSelector((state: RootState) => selectFormData(state));
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
 
     const [formData, setFormData] = useState<FormData>({
-        id: Data.id.length!=0 ? Data.id : job_data.id,
-        jobTitle: Data.jobTitle.length!=0 ? Data.jobTitle : job_data.jobTitle,
-        HiringType: Data.HiringType.length!=0? Data.HiringType : job_data.availability.toString().toLowerCase().replace("_"," "),
-        workplaceType: Data.workplaceType.length!=0? Data.workplaceType : job_data.location,
-        skills: Data.skills.length!=0 ? Data.skills : job_data.skills,
-        salaryType: Data.salaryType || job_data.salaryType || "",
-        salaryFigure: Data.salaryFigure.length!=0?Data.salaryFigure: job_data.salary,
-        jobDescription: Data.jobDescription.length? Data.jobDescription :  job_data.jobDescription,
-        employmentType: Data.employmentType || "",
-        expectedStartDate: Data.expectedStartDate || "",
-        currentState: Data.currentState
+        id: Data.id || job_data?.id || "",
+        jobTitle: Data.jobTitle || job_data?.jobTitle || "",
+        HiringType:
+            Data.HiringType ||
+            job_data?.availability?.toLowerCase().replace("_", " ") ||
+            "",
+        workplaceType: Data.workplaceType || job_data?.location || "",
+        skills: Data.skills.length ? Data.skills : job_data?.skills || [],
+        salaryType: (Data.salaryType as "FIXED" | "RANGE" | "INCENTIVE") || (job_data?.salaryType as "FIXED" | "RANGE" | "INCENTIVE") || "",
+        salaryFigure: Data.salaryFigure || job_data?.salary || "",
+        showSalary: Data.showSalary ?? job_data?.showSalary ?? false,
+        jobDescription: Data.jobDescription || job_data?.jobDescription || "",
+        expectedStartDate: Data.expectedStartDate || job_data.startWithIn || "",
+        currentState: Data.currentState || job_data.status,
     });
 
-    // update the id in redux
-    useEffect(()=>{
-        dispatch(setIdStore(job_data.id))
-    },[dispatch,job_data.id])
+    useEffect(() => {
+        if (job_data?.id) dispatch(setIdStore(job_data.id));
+    }, [dispatch, job_data?.id]);
 
-    // handel the btn toggle in salary section
-    const [btntoggle, setButtonToggle] = useState<boolean>(false)
-    const handleChange = useCallback((
-        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-    ) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    },[formData]);
+    const handleChange = useCallback(
+        (
+            e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+        ) => {
+            const { name, value } = e.target;
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        },
+        []
+    );
 
-    const handleSkillChange = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    const handleSkillChange = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter" && e.currentTarget.value.trim()) {
             e.preventDefault();
             const newSkill = e.currentTarget.value.trim();
@@ -62,7 +83,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
             }));
             e.currentTarget.value = "";
         }
-    },[]);
+    }, []);
 
     const handelRemoveSkill = useCallback((indexToRemove: number) => {
         setFormData((prev) => ({
@@ -70,36 +91,56 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
             skills: prev.skills.filter((_, index) => index !== indexToRemove),
         }));
     }, []);
-    
 
     const handleStartDateSelection = useCallback((option: string) => {
-        setFormData((prev) => ({ ...prev, expectedStartDate: option }));
-    },[]);
+        setFormData((prev) => ({
+            ...prev,
+            expectedStartDate: option,
+        }));
+    }, []);
 
-    const handleSubmit = useCallback((e: React.FormEvent) => {
-        e.preventDefault();
-        console.log("Form Data:", formData);
-        // setting the form data to store
-        formData.currentState = "Completed"
-        toast.success("Job details Publish successfully!")
-        dispatch(setFormDataStore(formData))
-    },[dispatch,formData]);
-    
+    const handelSalaryShow = useCallback((e: boolean) => {
+        setFormData((prev) => ({
+            ...prev, showSalary: !e
+        }))
+    }, [])
+
+    const handleSubmit = useCallback(
+        async (e: FormEvent) => {
+            e.preventDefault();
+            const updatedData: FormData = { ...formData, currentState: "COMPLETED" };
+            console.log(updatedData)
+            dispatch(setFormDataStore(updatedData));
+            setLoading(true)
+            const data = await updateJobDetails(formData.id, updatedData)
+            if (data) {
+                setLoading(false)
+                toast.success("Job details published successfully!");
+            } else {
+                setLoading(false)
+                toast.error("Job details published successfully!")
+            }
+        },
+        [dispatch, formData]
+    );
+
     const handelDraft = useCallback(() => {
-        console.log("Draft Data:", formData);
-        formData.currentState = "Pending"
-        // setting the form data to store
-        toast.success("Job details save as Draft successfully!")
-        dispatch(setFormDataStore(formData))
-    },[formData,dispatch])
+        const updatedData: FormData = { ...formData, currentState: "PENDING" };
+        toast.success("Job details saved as draft successfully!");
+        dispatch(setFormDataStore(updatedData));
+    }, [dispatch, formData]);
 
-// admin dashboard
-// empty state
+    // handel update
+
+    // admin dashboard
+    // empty state
     return (
-        <div className="p-2 flex justify-center text-sm min-w-full">
+        <>
+        {loading && <Loading/>}
+        {!loading && <div className="p-2 flex justify-center text-sm min-w-full">
             <form
-            onSubmit={(e) => e.preventDefault()}
-                
+                onSubmit={(e) => e.preventDefault()}
+
                 className="w-full border p-2 rounded-lg space-y-6"
             >
                 <section className="_part1 grid gap-4  border rounded-lg px-4 py-3">
@@ -121,7 +162,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                         <label className="block">
                             Hiring Type:
                             <div className="flex gap-4 mt-2">
-                                {["Full Time","Part Time", "Intern", "Contract"].map((type) => (
+                                {["Full Time", "Part Time", "Intern", "Contract"].map((type) => (
                                     <label key={type} className="flex items-center">
                                         <input
                                             type="radio"
@@ -235,7 +276,7 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                             {["FIXED", "RANGE", "INCENTIVE"].map((type) => (
                                 <button type="button"
                                     key={type}
-                                    onClick={() => setFormData((prev) => ({ ...prev, salaryType: type as "FIXED"|"RANGE"|"INCENTIVE"}))}
+                                    onClick={() => setFormData((prev) => ({ ...prev, salaryType: type as "FIXED" | "RANGE" | "INCENTIVE" }))}
                                     className={`px-4 py-2 border rounded-lg transition ${formData.salaryType === type ? "bg-primary text-white" : "bg-inherit"
                                         }`}
                                 >
@@ -248,8 +289,8 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                         <div className="flex flex-wrap gap-4 items-start justify-end h-full">
                             <p className="text-sm font-semibold text-end">Hide Salary from candidates</p>
                             <label className="relative inline-flex items-center cursor-pointer justify-center">
-                                <input type="checkbox" className="sr-only peer" onClick={() => setButtonToggle(!btntoggle)} />
-                                <div className={`w-9 h-[20px] bg-primary-dark rounded-full flex items-center px-1 transition-all ${btntoggle ? "justify-end" : "justify-start"}`}>
+                                <input type="checkbox" className="sr-only peer" onClick={() => handelSalaryShow(formData.showSalary)} />
+                                <div className={`w-9 h-[20px] bg-primary-dark rounded-full flex items-center px-1 transition-all ${formData.showSalary ? "justify-end" : "justify-start"}`}>
                                     <span className="w-3 h-3 bg-primary-foreground inline-block rounded-full "></span>
                                 </div>
                             </label>
@@ -302,10 +343,10 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                             <button type="button" className=" font-semibold hover:text-gray-300">B</button>
                             <button type="button" className=" font-semibold hover:text-gray-300 italic">I</button>
                             <button type="button" className=" font-semibold hover:text-gray-300 underline">U</button>
-                            <button type="button" className=" font-semibold hover:text-gray-300"><TextLeft/></button>
-                            <button type="button" className=" font-semibold hover:text-gray-300"><TextCenter/></button>
-                            <button type="button" className=" font-semibold hover:text-gray-300"><TextRight/></button>
-                            <button type="button" className=" font-semibold hover:text-gray-300"><ImageIcon className="w-4"/></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><TextLeft /></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><TextCenter /></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><TextRight /></button>
+                            <button type="button" className=" font-semibold hover:text-gray-300"><ImageIcon className="w-4" /></button>
                         </div>
 
                         {/* Text Editor */}
@@ -324,12 +365,14 @@ const BasicDetails = ({job_data}:{job_data:JobProfile}) => {
                     <button type="button" onClick={handelDraft} className="border bg-primary text-white hover:bg-primary-dark px-4 py-2 rounded-md">
                         Save as Draft
                     </button>
-                    <button type="submit" onSubmit={handleSubmit} className=" px-4 py-2 rounded-md border bg-primary text-white hover:bg-primary-dark">
+                    <button type="submit" onClick={handleSubmit} className=" px-4 py-2 rounded-md border bg-primary text-white hover:bg-primary-dark">
                         Publish
                     </button>
                 </div>
             </form>
-        </div>
+        </div>}
+        </>
+
     );
 };
 

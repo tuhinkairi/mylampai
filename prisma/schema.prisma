@@ -275,7 +275,7 @@ model JobProfile {
   updatedAt            DateTime       @updatedAt
   JobCandidate         JobCandidate[]
   showSalary           Boolean       @default(true)
-  startWithIn          String?        
+  startWithIn          String        @default("")
   salaryType           SalaryType    @default(FIXED)    
   status               CurrentJobStatus @default(PENDING)      
 }
