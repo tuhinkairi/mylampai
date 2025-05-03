@@ -13,6 +13,7 @@ import storage from "redux-persist/lib/storage";
 import talentProfileReducer from "./features/talent_profile/talentProfileSlice";
 import talentPoolProfileReducer from "./features/talent_pool_profile/talentPoolProfileSlice";
 import cvReviewerReducer from "./features/cv_reviewer/cvReviewerSlice";
+import interviewerReducer from "./features/interview/interviewSlice";
 
 // Configure persist options
 const persistConfig = {
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   talentProfile: talentProfileReducer,
   talentPoolProfile: talentPoolProfileReducer,
   cvReviewer: cvReviewerReducer,
+  interviewerData: interviewerReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

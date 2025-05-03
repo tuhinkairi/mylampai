@@ -1,5 +1,6 @@
 "use client";
 
+import { MediaService } from "@/lib/MediaService";
 import {
   createContext,
   useCallback,
@@ -58,14 +59,11 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({
     setMicrophoneState(MicrophoneState.SettingUp);
 
     try {
-      const userMedia = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          noiseSuppression: true,
-          echoCancellation: true,
-        },
-      });
-
-      const microphone = new MediaRecorder(userMedia);
+      const userMedia = await MediaService.getStream()
+      const audioTracks = userMedia?.getAudioTracks() ?? []
+      const newAudioStream = new MediaStream(audioTracks)
+      // console.log("new audio steeammsn: ", newAudioStream)
+      const microphone = new MediaRecorder(newAudioStream);
       setMediaStream(userMedia);
       setMicrophoneState(MicrophoneState.Ready);
       setMicrophone(microphone);

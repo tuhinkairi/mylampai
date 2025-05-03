@@ -39,7 +39,6 @@ import axios from "axios";
 import { useAppDispatch } from "@/lib/hooks";
 import { setAnalysisData, setInterviewVideoUrl } from "@/lib/features/interview/interviewSlice";
 import { MediaService } from "@/lib/MediaService";
-import { stageWithRetry, uploadSemaphore } from "@/app/helpers/videoUploadHelpers";
 // import { useMediaStream } from "@/context/MediaStreamContext";
 
 type ChatMessage = {
@@ -105,12 +104,6 @@ const InterviewPage = () => {
 
   const recordedChunks = useRef<BlobPart[]>([]);
   const blockIds = useRef<string[]>([]);
-  const [uploadSpeed, setUploadSpeed] = useState(0);
-  const [chunkInterval, setChunkInterval] = useState(2000);
-  const totalUploadedBytes = useRef(0);
-  const lastUploadTime = useRef(Date.now());
-  const shouldCommitAtEnd = useRef(false);
-
 
 
 
@@ -397,9 +390,7 @@ const InterviewPage = () => {
           });
 
           if (res.status === "failed") toast.error("Message send failed");
-          audioRef.current?.pause()
-          shouldCommitAtEnd.current = true;
-          MediaService.releaseStream();
+
           setInterviewStage("ending");
           setShowFeedback(true);
 
@@ -413,32 +404,22 @@ const InterviewPage = () => {
         case "analysis":
 
           if (data.result && Array.isArray(data.result)) {
-            await submitAnalysis(data.result).catch(err => console.error(err));
+            submitAnalysis(data.result).catch(err => console.error(err));
           }
-          toast(
-            () => (
-              <div
-                onClick={() => {
-                  router.push(`/interview/${interviewId}/analysis`);
-                }}
-                className="cursor-pointer"
-              >
-                🎉 Your interview analysis is ready! Click to view.
-              </div>
-            ),
-            {
-              duration: 5000,
-            }
-          );
+          // setChatMessages((prevMessages) => [
+          //   ...prevMessages,
+          //   { user: "Analysis", message: JSON.stringify(data.result) },
+          // ]);
           if (interviewType) {
             // console.log("type to update:: ", interviewType)
             handleInterviewState(interviewId, "Analysis_Completed", interviewType);
           }
           disconnectInterviewer()
+          // setTimeout(() => {
           router.push(`/interview/${interviewId}/analysis`);
-          
+        // }, 100);
         case "greeting_from_ws":
-          // console.log("Greeting from ws");
+          console.log("Greeting from ws");
           break;
         default:
           break;
@@ -447,42 +428,14 @@ const InterviewPage = () => {
   }, [ws, handleInterviewer, interviewId]);
 
   const handleInterviewEnd = () => {
+    audioRef.current?.pause()
+    MediaService.releaseStream();
     ws?.send(
       JSON.stringify({
         type: "end_interview",
       }),
     );
   };
-
-
-  const handleFeedbackSubmit = async (rating: number, feedback: string) => {
-    if (rating === 0) {
-      toast.error("Rate the Interview");
-      return;
-    }
-
-    try {
-      const res = await submitFeedback({ interviewId, rating, feedback });
-      if (res.status === "success") {
-        toast.success("Feedback submitted successfully");
-        setShowFeedback(false);
-        setFeedbackSubmitted(true);
-        // console.log("rubrics for analysis: ", rubrics)
-        ws?.send(
-          JSON.stringify({
-            type: "get_analysis",
-            rubrics: rubrics,
-          }),
-        );
-      } else {
-        toast.error("Error submitting feedback");
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-
 
   const handleStart = () => {
     try {
@@ -544,45 +497,70 @@ const InterviewPage = () => {
         return;
       }
 
+      // Generate a simpler block ID format that Azure Storage can handle
       // Use a base64 encoded sequential number padded to 6 digits
       const blockIdBase = `block-${blockIds.current.length.toString().padStart(6, '0')}`;
       const blockId = Buffer.from(blockIdBase).toString('base64');
 
+      // console.log(`Generated blockId: ${blockId} from ${blockIdBase}`);
+      blockIds.current.push(blockId);
 
       // Convert Blob to ArrayBuffer
       const arrayBuffer = await chunk.arrayBuffer();
 
       // Use the proper stageBlock method with content-length header
-      // await videoBlobClient.current.stageBlock(
-      //   blockId,
-      //   arrayBuffer,
-      //   arrayBuffer.byteLength
-      // );
+      await videoBlobClient.current.stageBlock(
+        blockId,
+        arrayBuffer,
+        arrayBuffer.byteLength
+      );
 
-      await uploadSemaphore.acquire();
-
-      try {
-        // Stage with retry
-        await stageWithRetry(videoBlobClient.current, blockId, arrayBuffer);
-        // Only after success, push ID
-        if (!blockIds.current.includes(blockId)) {
-          blockIds.current.push(blockId);
-          // console.log(`Uploaded chunk with blockId: ${blockId}`);
-        }
-
-      } catch (err) {
-        console.error(`Failed to stage block ${blockId}`, err);
-        throw err;
-      } finally {
-        uploadSemaphore.release();
-      }
-
+      // console.log(`Uploaded chunk with blockId: ${blockId}`);
     } catch (error) {
       console.error("Error uploading chunk:", error);
-      throw error;
+      throw error; // Re-throw to allow proper error handling upstream
     }
   };
 
+  const commitVideoUpload = async () => {
+    try {
+      if (!videoBlobClient.current) {
+        // console.log("Video blob client not initialized");
+        return;
+      }
+
+      if (blockIds.current.length === 0) {
+        console.warn("No blocks to commit");
+        return;
+      }
+
+      // Before committing, log the block IDs for debugging
+      // console.log(`Attempting to commit ${blockIds.current.length} blocks:`, blockIds.current);
+
+      // Format the block list correctly - each block ID must be in the proper format
+      const blockList = {
+        Latest: blockIds.current,
+        Committed: [],
+        Uncommitted: []
+      };
+
+      await videoBlobClient.current.commitBlockList(blockList.Latest);
+      // console.log("Video upload finalized");
+
+      dispatch(setInterviewVideoUrl(videoBlobClient.current.url));
+      if (interviewType) {
+        await updateInterviewVideo(
+          interviewId, videoBlobClient.current.url, interviewType
+        );
+      }
+      blockIds.current = []; // Clear blockIds for next use
+
+    } catch (error) {
+      console.error("Error committing blocks:", error);
+      console.error("Failed block IDs:", blockIds.current);
+      throw error; // Re-throw to allow proper error handling upstream
+    }
+  };
 
   const startVideoStream = useCallback(async () => {
     if (interviewStage === "ending" || interviewStage === "completed") return;
@@ -590,12 +568,17 @@ const InterviewPage = () => {
     try {
       const stream = MediaService.getStream();
 
-      if (videoRef.current && stream && videoBlobClient.current) {
+      if (videoRef.current && stream) {
         videoRef.current.srcObject = stream;
 
+        // Ensure the container exists before starting recording
+        if (!videoBlobClient.current) {
+          // console.log("Video blob client not initialized");
+          return;
+        }
+
+        // Reset block IDs at the start of a new recording session
         blockIds.current = [];
-        recordedChunks.current = [];
-        shouldCommitAtEnd.current = false;
 
         mediaRecorder.current = new MediaRecorder(stream, {
           mimeType: 'video/webm;codecs=vp8',
@@ -604,90 +587,85 @@ const InterviewPage = () => {
         mediaRecorder.current.ondataavailable = async (event) => {
           if (event.data.size > 0) {
             try {
-              const now = Date.now();
-              const timeDiff = (now - lastUploadTime.current) / 1000;
-              lastUploadTime.current = now;
-
-              const sizeKB = event.data.size / 1024;
-              const speed = sizeKB / timeDiff;
-              setUploadSpeed(parseFloat(speed.toFixed(1)));
-
-              // Adjust interval based on speed
-              if (speed < 50 && chunkInterval < 5000) {
-                setChunkInterval((prev) => prev + 500);
-              } else if (speed > 200 && chunkInterval > 1000) {
-                setChunkInterval((prev) => prev - 500);
-              }
-
+              // Store chunks locally as well
               recordedChunks.current.push(event.data);
               await uploadChunkToBlob(event.data);
-              totalUploadedBytes.current += event.data.size;
-
             } catch (error) {
               console.error("Failed to upload chunk:", error);
+              // Consider implementing retry logic here
             }
           }
         };
 
         mediaRecorder.current.onstop = async () => {
-          if (shouldCommitAtEnd.current) {
-            try {
-              if (blockIds.current.length > 0 && videoBlobClient.current) {
-                // console.log("Committing final block list:", blockIds.current);
-                await videoBlobClient.current.commitBlockList(blockIds.current);
-                console.log("Blocks committed successfully.");
+          try {
+            // console.log(`Recording stopped. Total blocks: ${blockIds.current.length}`);
+
+            if (blockIds.current.length > 0) {
+              // Create a complete blob from all the chunks to upload as a single block
+              const completeBlob = new Blob(recordedChunks.current, { type: 'video/webm' });
+              // console.log(`Complete video size: ${completeBlob.size} bytes`);
+
+              // Clear existing block IDs
+              blockIds.current = [];
+
+              // Upload the entire video as a single put blob operation instead of using blocks
+              if (videoBlobClient.current) {
+                // console.log("Uploading full video as a single blob...");
+                await videoBlobClient.current.uploadData(completeBlob);
+                // console.log("Full video upload complete");
+
                 dispatch(setInterviewVideoUrl(videoBlobClient.current.url));
                 if (interviewType) {
-                  await updateInterviewVideo(interviewId, videoBlobClient.current.url, interviewType);
+                  await updateInterviewVideo(
+                    interviewId, videoBlobClient.current.url, interviewType
+                  );
                 }
-              } else {
-                throw new Error("No blocks staged for commit.");
               }
-            } catch (commitError) {
-              console.warn("Final commit failed, fallback to full upload:", commitError);
-              try {
-                const completeBlob = new Blob(recordedChunks.current, { type: 'video/webm' });
-                // console.log("Uploading full video...");
-                await videoBlobClient.current!.uploadData(completeBlob);
-                // console.log("Full video uploaded.");
-                dispatch(setInterviewVideoUrl(videoBlobClient.current!.url));
-                if (interviewType) {
-                  await updateInterviewVideo(interviewId, videoBlobClient.current!.url, interviewType);
-                }
-              } catch (uploadError) {
-                console.error("Full video upload failed:", uploadError);
-              }
-            } finally {
-              blockIds.current = [];
-              recordedChunks.current = [];
-              setVideoBlob(null);
+            } else {
+              console.warn("No video chunks were recorded");
             }
+            recordedChunks.current = [];
+            setVideoBlob(null);
+          } catch (error) {
+            console.error("Failed to finalize video upload:", error);
           }
         };
 
-        mediaRecorder.current.start(chunkInterval);
-
-        const intervalId = setInterval(() => {
-          if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-            mediaRecorder.current.requestData();
-          }
-        }, chunkInterval);
-
-        // Stop cleanly when interviewStage changes to ending/completed
-        const unsubscribe = () => {
-          clearInterval(intervalId);
-          if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-            shouldCommitAtEnd.current = true;
-            mediaRecorder.current.stop();
-          }
-        };
-
-        window.addEventListener("beforeunload", unsubscribe);
+        // Start recording with smaller chunks for more reliable uploads
+        mediaRecorder.current.start(2000); // Fire dataavailable every 2s
       }
     } catch (error) {
       console.error("Error starting recording:", error);
     }
   }, [interviewStage]);
+
+  const uploadVideoToStorage = async (blob: Blob) => {
+    try {
+      if (!videoBlobClient.current) {
+        // console.error("Video blob client not initialized");
+        return;
+      }
+
+      // console.log("Starting upload to:", videoBlobClient.current.url);
+
+      await videoBlobClient.current.uploadData(blob, {
+        blobHTTPHeaders: { blobContentType: "video/webm" },
+      });
+      // console.log("Video uploaded successfully");
+
+      // Store the video URL in the database
+      dispatch(setInterviewVideoUrl(videoBlobClient.current.url))
+      if (interviewType) {
+        await updateInterviewVideo(
+          interviewId, videoBlobClient.current.url, interviewType
+        );
+      }
+
+    } catch (error: any) {
+      toast.error(`Upload failed: ${error.message || "Unknown error"}`);
+    }
+  };
 
 
   const handleButtonClick = (index: number) => {
@@ -708,8 +686,6 @@ const InterviewPage = () => {
     [handleSendMessage],
   );
 
-
-
   const enableFullscreen = () => {
     document.documentElement.requestFullscreen()
       .then(() => {
@@ -722,6 +698,34 @@ const InterviewPage = () => {
       });
   };
 
+
+
+  const handleFeedbackSubmit = async (rating: number, feedback: string) => {
+    if (rating === 0) {
+      toast.error("Rate the Interview");
+      return;
+    }
+
+    try {
+      const res = await submitFeedback({ interviewId, rating, feedback });
+      if (res.status === "success") {
+        toast.success("Feedback submitted successfully");
+        setShowFeedback(false);
+        setFeedbackSubmitted(true);
+        // console.log("rubrics for analysis: ", rubrics)
+        ws?.send(
+          JSON.stringify({
+            type: "get_analysis",
+            rubrics: rubrics,
+          }),
+        );
+      } else {
+        toast.error("Error submitting feedback");
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     if (audioURL && audioRef.current) {

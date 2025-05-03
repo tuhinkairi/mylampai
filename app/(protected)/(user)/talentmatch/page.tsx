@@ -38,6 +38,7 @@ import { setCareerProfiles } from "@/lib/features/talent_pool_profile/talentPool
 import { CareerProfileSkeleton } from "@/skeletons/talentmatch/careerProfileSkeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useRouter } from "next/navigation";
+import { MediaService } from "@/lib/MediaService";
 
 
 type RubricsType = {
@@ -231,7 +232,7 @@ function TalentMatchContent() {
         interview_id: interviewId,
         rubrics: rubrics
       }));
-
+      await MediaService.initializeStream();
       router.push(`/interview/${interviewId}?type=talent`)
     }
     catch (error) {

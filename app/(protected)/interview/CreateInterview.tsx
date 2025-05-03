@@ -38,6 +38,8 @@ import { useUserStore } from "@/utils/userStore";
 import { getUserResumesList } from "@/actions/resumeActions";
 import { generateInterviewRubrics } from "@/actions/interviewTemplates/createTemplateActions";
 import { Circles } from "react-loader-spinner";
+import { MediaService } from "@/lib/MediaService";
+
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
@@ -238,7 +240,6 @@ const CreateInterviewComponent = ({ jobDescription, category, rubrics }: { jobDe
     const extractedText = await extractTextFromPDF(file);
 
     if (extractedText) {
-
       const response = await generateInterviewRubrics(extractedText)
 
       if (response.status !== 200) {
@@ -370,6 +371,7 @@ const CreateInterviewComponent = ({ jobDescription, category, rubrics }: { jobDe
   //   console.log("rubrics22", rubricsList);
   // }, [JD, rubricsList]);
 
+  // const { startStream } = useMediaStream();
 
   const startInterview = useCallback(async () => {
     if (!resumeText || !JD) {
@@ -386,15 +388,7 @@ const CreateInterviewComponent = ({ jobDescription, category, rubrics }: { jobDe
       if (res.status === "success" && res.interviewId) {
         setInterviewId(res.interviewId);
 
-        // Verify media devices access without actually using them
         try {
-          // const stream = await navigator.mediaDevices.getUserMedia({
-          //   audio: true,
-          //   video: true,
-          // });
-
-          // // Release streams immediately
-          // stream.getTracks().forEach(track => track.stop());
 
           if (res.status === "success" && res.interviewId) {
             // Store interview data in sessionStorage
@@ -404,8 +398,8 @@ const CreateInterviewComponent = ({ jobDescription, category, rubrics }: { jobDe
               interview_id: res.interviewId,
               rubrics: rubricsList,
             }));
-
             // Navigate to interview page
+            await MediaService.initializeStream();
             if (category) {
               router.push(`/interview/${res.interviewId}?type=${interviewType}&c=${category}`);
             } else {

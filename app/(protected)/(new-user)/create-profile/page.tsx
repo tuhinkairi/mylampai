@@ -608,7 +608,7 @@ export default function CreateProfile() {
           <div className="flex flex-col items-center justify-center h-full">
             <p className="mb-6 text-center">
               We need to get a sense of your education, experience and skills.
-              It's quickest to import your information — you can edit it
+              It&apos;s quickest to import your information — you can edit it
               before your profile goes live.
             </p>
 
@@ -696,7 +696,7 @@ export default function CreateProfile() {
         <div className="md:hidden w-full mt-6 border-t pt-6">
           <p className="mb-6 text-center">
             We need to get a sense of your education, experience and skills.
-            It's quickest to import your information.
+            It&apos;s quickest to import your information.
           </p>
 
           <div className="bg-white py-4 px-4 rounded-xl w-full shadow-md text-center">

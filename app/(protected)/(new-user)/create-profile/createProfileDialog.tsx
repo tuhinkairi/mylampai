@@ -488,33 +488,40 @@ function CreateProfileDialog() {
                 updateUserBio()
             ]);
 
-            // Handle results
-            // results.forEach((result, index) => {
-            //     if (result.status === "fulfilled") {
-            //         console.log(`Update ${index + 1} succeeded.`);
-            //     } else {
-            //         console.error(`Update ${index + 1} failed:`, result.reason);
-            //     }
-            // });
+            // Helper function to safely convert date to ISO string
+            const safeToISOString = (dateObj: any) => {
+                if (!dateObj) return undefined;
 
-            const allFulfilled = results.every((result) => result.status === "fulfilled")
+                // Check if dateObj is a valid Date object
+                if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+                    console.warn("Invalid date encountered:", dateObj);
+                    return undefined; // or return a default value
+                }
+
+                try {
+                    return dateObj.toISOString();
+                } catch (error) {
+                    console.warn("Error converting date to ISO string:", error);
+                    return undefined; // or return a default value
+                }
+            };
+
+            const allFulfilled = results.every((result) => result.status === "fulfilled");
 
             if (allFulfilled) {
-                dispatch(setBio(bio))
-                dispatch(setTitle(jobRole))
+                dispatch(setBio(bio));
+                dispatch(setTitle(jobRole));
                 dispatch(setEducations(educationData.map((edu: any) => ({
                     ...edu,
-                    startDate: edu.startDate.toISOString(),
-                    endDate: edu.endDate ? edu.endDate.toISOString() : undefined
-                }))))
+                    startDate: safeToISOString(edu.startDate),
+                    endDate: edu.endDate ? safeToISOString(edu.endDate) : undefined
+                }))));
                 dispatch(setExperiences(experienceData.map((exp: any) => ({
                     ...exp,
-                    startDate: exp.startDate.toISOString(),
-                    endDate: exp.endDate ? exp.endDate.toISOString() : undefined
-                })
-                )))
-                dispatch(setProfiles(profiles))
-                // console.log("All updates succeeded. Redirecting to /talentmatch...");
+                    startDate: safeToISOString(exp.startDate),
+                    endDate: exp.endDate ? safeToISOString(exp.endDate) : undefined
+                }))));
+                dispatch(setProfiles(profiles));
                 router.push("/talentmatch");
             } else {
                 console.error("Some updates failed. Please check the logs.");
@@ -524,7 +531,6 @@ function CreateProfileDialog() {
                     }
                 });
             }
-
         } catch (error) {
             console.error("Error while updating data:", error);
         }
