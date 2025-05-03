@@ -14,30 +14,31 @@ import { useSearchParams } from "next/navigation";
 import { getJobs } from "@/actions/careerActions";
 import { Job } from "./jobCard";
 import { Album } from "lucide-react";
+import { JobProfile } from "@prisma/client";
 
-type Job = {
-  id: string;
-  jobTitle: string;
-  jobDescription: string;
-  company: string;
-  startDate: Date;
-  endDate: Date | null;
-  registrationDeadline: Date;
-  skills: string[];
-  salary: string;
-  location: string;
-  availability: string;
-};
+// type Job = {
+//   id: string;
+//   jobTitle: string;
+//   jobDescription: string;
+//   company: string;
+//   startDate: Date;
+//   endDate: Date | null;
+//   registrationDeadline: Date;
+//   skills: string[];
+//   salary: string;
+//   location: string;
+//   availability: string;
+// };
 
 export default function Career() {
   const searchParams = useSearchParams();
   const page = searchParams.get("page") || "1";
-  const [jobsData, setJobsData] = useState<Job[]>([]);
+  const [jobsData, setJobsData] = useState<JobProfile[]>([]);
 
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const jobs = await getJobs(Number(page));
+        const jobs:JobProfile[] = await getJobs(Number(page));
         setJobsData(jobs);
       } catch (error) {
         console.error(error);

@@ -6,8 +6,13 @@ import { getJob } from "@/actions/careerActions"; // Replace with your actual AP
 import RubricList from "./RubricsList";
 import { getRubricsList } from "@/actions/jobs/rubricsGet";
 import LoadingGlobal from "@/components/ui/loading";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
+import { CalendarDays, Eye, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useAppSelector } from "@/lib/hooks";
 
-interface Round {
+export interface Round {
     id: string;
     roundName: string;
     roundNumber: number;
@@ -27,8 +32,9 @@ interface JobRoundRubric {
     condition: string;
     jobRoundId: string;
 }
-const RoundShow = () => {
-    const { jobProfileId } = useParams<{ jobProfileId: string }>();
+export const RoundShow = () => {
+    let { jobProfileId } = useParams<{ jobProfileId: string }>();
+    const jobID = useAppSelector((state)=>state.job.id)
     const [rounds, setRounds] = useState<Round[] | any>([]);
     const [title, setTitle] = useState<string>("")
     const [loading, setLoading] = useState(true);
@@ -38,9 +44,9 @@ const RoundShow = () => {
     const [rubricsData, setRubricsData] = useState<JobRoundRubric[]>();
 
     useEffect(() => {
-        if (!jobProfileId) return;
+        // if (!jobProfileId) return;
 
-        getJob(jobProfileId)
+        getJob(jobProfileId || jobID)
             .then((res) => {
                 if (res?.rounds) {
 
@@ -53,40 +59,66 @@ const RoundShow = () => {
                 console.error("Error fetching rounds:", err);
                 setLoading(false);
             });
-    }, [jobProfileId]);
-
+    }, [jobProfileId, jobID]);
+    
     // console.log(rounds)
     return (
-        <div className="p-4">
-            <h2 className="text-xl font-bold mb-4">Job Rounds for {title}</h2>
-            {loading ? (
-                <LoadingGlobal text={"Rounds"} />
-            ) : rounds.length === 0 ? (
-                <p>No rounds found.</p>
-            ) : (
-                <ul className="space-y-4">
-                    {rounds.map((round: any) => (
-                        <li
-                            key={round.id}
-                            className="p-4 border rounded-lg shadow-sm bg-gray-50"
-                        >
-                            <h3 className="text-lg font-semibold">
-                                {round.roundNumber}. {round.roundName} ({round.roundType})
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                                Date: {new Date(round.roundDate).toLocaleDateString()}
-                            </p>
-                            <p className="mt-2">{round.details}</p>
-                            <p className="mt-2">Round: {round.roundNumber}</p>
-                            <div className="mt-5">
-                                <button onClick={() => router.push(`/job/${jobProfileId}/evaluation/${round.id}`)}
-                                    className="border rounded-md p-2 bg-purple-400 hover:bg-purple-500 text-white">show rubics</button><button className="border rounded-md p-2 bg-red-400 hover:bg-red-500 ml-2 text-white">delete</button></div>
+        <div className="p-6">
+  <h2 className="text-2xl font-semibold mb-6">
+    Job Rounds for <span className="text-purple-600">{title}</span>
+  </h2>
 
-                        </li>
-                    ))}
-                </ul>
-            )}
+  {loading ? (
+    <LoadingGlobal text="Rounds" />
+  ) : rounds.length === 0 ? (
+    <div className="text-center text-gray-500 py-10">
+      <p>No rounds found.</p>
+    </div>
+  ) : (
+    <div className="space-y-6">
+      {rounds.map((round: any) => (
+        <div
+          key={round.id}
+          className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm hover:shadow-md transition-all duration-300"
+        >
+          <div className="flex flex-col md:flex-row md:justify-between md:items-start">
+            <div>
+              <h3 className="text-xl font-bold text-gray-800">
+                {round.roundNumber}. {round.roundName}
+                <span className="text-sm text-gray-500 ml-2">
+                  ({round.roundType})
+                </span>
+              </h3>
+              <div className="flex items-center text-sm text-gray-500 mt-1">
+                <CalendarDays className="w-4 h-4 mr-1" />
+                {new Date(round.roundDate).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="mt-4 md:mt-0 flex gap-3">
+              <Button
+                onClick={() =>
+                  router.push(`/job/${jobProfileId || jobID}/evaluation/${round.id}`)
+                }
+                className="bg-purple-500 hover:bg-purple-600 text-white flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" /> Show Rubrics
+              </Button>
+              <Button className="bg-red-500 hover:bg-red-600 text-white flex items-center gap-2">
+                <Trash2 className="w-4 h-4" /> Delete
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 text-gray-700 text-sm leading-relaxed">
+            {round.details}
+          </div>
+
         </div>
+      ))}
+    </div>
+  )}
+</div>
+
     );
 };
 

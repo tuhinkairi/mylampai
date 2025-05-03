@@ -6,13 +6,20 @@ import AddJobsMini from "@/components/Jobs/add-jobs-mini";
 import { BarChart, LucideVerified } from "lucide-react";
 import { RiLiveLine } from "react-icons/ri";
 import { ExclamationCircle } from "react-bootstrap-icons";
+import { useDispatch } from "react-redux";
+import { setSortBy } from "@/lib/features/jobSlice/sortSlice";
+import { useAppSelector } from "@/lib/hooks";
 
 export default function Dashboard() {
   const [state, SetState] = useState<boolean>(false)
+  const dispatch = useDispatch()
+  const currentState = useAppSelector((state)=>state.jobStateSort.sortBy)
   const handelMiniJob = () => {
     SetState(!state)
   }
-
+  const handleSortChange = (sortBy: 'Default' | 'Completed' | 'Pending') => {
+    dispatch(setSortBy(sortBy));
+  };
   return (
     <>
       <section className="pb-3 grid md:grid-cols-3 md:grid-rows-5 items-start justify-center  gap-5 gap-x-3 h-screen overflow-hidden text-gray-700">
@@ -35,17 +42,17 @@ export default function Dashboard() {
               // onChange={(e) => setSearchTerm(e.target.value)}
               />
               <div className="flex items-center gap-3 text-gray-500">
-                <button className="flex gap-2 items-center text-sm font-semibold ">
+                <button onClick={()=>handleSortChange("Default")} className={`flex gap-2 items-center text-sm font-semibold ${currentState==="Default"?"text-primary":""}`}>
                   <BarChart className="-rotate-90" width={20} height={20} />
-                  <span className="">All</span>
+                  <span>All</span>
                 </button>
-                <button className="flex gap-2 items-center text-sm font-semibold ">
+                <button onClick={()=>handleSortChange("Completed")} className={`flex gap-2 items-center text-sm font-semibold ${currentState==="Completed"?"text-primary":""}`}>
                   <LucideVerified width={20} height={20} />
-                  <span className="">Live</span>
+                  <span>Live</span>
                 </button>
-                <button className="flex gap-2 items-center text-sm font-semibold ">
+                <button onClick={()=>handleSortChange("Pending")} className={`flex gap-2 items-center text-sm font-semibold ${currentState==="Pending"?"text-primary":""}`}>
                   <ExclamationCircle width={16} height={16} />
-                  <span className="">Incomplete</span>
+                  <span>Incomplete</span>
                 </button>
               </div>
             </div>

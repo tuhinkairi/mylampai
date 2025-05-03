@@ -66,9 +66,11 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth focus:scroll-auto">
       <body className={`${openSans.className}`}>
         <StoreProvider>
-        <AuthProvider><MicrophoneContextProvider>
-          <DeepgramContextProvider>{children}</DeepgramContextProvider>
-        </MicrophoneContextProvider></AuthProvider></StoreProvider>
+          <AuthProvider><MicrophoneContextProvider>
+            <DeepgramContextProvider>{children}</DeepgramContextProvider>
+          </MicrophoneContextProvider></AuthProvider>
+        </StoreProvider>
+
         <GoogleAnalytics gaId="G-3TPKSH7MPS" />
         <Script id="clarity-script" strategy="afterInteractive">
           {`

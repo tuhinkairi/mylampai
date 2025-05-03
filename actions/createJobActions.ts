@@ -1,4 +1,5 @@
 "use server";
+import { FormData } from "@/components/dashboard/jobdetails/nav-job-pages/BasicDetails";
 import prisma from "@/lib/index";
 
 type JobDataType = {
@@ -14,6 +15,10 @@ type JobDataType = {
   location: string;
   salary: string;
   availability: "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT";
+  showSalary?: boolean;
+  startWithIn?: string;
+  salaryType?: "FIXED" | "RANGE" | "INCENTIVE"
+  status?: "PENDING" | "COMPLETED"
 };
 
 export const createJob = async (jobData: JobDataType, userId: string) => {
@@ -44,6 +49,46 @@ export const fetchJob = async () => {
   }
 };
 
+// update job
+export const updateJobDetails = async (jobId: string, formData: FormData) => {
+  try {
+    const updatePayload: any = {};
+
+    if (formData.jobTitle) updatePayload.jobTitle = formData.jobTitle;
+
+    if (formData.jobDescription) updatePayload.jobDescription = formData.jobDescription;
+
+    if (formData.workplaceType) updatePayload.location = formData.workplaceType;
+
+    if (formData.salaryFigure) updatePayload.salary = formData.salaryFigure;
+
+    if (formData.salaryType) updatePayload.salaryType = formData.salaryType;
+
+    if (formData.expectedStartDate) updatePayload.startWithIn = formData.expectedStartDate;
+
+    if (formData.skills?.length) updatePayload.skills = formData.skills;
+
+    if (formData.HiringType)
+      updatePayload.availability = formData.HiringType
+        .toUpperCase()
+        .replace(" ", "_") as "FULL_TIME" | "PART_TIME" | "INTERN" | "CONTRACT";
+
+    if (formData.showSalary !== undefined) updatePayload.showSalary = formData.showSalary;
+
+    if (formData.currentState) updatePayload.status = formData.currentState;
+
+    const updatedJob = await prisma.jobProfile.update({
+      where: { id: jobId },
+      data: updatePayload,
+    });
+
+    return updatedJob;
+  } catch (error) {
+    console.error("Error updating job:", error);
+    throw new Error("Failed to update job data");
+  }
+};
+
 export type RoundsType = {
   roundName: string;
   roundNumber: number;
@@ -51,7 +96,8 @@ export type RoundsType = {
   roundType: string;
   roundDate: Date;
   jobProfileId: string;
-  id?: string;
+  id?: string
+
 }[];
 
 export const addRounds = async (rounds: RoundsType) => {
@@ -116,17 +162,20 @@ export const getRecruiterJobs = async (userId: string) => {
       where: {
         userId,
       },
-      select: {
-        id: true,
-        jobTitle: true,
-        jobRole: true,
-        company: true,
-        startDate: true,
-        skills: true,
-        salary: true,
-        location: true,
-        availability: true,
-      },
+      // select: {
+      //   id: true,
+      //   jobTitle: true,
+      //   jobRole: true,
+      //   company: true,
+      //   startDate: true,
+      //   skills: true,
+      //   salary: true,
+      //   location: true,
+      //   availability: true,
+      //   jobDescription: true,
+      //   endDate: true,
+      //   registrationDeadline: true, 
+      // },
     });
 
     return jobs;

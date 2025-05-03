@@ -11,16 +11,13 @@ import DetailsShow from "./DetailsShow"
 import { JobProfile } from "@prisma/client"
 // import { DialogTitle } from "@/components/ui/dialog"
 
-function JobDrawer({ children, job_data }: { children: React.ReactNode, job_data?: JobProfile }) {
+function JobDrawer({ children, job_data }: { children: React.ReactNode, job_data: JobProfile }) {
     const [active, setActive] = useState<number>(0)
     const initial = useRef<HTMLButtonElement>(null)
     const handel_active = (e: number) => {
         setActive(e)
     }
-    // useEffect(() => {
-    //     initial.current?.classList.toggle("border-b-primary")
-    //     console.log("clicked")
-    // }, [initial])
+    
     return (
         <div>
             <Sheet modal={true}>
@@ -36,7 +33,7 @@ function JobDrawer({ children, job_data }: { children: React.ReactNode, job_data
                             </nav>
                     </SheetHeader>
                     {/* details show help to list the option components as per the active number */}
-                    <DetailsShow active_state={active} />
+                    <DetailsShow active_state={active} job_data={job_data}/>
                 </SheetContent>
 
             </Sheet>

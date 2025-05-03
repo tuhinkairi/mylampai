@@ -143,11 +143,11 @@ export default async function JobPage({
                       label="Job Description"
                       value={jobProfile.jobDescription}
                     />
-                    <JobDetail
+                    {jobProfile.showSalary && <JobDetail
                       icon={<IndianRupeeIcon className="h-4 w-4" />}
                       label="Salary"
                       value={jobProfile.salary}
-                    />
+                    />}
                   </div>
 
                   <TagList title="Skills" items={jobProfile.skills} />

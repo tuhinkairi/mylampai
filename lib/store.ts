@@ -1,3 +1,16 @@
+import { configureStore } from '@reduxjs/toolkit';
+import jobReducer from './features/jobSlice/jobSlice';
+import sortReducer from './features/jobSlice/sortSlice';
+import joblistSlice from './features/jobSlice/jobListSlice';
+
+export const makeStore = () => {
+  return configureStore({
+    reducer: {
+      job: jobReducer.reducer,
+      jobStateSort: sortReducer.reducer,
+      joblist:joblistSlice.reducer
+    },
+  });
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import {
   persistStore,
@@ -45,5 +58,6 @@ export const makeStore = () => {
 
 // Infer the type of makeStore
 export type AppStore = ReturnType<typeof makeStore>;
-export type RootState = ReturnType<AppStore["getState"]>;
-export type AppDispatch = AppStore["dispatch"];
+export type RootState = ReturnType<AppStore['getState']>;
+export type AppDispatch = AppStore['dispatch'];
+
