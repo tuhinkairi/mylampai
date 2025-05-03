@@ -5,8 +5,6 @@ import JobDrawer from './jobdetails/JobDrawer';
 import { useUserStore } from '@/utils/userStore';
 import { JobProfile } from '@prisma/client';
 import { getRecruiterJobs } from '@/actions/createJobActions';
-import Loading from '@/app/(protected)/(recruiter)/dashboard/loading';
-import { RootState } from '@/lib/store';
 import { toast } from 'sonner';
 import LoadingGlobal from '../ui/loading';
 import { useAppDispatch, useAppSelector } from '@/lib/hooks';
