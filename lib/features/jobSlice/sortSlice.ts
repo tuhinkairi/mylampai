@@ -3,10 +3,12 @@ import { RootState } from '../../store'; // Adjust the path to your store file
 
 interface SortState {
     sortBy: 'Default' | 'Completed' | 'Pending';
+    title:string;
 }
 
 const initialState: SortState = {
-    sortBy: 'Default', 
+    sortBy: 'Default',
+    title:""
 };
 
 const sortReducer = createSlice({
@@ -16,10 +18,13 @@ const sortReducer = createSlice({
         setSortBy(state, action: PayloadAction<SortState['sortBy']>) {
             state.sortBy = action.payload;
         },
+        setSearchItem(state, action : PayloadAction<SortState["title"]>){
+            state.title = action.payload
+        }
     },
 });
 
-export const { setSortBy } = sortReducer.actions;
+export const { setSortBy, setSearchItem } = sortReducer.actions;
 
 // Selector to retrieve the sortBy value
 export const selectSortBy = (state: RootState) => state.jobStateSort.sortBy;

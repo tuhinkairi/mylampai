@@ -1,14 +1,19 @@
-import { RoundsForm } from "./rounds-form";
+"use client";
 
-export default async function JobProfilePage({
+import { RoundsForm } from "./rounds-form";
+import { use } from "react";
+
+export default function JobProfilePage({
   params,
 }: {
   params: Promise<{
     jobProfileId: string;
-  }>
+
+  }>;
 }) {
-  const param = await params;
-  const jobProfileId = param.jobProfileId;
+  const { jobProfileId } = use(params);
+
+
   return (
     <div>
       <div>

@@ -1,19 +1,17 @@
 import { getFavouriteTalents } from "@/actions/talentPoolActions";
 import Favourites from "./Favourites";
 
-export default async function page({
+export default async function Page({
   params,
 }: {
-  params: Promise<{ talentPoolId: string }>;
+  params: { talentPoolId: string };
 }) {
-  const { talentPoolId } = await params;
+  const { talentPoolId } = params;
 
   const res = await getFavouriteTalents(talentPoolId);
-//   console.log("res:: ",res)
+
   return (
     <div>
-      {/* <h1>Talent Pool Page</h1> */}
-
       {res ? (
         <div>
           <Favourites favouriteTalents={res.data} />
