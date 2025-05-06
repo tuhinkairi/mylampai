@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useInterviewStore } from "@/utils/store";
 import * as pdfjsLib from "pdfjs-dist/webpack";
+// import pdfjsLib from "pdfjs-dist/webpack";
 import Image from "next/image";
 import { useUserStore } from "@/utils/userStore";
 import { CircularProgressbarWithChildren } from "react-circular-progressbar";

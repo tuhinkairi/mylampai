@@ -1,17 +1,18 @@
 "use client";
 import JoblistingRight from "@/components/dashboard/JoblistingRight";
 import TemplateRIght from "../../../../components/dashboard/TemplateRIght";
-import { useState } from "react";
+import { ChangeEvent, useState } from "react";
 import AddJobsMini from "@/components/Jobs/add-jobs-mini";
 import { BarChart, LucideVerified } from "lucide-react";
 import { RiLiveLine } from "react-icons/ri";
 import { ExclamationCircle } from "react-bootstrap-icons";
 import { useDispatch } from "react-redux";
-import { setSortBy } from "@/lib/features/jobSlice/sortSlice";
+import { setSearchItem, setSortBy } from "@/lib/features/jobSlice/sortSlice";
 import { useAppSelector } from "@/lib/hooks";
 
 export default function Dashboard() {
   const [state, SetState] = useState<boolean>(false)
+  const [search,setSearch] = useState<string>("")
   const dispatch = useDispatch()
   const currentState = useAppSelector((state)=>state.jobStateSort.sortBy)
   const handelMiniJob = () => {
@@ -19,6 +20,11 @@ export default function Dashboard() {
   }
   const handleSortChange = (sortBy: 'Default' | 'Completed' | 'Pending') => {
     dispatch(setSortBy(sortBy));
+  };
+  const handleSearch = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearch(value);
+    dispatch(setSearchItem(value));
   };
   return (
     <>
@@ -37,7 +43,8 @@ export default function Dashboard() {
                 type="text"
                 className="border p-2 text-sm rounded-md shadow-sm w-full md:w-1/2"
                 placeholder="Search..."
-                value={""}
+                onChange={handleSearch}
+                value={search}
 
               // onChange={(e) => setSearchTerm(e.target.value)}
               />

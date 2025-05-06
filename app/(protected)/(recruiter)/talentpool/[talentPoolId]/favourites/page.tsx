@@ -6,7 +6,7 @@ export default async function page({
 }: {
   params: { talentPoolId: string };
 }) {
-  const { talentPoolId } = await params;
+  const { talentPoolId } = params;
 
   const res = await getFavouriteTalents(talentPoolId);
 //   console.log("res:: ",res)

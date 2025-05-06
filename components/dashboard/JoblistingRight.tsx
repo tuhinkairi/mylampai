@@ -1,3 +1,4 @@
+"use client"
 import { Edit, Share2 } from 'lucide-react'
 import React, { useCallback, useEffect, useState } from 'react'
 import { CalendarEvent } from 'react-bootstrap-icons';
@@ -15,6 +16,7 @@ function JoblistingRight() {
     const { userData } = useUserStore();
     // sortdata
     const sortData = useAppSelector((state) => state.jobStateSort.sortBy)
+    const searchByTitle = useAppSelector((state) => state.jobStateSort.title)
     const jobListData = useAppSelector((state) => state.joblist.list)
     const dispatch = useAppDispatch()
 
@@ -24,8 +26,16 @@ function JoblistingRight() {
             if (!userData?.id) return;
             setLoading(true);
             const jobs = await getRecruiterJobs(userData.id) as JobProfile[];
-            // console.log("Fetched jobs:", jobs[0].jobDescription);
-            dispatch(setJobProfiles(jobs))
+
+            // dispatch(setJobProfiles(jobs))
+            // Normalize dates
+            const normalizedJobs = (jobs as JobProfile[]).map((job) => ({
+                ...job,
+                startDate: new Date(job.startDate),
+                endDate: job.endDate ? new Date(job.endDate) : null,
+            }));
+
+            dispatch(setJobProfiles(normalizedJobs));
             setLoading(false)
         } catch (error) {
             console.error("Error fetching jobs:", error);
@@ -34,11 +44,11 @@ function JoblistingRight() {
 
     // useEffect to fetch jobs when userData.id changes
     useEffect(() => {
-        if (jobListData.length==0) {
+        if (jobListData.length == 0) {
             fetchJobs();
         }
-    }, [fetchJobs,jobListData]);
-    
+    }, [fetchJobs, jobListData]);
+
     // share jobs
     const handelShare = (id: string) => {
         navigator.clipboard.writeText(`${window.location.host}/login?redirect=/career/${id}`)
@@ -46,11 +56,20 @@ function JoblistingRight() {
     }
 
     const filteredJobs = jobListData.filter(job => {
-        if (sortData === "Completed") return job.status === "COMPLETED";
-        if (sortData === "Pending") return job.status === "PENDING";
-        return true;
-      });
+        const matchesSort =
+            sortData === "Completed"
+                ? job.status === "COMPLETED"
+                : sortData === "Pending"
+                    ? job.status === "PENDING"
+                    : true;
 
+        const matchesTitle = job.jobTitle.toLowerCase().includes(searchByTitle.toLowerCase());
+
+        return matchesSort && matchesTitle;
+    });
+    const handleDate=(date:Date)=>{
+        return new Date(date).toISOString().split("T")[0].toString()
+    }
     // if (joblist_nodes) {
     //     Array.from(joblist_nodes).forEach((element) => {
     //         const status = (element as HTMLDivElement).querySelector("._status")?.textContent;
@@ -73,7 +92,7 @@ function JoblistingRight() {
                 filteredJobs.map((element) => (
                     <div key={element.id} className='joblisting overflow-y-auto p-5 border shadow-sm rounded-md flex items-center justify-around'>
                         <div className='grid gap-2 text-start'>
-                            <div className='flex gap-4 items-center justify-between'>
+                            <div className='flex gap-4 items-center justify-between w-full'>
                                 <h1 className='font-semibold text-lg flex-grow'>{element.jobTitle}</h1>
                                 <span className={`_status ${element.status === "PENDING" ? "text-red-500" : "text-green-500"}`}>{element.status}</span>
                                 <button onClick={() => handelShare(element.id)}>
@@ -84,12 +103,9 @@ function JoblistingRight() {
                             <div className='flex gap-4 items-center justify-start'>
                                 <div className='meta-data flex gap-x-6 gap-y-4 items-center justify-start w-fit'>
                                     <CalendarEvent className='inline-block' />
-                                    <input
-                                        type='date'
-                                        readOnly
-                                        value={element.startDate.toISOString().split('T')[0]}
-                                        className='border rounded-md p-2'
-                                    />
+                                    <span className='border rounded-md p-2'>
+                                        {handleDate(element.startDate)}
+                                    </span>
                                 </div>
                                 <div className='tags inline-block w-fit border-l-2 pl-4 border-l-primary-foreground text-xs'>
                                     <span className='px-3 py-2 border rounded-md shadow-sm inline-block mr-2'>{element.jobRole}</span>
