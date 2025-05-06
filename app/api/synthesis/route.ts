@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
       input: { text },
       voice: {
         languageCode: "en-IN",
-        ssmlGender: "MALE" as const,
-        name: "en-IN-Chirp3-HD-Charon",
+        ssmlGender: "FEMALE" as const,
+        name: "en-IN-Chirp3-HD-Callirrhoe",
       },
       audioConfig: { audioEncoding: "MP3" as const },
     };

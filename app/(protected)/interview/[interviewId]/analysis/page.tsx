@@ -24,6 +24,12 @@ import { getConversation, getInterviewVideo } from "@/actions/interviewActions";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ChatInterface from "./ChatInterface";
 import VideoPlayer from "./VideoPlayer";
+import { useAppSelector } from "@/lib/hooks";
+import { SummarySkeleton } from "@/skeletons/interview-analysis/summarySkeleton";
+import { VideoSkeleton } from "@/skeletons/interview-analysis/videoSkeleton";
+import { useWebSocketContext } from "@/hooks/interviewersocket/webSocketContext";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 ChartJS.register(
   CategoryScale,
@@ -98,15 +104,73 @@ const Analysis: React.FC = () => {
 
   const [selectedLineIndex, setSelectedLineIndex] = useState<number | null>(null);
 
-  // If you need to track selections separately for each analysis item, use this instead:
   const [selectedLineIndices, setSelectedLineIndices] = useState<Record<number, number | null>>({});
   const [conversationChat, setConversationChat] = useState<any[]>([]);
-  // useEffect(() => {
-  //   console.log("Video URL:", videoUrl);
-  // }, [videoUrl]);
+
+  const interviewStore = useAppSelector(state => state.interviewerData)
+
+  const [isLoadingVideo, setIsLoadingVideo] = useState<boolean>(true)
+
+  const { interviewerWs, connectInterviewer, disconnectInterviewer } = useWebSocketContext();
+  const ws = interviewerWs;
+
+  const router = useRouter()
+
+
+  
+
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
+        setLoading(true);
+        const dataFromReduxStore = interviewStore.analysisData
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          ws.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type = "analysis") {
+              toast(
+                () => (
+                  <div
+                    onClick={() => {
+                      router.push(`/interview/${interviewId}/analysis`);
+                    }}
+                    className="cursor-pointer"
+                  >
+                    🎉 Your interview analysis is ready! Click to view.
+                  </div>
+                ),
+                {
+                  duration: 5000,
+                }
+              );
+              
+              if (data.result && Array.isArray(data.result)) {
+                await submitAnalysis(data.result).catch(err => console.error(err));
+              }
+
+            }
+          }
+        }
+
+        // console.log("i am hereee::", dataFromReduxStore)
+        if (dataFromReduxStore && dataFromReduxStore.interviewId === interviewId) {
+          // console.log("Using cached analysis data from Redux.:> ", dataFromReduxStore);
+
+          // Convert to transformedData format
+          const transformedData = INTERVIEW_SECTIONS.map(
+            (section) => (dataFromReduxStore as Record<string, any>)[section]
+          );
+
+          // console.log("transformed data from redux:: ",transformedData)
+
+          setAnalysisData(transformedData);
+          setExpandedSections(Array(transformedData.length).fill(false));
+          const body = dataFromReduxStore
+          axios.post("/api/interviewer/post_review", body)
+          return; // Skip API call
+        }
         const response = await axios.get(`/api/interviewer/get_review/${interviewId}`);
         const structuredData = response.data.data;
         // console.log("Structured Analysis Data:", structuredData);
@@ -123,21 +187,23 @@ const Analysis: React.FC = () => {
       } catch (error) {
         console.error("Error fetching analysis data:", error);
         // setError("Failed to load analysis data");
+      } finally {
+        setLoading(false);
       }
     };
 
-
-
     const fetchVideo = async () => {
       try {
-        setLoading(true);
+        setIsLoadingVideo(true);
         // First try to get URL from session storage
-        const sessionUrl = sessionStorage.getItem('interviewVideoUrl');
-
+        // const sessionUrl = sessionStorage.getItem('interviewVideoUrl');
+        const sessionUrl = interviewStore.interviewVideoUrl;
         if (sessionUrl) {
+          // console.log("setting vdo url::> ", sessionUrl)
           setVideoUrl(sessionUrl.split("?")[0]);
         } else {
           // If not in session, fetch from API
+          // console.log("getting from api::")
           const res = await getInterviewVideo(interviewId, interviewType);
           if (res && !Array.isArray(res) && 'status' in res && res.status === 200 && res.data && res.data.videoUrl) {
             const url = res.data.videoUrl.split("?")[0];
@@ -150,6 +216,8 @@ const Analysis: React.FC = () => {
       } catch (err) {
         console.error('Error loading video:', err);
         setError('Failed to load interview recording');
+      } finally {
+        setIsLoadingVideo(false)
       }
     };
 
@@ -221,14 +289,11 @@ const Analysis: React.FC = () => {
     // };
     const initializeData = async () => {
       try {
-        setLoading(true);
         await fetchVideo();
         await fetchAnalysis();
         // await fetchConversation();
-        setLoading(false);
       } catch (error) {
         console.error("Error initializing data:", error);
-        setLoading(false);
       }
     };
 
@@ -298,9 +363,9 @@ const Analysis: React.FC = () => {
     };
   }, [transcript, currentTranscriptIndex]);
 
-  if (loading) {
-    return <FullScreenLoader message="Loading Interview Analysis" />;
-  }
+  // if (loading) {
+  //   return <FullScreenLoader message="Loading Interview Analysis" />;
+  // }
 
   const toggleSectionVisibility = (index: number) => {
     setExpandedSections((prev) => {
@@ -429,50 +494,55 @@ const Analysis: React.FC = () => {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         {/* Dashboard Summary */}
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Performance Summary</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Overall Score */}
-            <div className="bg-gradient-to-br from-primary to-purple-700 text-white rounded-xl p-6 flex flex-col items-center justify-center">
-              <h3 className="text-xl font-semibold mb-2">Overall Score</h3>
-              <div className="text-5xl font-bold">{calculateOverallScore()}/100</div>
-            </div>
 
-            {/* Top Strengths */}
-            <div className="bg-white border border-green-200 rounded-xl p-6">
-              <h3 className="text-xl font-semibold text-green-600 mb-2">Top Strengths</h3>
-              <ul className="space-y-2">
-                {getTopStrengths().length > 0 ? (
-                  getTopStrengths().map((strength, i) => (
-                    <li key={i} className="flex items-start">
-                      <span className="inline-block bg-green-100 text-green-600 p-1 rounded-full mr-2">✓</span>
-                      <span>{strength}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gray-500">No specific strengths highlighted</li>
-                )}
-              </ul>
-            </div>
+        {loading ? <SummarySkeleton /> : (
 
-            {/* Areas to Improve */}
-            <div className="bg-white border border-orange-200 rounded-xl p-6">
-              <h3 className="text-xl font-semibold text-orange-600 mb-2">Areas to Improve</h3>
-              <ul className="space-y-2">
-                {getTopAreasToImprove().length > 0 ? (
-                  getTopAreasToImprove().map((area, i) => (
-                    <li key={i} className="flex items-start">
-                      <span className="inline-block bg-orange-100 text-orange-600 p-1 rounded-full mr-2">↗</span>
-                      <span>{area}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-gray-500">No specific areas highlighted</li>
-                )}
-              </ul>
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">Performance Summary</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Overall Score */}
+              <div className="bg-gradient-to-br from-primary to-purple-700 text-white rounded-xl p-6 flex flex-col items-center justify-center">
+                <h3 className="text-xl font-semibold mb-2">Overall Score</h3>
+                <div className="text-5xl font-bold">{calculateOverallScore()}/100</div>
+              </div>
+
+              {/* Top Strengths */}
+              <div className="bg-white border border-green-200 rounded-xl p-6">
+                <h3 className="text-xl font-semibold text-green-600 mb-2">Top Strengths</h3>
+                <ul className="space-y-2">
+                  {getTopStrengths().length > 0 ? (
+                    getTopStrengths().map((strength, i) => (
+                      <li key={i} className="flex items-start">
+                        <span className="inline-block bg-green-100 text-green-600 p-1 rounded-full mr-2">✓</span>
+                        <span>{strength}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-gray-500">No specific strengths highlighted</li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Areas to Improve */}
+              <div className="bg-white border border-orange-200 rounded-xl p-6">
+                <h3 className="text-xl font-semibold text-orange-600 mb-2">Areas to Improve</h3>
+                <ul className="space-y-2">
+                  {getTopAreasToImprove().length > 0 ? (
+                    getTopAreasToImprove().map((area, i) => (
+                      <li key={i} className="flex items-start">
+                        <span className="inline-block bg-orange-100 text-orange-600 p-1 rounded-full mr-2">↗</span>
+                        <span>{area}</span>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="text-gray-500">No specific areas highlighted</li>
+                  )}
+                </ul>
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
 
         {/* Video and Transcript */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
@@ -504,37 +574,16 @@ const Analysis: React.FC = () => {
                   </div>
                 ) : videoUrl ? (
                   <div>
-                    {/* <video
-                      ref={videoRef}
-                      src={videoUrl}
-                      className="w-full aspect-video"
-                      onPlay={() => setIsPlaying(true)}
-                      onPause={() => setIsPlaying(false)}
-                      controls={true}
-                    /> */}
                     <VideoPlayer videoUrl={videoUrl} />
-                    {/* <div className="bg-gray-900 text-white p-4 flex justify-between items-center">
-                      <button
-                        onClick={handlePlayPause}
-                        className="flex items-center space-x-2 bg-primary hover:bg-primary/90 py-2 px-4 rounded-lg"
-                      >
-                        {isPlaying ? <FaPause className="mr-2" /> : <FaPlay className="mr-2" />}
-                        <span>{isPlaying ? "Pause" : "Play"}</span>
-                      </button>
-                      <button
-                        onClick={handleFullscreen}
-                        className="flex items-center space-x-2 bg-gray-700 hover:bg-gray-600 py-2 px-4 rounded-lg"
-                      >
-                        <FaExpand className="mr-2" />
-                        <span>Fullscreen</span>
-                      </button>
-                    </div> */}
                   </div>
                 ) : (
                   <div className="bg-gray-100 p-8 text-center rounded-lg">
                     <p className="text-gray-600">No interview recording available.</p>
                   </div>
                 )}
+                {
+                  isLoadingVideo && <VideoSkeleton />
+                }
               </div>
             </TabsContent>
 

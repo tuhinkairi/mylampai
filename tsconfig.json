@@ -46,7 +46,7 @@
     "components/ui/globe.jsx",
     "build/types/**/*.ts",
     "public/audioProcessor.js",
-    "components/speech-to-text/speechRecognition.tsx"
+    "components/speech-to-text/SpeechRecognition.tsx"
   ],
   "exclude": [
     "node_modules"

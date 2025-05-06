@@ -1,4 +1,4 @@
-import textToSpeech from "@google-cloud/text-to-speech"
+import textToSpeech from "@google-cloud/text-to-speech";
 
 const textClient = new textToSpeech.TextToSpeechClient();
 

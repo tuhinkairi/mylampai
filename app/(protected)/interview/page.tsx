@@ -185,7 +185,7 @@ export default function InterviewsPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          {!isRegistered && (
+          {/* {!isRegistered && (
             <Button
               onClick={() => updateCredits(userData?.email as string)}
               className="flex items-center gap-2"
@@ -193,7 +193,7 @@ export default function InterviewsPage() {
               <FilePlus2 className="h-4 w-4" />
               Get Free Credits
             </Button>
-          )}
+          )} */}
 
 
           <Dialog open={open} onOpenChange={setOpen}>
@@ -270,7 +270,7 @@ export default function InterviewsPage() {
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                         <Clock className="h-4 w-4" />
                         <span>
-                          {interview.createdAt ? format(new Date(interview.createdAt), "MMM d, yyyy") : "Date unavailable"}
+                          {interview.createdAt ? format(new Date(interview.createdAt), "MMM d, yyyy 'at' h:mm a") : "Date unavailable"}
                         </span>
                       </div>
 

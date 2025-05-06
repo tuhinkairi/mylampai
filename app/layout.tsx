@@ -68,8 +68,10 @@ export default function RootLayout({
         <StoreProvider>
           <AuthProvider><MicrophoneContextProvider>
             <DeepgramContextProvider>{children}</DeepgramContextProvider>
+
           </MicrophoneContextProvider></AuthProvider>
         </StoreProvider>
+
 
         <GoogleAnalytics gaId="G-3TPKSH7MPS" />
         <Script id="clarity-script" strategy="afterInteractive">

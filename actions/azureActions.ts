@@ -62,18 +62,3 @@ export const generateSasUrlForInterview = async () => {
   }
 };
 
-export const uploadLargeFile = async (file: File) => {
-  const blobServiceClient = BlobServiceClient.fromConnectionString(
-    "<your-connection-string>"
-  );
-  const containerClient =
-    blobServiceClient.getContainerClient("<your-container>");
-  const blobClient = containerClient.getBlockBlobClient(file.name);
-
-  await blobClient.uploadBrowserData(file, {
-    maxSingleShotSize: 4 * 1024 * 1024, // Set max chunk size (4 MB here)
-    concurrency: 5, // Set parallel uploads
-  });
-
-  // console.log("Upload successful!");
-};
