@@ -1,5 +1,5 @@
+import { WebSocketProvider } from "@/hooks/interviewersocket/webSocketContext";
 import { auth } from "@/lib/authlib";
-import { usejobCreateStore } from "@/utils/store";
 import { redirect } from "next/navigation";
 
 export default async function UserLayout({
@@ -15,5 +15,5 @@ export default async function UserLayout({
     redirect("/not-found");
   }
 
-  return <>{children}</>;
+  return <WebSocketProvider>{children}</WebSocketProvider>;
 }

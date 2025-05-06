@@ -64,9 +64,9 @@ const RoundCard = ({ round }: { round: any }) => (
 export default async function JobPage({
   params,
 }: {
-  params: {
+  params: Promise<{
     jobProfileId: string;
-  };
+  }>;
 }) {
   const param= await params;
   const jobProfile = await getJob(param.jobProfileId);

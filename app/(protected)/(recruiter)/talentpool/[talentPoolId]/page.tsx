@@ -4,7 +4,7 @@ import ProfileMatches from "./ProfileMatches";
 export default async function TalentPoolPage({
   params,
 }: {
-  params: { talentPoolId: string };
+  params: Promise<{ talentPoolId: string }>;
 }) {
   const { talentPoolId } = await params;
 

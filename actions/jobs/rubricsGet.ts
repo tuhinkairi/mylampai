@@ -2,23 +2,22 @@ import prisma from "@/lib";
 import axios from "axios";
 
 export const postRubricEvaluation = async (job_description: string) => {
-    try {
-        const endpoint = process.env.NEXT_PUBLIC_RUBRICS_API_ENDPOINT ?? "http://127.0.0.1:5000"
+  try {
+    const endpoint =
+      process.env.NEXT_PUBLIC_RUBRICS_API_ENDPOINT ?? "http://127.0.0.1:5000";
 
-        const response = await axios.post(
-            endpoint.concat('/get-rubric-evaluation'),
-            { "job_description":job_description }
-        );
-        console.log("Rubics fetch Success:", response.data);
+    const response = await axios.post(
+      endpoint.concat("/get-rubric-evaluation"),
+      { job_description: job_description }
+    );
+    // console.log("Rubics fetch Success:", response.data);
 
-        return response.data; // Return the API response
-    } catch (error) {
-        console.error("Rubics fetch Error:", error);
-        throw error; // Throw error so it can be handled where called
-    }
+    return response.data; // Return the API response
+  } catch (error) {
+    console.error("Rubics fetch Error:", error);
+    throw error; // Throw error so it can be handled where called
+  }
 };
-
-
 
 export const addRubricsToJobRound = async (
   jobRoundId: string,
@@ -42,7 +41,7 @@ export const addRubricsToJobRound = async (
 
     // Create rubrics and associate them with the job round
 
-    console.log("this is rubrics",rubrics)
+    // console.log("this is rubrics",rubrics)
     const createdRubrics = await prisma.jobRoundRubric.createMany({
       data: rubrics.map((rubric) => ({
         ...rubric,
@@ -60,6 +59,7 @@ export const addRubricsToJobRound = async (
     throw new Error("Failed to add rubrics");
   }
 };
+
 export const getRubricsList = async (RoundId: string) => {
   try {
     const response = await fetch("/api/recruiter/rubrics/updaterubrics", {
@@ -78,6 +78,7 @@ export const getRubricsList = async (RoundId: string) => {
     return { status: "failed", message: "Internal Server Error", error };
   }
 };
+
 // export const getRubricsList = async (RoundId: string) => {
 //   try {
 //     const rubrics = await prisma.jobRoundRubric.findMany({
@@ -103,7 +104,7 @@ export const updateRubric = async (rubricData: any) => {
     });
 
     if (!response.ok) throw new Error("Failed to update rubric");
-    
+
     return await response.json();
   } catch (error) {
     console.error("Error updating rubric:", error);

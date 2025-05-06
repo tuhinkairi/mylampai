@@ -24,28 +24,27 @@ type TalentPoolResponse = {
   totalItems: number;
 };
 
-export default function ListTalentPool({userId}:{userId:string}) {
+export default function ListTalentPool({ userId }: { userId: string }) {
   const [talentPools, setTalentPools] = useState<TalentPool[]>([]);
-  
 
-  const fetchTalentPools = async ()=> {
-    try {
-      const response = await getRecruiterTalentPools(userId);
-      if(response&&response.success){
-        if (response?.data) {
-          setTalentPools(response.data);
+
+  useEffect(() => {
+    const fetchTalentPools = async () => {
+      try {
+        const response = await getRecruiterTalentPools(userId);
+        if (response && response.success) {
+          if (response?.data) {
+            setTalentPools(response.data);
+          }
+        } else {
+          toast.error("Facing some issue,Try again!")
         }
-      }else{
-        toast.error("Facing some issue,Try again!")
+      } catch (error) {
+        console.error("Error fetching talent pool data:", error);
       }
-    } catch (error) {
-      console.error("Error fetching talent pool data:", error);
-    }
-  };
-
-  useEffect(()=>{
-   fetchTalentPools()
-  },[])
+    };
+    fetchTalentPools()
+  }, [])
 
 
   return (

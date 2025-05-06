@@ -7,7 +7,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Check, CirclePlus, LoaderIcon, Upload } from "lucide-react";
+import { CalendarIcon, Check, CirclePlus, LoaderCircleIcon, LoaderIcon, Upload } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import {
   Form,
@@ -24,13 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -39,14 +38,21 @@ import * as z from "zod";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
-import { addUsersResume, getUserResumesList } from "@/actions/resumeActions";
+import { getUserResumesList } from "@/actions/resumeActions";
 import { useUserStore } from "@/utils/userStore";
 import { createTalentPoolProfile } from "@/actions/talentMatchActions";
 import { ArrayInput } from "@/components/misc/ArrayInput";
-import { useProfileStore } from "@/utils/profileStore";
+import { Calendar } from "@/components/ui/calendar";
+import { useAppDispatch, useAppSelector } from "@/lib/hooks";
+import { addCareerProfile } from "@/lib/features/talent_pool_profile/talentPoolProfileSlice";
+import { generateInterviewRubrics } from "@/actions/interviewTemplates/createTemplateActions";
+import * as pdfjsLib from "pdfjs-dist/webpack";
+
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const profileSchema = z.object({
-  resumeUrl: z.string(),
+  resumeId: z.string(),
   role: z
     .string({
       required_error: "Title is required",
@@ -67,13 +73,24 @@ const profileSchema = z.object({
     required_error: "Interview date is required",
     invalid_type_error: "Invalid date format",
   }),
+  locationPref: z.enum(["Onsite", "Remote", "Hybrid"], {
+    required_error: "Location preference is required",
+    invalid_type_error: "Must be Onsite, Remote, or Hybrid",
+  }),
 });
 
 type ResumeList = {
   id: string;
-  resumeUrl: string;
   resumeName: string | null;
+  resumeFileText?: string | null;
+  resumeUrl: string | null;
 }[];
+
+type RubricsType = {
+  parameter: string,
+  description: string,
+  weightage: number
+}
 
 const profileOptions = [
   "Software Engineer",
@@ -93,6 +110,12 @@ const profileOptions = [
   "QA Engineer",
   "QA Tester",
   "QA Analyst",
+];
+
+const locationOptions = [
+  "Onsite",
+  "Remote",
+  "Hybrid",
 ];
 
 const roundToNearest30 = () => {
@@ -116,29 +139,56 @@ const roundToNearest30 = () => {
   return now;
 };
 
-export default function CreateTalentPoolProfileDialog() {
-  const [open, setOpen] = useState(false);
-  const { userData } = useUserStore();
+
+type ProfileData = {
+  resumeId: string;
+  role: string;
+  skills: string[];
+  targetFor: string;
+  locationPref?: "Onsite" | "Remote" | "Hybrid" | null | undefined;
+  availability: "FULL_TIME" | "PART_TIME" | "FREELANCE" | "CONTRACT" | null;
+  interviewDate: Date;
+};
+
+const baseUrl = process.env.NEXT_PUBLIC_RESUME_API_ENDPOINT
+
+
+export default function CreateTalentPoolProfileDialog({
+  isCTPPDialogOpen,
+  setIsCTPPDialogOpen,
+}: {
+  isCTPPDialogOpen: boolean;
+  setIsCTPPDialogOpen: (open: boolean) => void;
+}) {
+  const { userData, token } = useUserStore();
   const [resumeList, setResumeList] = useState<ResumeList>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [matchingProfiles, setMatchingProfiles] = useState<string[]>([]);
-  const [uploadedResumeUrl, setUploadedResumeUrl] = useState<string | null>(
+  const [uploadedResumeId, setUploadedResumeId] = useState<string | null>(
     null
   );
-  const [isUploading,setIsUploading]=useState<boolean>(false);
-  const [isUploaded,setIsUploaded]=useState<boolean>(false);
-  
-  const {id}=useProfileStore()
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isUploaded, setIsUploaded] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const dispatch = useAppDispatch()
+  const profile = useAppSelector((state) => state.talentProfile);
+  const careerProfiles = useAppSelector(
+    (state) => state.talentPoolProfile.talentPoolProfiles
+  );
+  const id = profile.id;
+
 
   const createProfile = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      resumeUrl: "",
-      role:"",
+      resumeId: "",
+      role: "",
       availability: "FULL_TIME",
       skills: [],
       interviewDate: roundToNearest30(),
+      locationPref: "Onsite",
+      targetFor: "JOB",
     },
   });
 
@@ -156,8 +206,8 @@ export default function CreateTalentPoolProfileDialog() {
   async function onSubmitProfile(values: z.infer<typeof profileSchema>) {
     if (!userData || !userData.id || !id) return;
 
-    if (!uploadedResumeUrl && !values.resumeUrl) {
-      createProfile.setError("resumeUrl", {
+    if (!uploadedResumeId && !values.resumeId) {
+      createProfile.setError("resumeId", {
         type: "required",
         message: "Please upload a resume",
       });
@@ -166,29 +216,111 @@ export default function CreateTalentPoolProfileDialog() {
     }
 
     try {
+      // console.log("values", values);
+      setIsSubmitting(true)
+      const rubricsContext = `{
+        "role": "${values.role}",
+        "skills": ${JSON.stringify(values.skills)},
+        "targetFor": "${values.targetFor}",`
+
+      const response = await generateInterviewRubrics(rubricsContext)
+
+      if (response.status !== 200) {
+        toast.error("Failed to generate rubrics.");
+        return;
+      }
+      const data = response.result;
+      // console.log("rubrics::in :: ", data.evaluation_criteria)
+      // console.log("resumeIDD : ", uploadedResumeId, " valuesndf:: ", values.resumeId)
       const res = await createTalentPoolProfile({
         ...values,
-        resumeUrl: uploadedResumeUrl || values.resumeUrl,
-        talentProfileId:id,
-        interviewStatus:"scheduled"
-      });
+        talentProfileId: id,
+        resumeId: values.resumeId || uploadedResumeId || "",
+      }, data.evaluation_criteria);
 
-      if (res.status === "success") {
+      if (res.status === "success" && res.data) {
         toast.success(res.message);
-        setOpen(false);
+        // console.log("res.data", res.data);
+        dispatch(addCareerProfile({
+          ...values,
+          id: res.data.id,
+          resumeUrl: res.data.resume.resumeUrl,
+          interviewDate: values.interviewDate.toISOString(),
+          interviewId: res.data.interviewId,
+          rubrics: res.data.rubrics,
+        }));
+        setIsCTPPDialogOpen(false);
+        createProfile.reset();
+        setMatchingProfiles([]);
       } else {
         toast.error(res.message);
       }
     } catch (error) {
       console.error(error);
       toast.error("Failed to create talent profile");
+    } finally {
+      setIsSubmitting(false)
     }
   }
+
+  const extractTextFromPDF = useCallback((file: File): Promise<string> => {
+    const reader = new FileReader();
+    return new Promise((resolve, reject) => {
+      reader.onload = async function (event) {
+        const typedArray = new Uint8Array(event.target?.result as ArrayBuffer);
+
+        if (typeof window !== "undefined") {
+          const pdf = await pdfjsLib.getDocument(typedArray).promise;
+          let text = "";
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item: any) => item.str)
+              .join(" ");
+            text += ` ${pageText}`;
+          }
+          resolve(text.trim());
+        } else {
+          reject(
+            new Error("pdfjs-dist is not available in the server environment")
+          );
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    });
+  }, []);
+  const extractStructuredData = useCallback(async (text: string) => {
+    try {
+      // console.log("debug in extractSD")
+      const response = await fetch(`${baseUrl}/extract_structured_data`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cv_text: text }),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        // setIsResumeUploaded(true);
+        // toast.success("Resume uploaded successfully");
+        return result.message;
+      }
+      toast.error("Error extracting structured data from resume");
+      return null;
+    } catch (error) {
+      toast.error("Error extracting structured data from resume");
+      // setUploading(false);
+      return null;
+    }
+  }, []);
 
   const handleResumeUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    setIsUploading(true)
+    setIsUploading(true);
     const file = event.target.files?.[0];
     if (!file) {
       toast.error("No file selected");
@@ -207,15 +339,46 @@ export default function CreateTalentPoolProfileDialog() {
 
     if (!userData || !userData.id) return;
 
-    const formData = new FormData();
-
-    formData.append("file", file);
-    
     try {
-      const res = await addUsersResume(formData, userData.id);
+      const resumeText = await extractTextFromPDF(file);
+      if (!resumeText) {
+        toast.error("Error extracting text from PDF");
+        return;
+      }
 
-      if (res.status === "success" && res.resumeUrl) {
-        setUploadedResumeUrl(res.resumeUrl);
+      const formData = new FormData();
+      formData.append("resumeFile", file);
+      const structuredText = await extractStructuredData(resumeText)
+      formData.append("resumeFileText", JSON.stringify(structuredText));
+
+      const response = await fetch("/api/resume/add_new", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      const res = await response.json();
+      // console.log("res", res);
+
+      if (res.status === 200 || res.status === 209) {
+        const newResumeId = res.resume.resumeId || res.resume.id;
+        setUploadedResumeId(newResumeId);
+
+        const newResume = {
+          id: newResumeId,
+          resumeName: res.resume.resumeName,
+          resumeUrl: res.resume.resumeUrl,
+        };
+
+        // Update resumeList with the new resume
+        setResumeList((prev) => [...prev, newResume]);
+
+        // Directly set the form value to select the new resume
+        createProfile.setValue("resumeId", String(newResumeId));
+
+        toast.success("Resume uploaded successfully");
       } else {
         toast.error("Failed to upload resume");
         return null;
@@ -224,11 +387,18 @@ export default function CreateTalentPoolProfileDialog() {
       console.error(error);
       toast.error("Failed to upload resume");
       return null;
-    }finally{
-      setIsUploading(false)
-      setIsUploaded(true)
+    } finally {
+      setIsUploading(false);
+      setIsUploaded(true);
     }
   };
+
+  // useEffect(() => {
+  //   if (uploadedResumeId) {
+  //     console.log("resumeId", uploadedResumeId);
+  //     createProfile.setValue("resumeId", uploadedResumeId);
+  //   }
+  // }, [uploadedResumeId]);
 
   const handleTitleChange = (value: string) => {
     createProfile.setValue("role", value);
@@ -302,67 +472,112 @@ export default function CreateTalentPoolProfileDialog() {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog open={isCTPPDialogOpen} onOpenChange={setIsCTPPDialogOpen}>
         <DialogTrigger asChild>
-          <div className="m-auto right-4 top-1 absolute">
-            <CirclePlus className="w-8 h-8 text-primary" />
-          </div>
+          <Button
+            className={`cursor-pointer ${careerProfiles.length === 0 ? 'hidden' : ''}`}
+            onClick={() => setIsCTPPDialogOpen(true)}
+            disabled={!(careerProfiles.length < 3)}// Ensures it opens on click
+            variant="outline"
+            size="icon"
+          >
+            <CirclePlus className="w-6 h-6 text-primary" />
+          </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Add another section</DialogTitle>
+            <DialogTitle>Create New Profile</DialogTitle>
           </DialogHeader>
           <Form {...createProfile}>
             <form
               onSubmit={createProfile.handleSubmit(onSubmitProfile)}
               className="space-y-4"
             >
-              <FormField
-                control={createProfile.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col mt-2 gap-2">
-                    <FormLabel>Select Your Profile</FormLabel>
-                    <FormControl>
-                      <div className="relative w-full group">
-                        <Input
-                          placeholder="Enter your profile"
-                          onChange={(e) => {
-                            handleMatchingProfiles(e.target.value);
-                            field.onChange(e.target.value);
-                          }}
-                          onKeyDown={handleKeyDown}
-                          value={field.value}
-                        />
-                        {matchingProfiles.length > 0 && (
-                          <div
-                            ref={dropdownRef}
-                            className="z-10 absolute translate-y-[calc(100%+4px)] bottom-0 flex-col w-full bg-white border border-gray-200 rounded-md shadow-lg p-1 text-muted-foreground  "
-                          >
-                            {matchingProfiles.map((profile, index) => (
+              <div className="flex flex-row item-center justify-between gap-4">
+                <div className="w-full">
+                  <FormField
+                    control={createProfile.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col mt-2 gap-2">
+                        <FormLabel>Select Your Profile</FormLabel>
+                        <FormControl>
+                          <div className="relative w-full group">
+                            <Input
+                              placeholder="Enter your profile"
+                              onChange={(e) => {
+                                handleMatchingProfiles(e.target.value);
+                                field.onChange(e.target.value);
+                              }}
+                              onKeyDown={handleKeyDown}
+                              value={field.value}
+                            />
+                            {matchingProfiles.length > 0 && (
                               <div
-                                key={index}
-                                onClick={() => {
-                                  handleTitleChange(profile);
-                                  setMatchingProfiles([]);
-                                }}
-                                className={`cursor-default hover:bg-accent text-sm py-1.5 px-2 rounded-md ${
-                                  selectedIndex === index
-                                    ? "bg-accent text-accent-foreground"
-                                    : ""
-                                }`}
+                                ref={dropdownRef}
+                                className="z-10 absolute translate-y-[calc(100%+4px)] bottom-0 flex-col w-full bg-white border border-gray-200 rounded-md shadow-lg p-1 text-muted-foreground  "
                               >
-                                {profile}
+                                {matchingProfiles.map((profile, index) => (
+                                  <div
+                                    key={index}
+                                    onClick={() => {
+                                      handleTitleChange(profile);
+                                      setMatchingProfiles([]);
+                                    }}
+                                    className={`cursor-default hover:bg-accent text-sm py-1.5 px-2 rounded-md ${selectedIndex === index
+                                      ? "bg-accent text-accent-foreground"
+                                      : ""
+                                      }`}
+                                  >
+                                    {profile}
+                                  </div>
+                                ))}
                               </div>
-                            ))}
+                            )}
                           </div>
-                        )}
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div>
+
+                  <FormField
+                    control={createProfile.control}
+                    name="locationPref"
+                    render={({ field }) => (
+                      <FormItem className="w-full mt-2 gap-2">
+                        <FormLabel> Select Location</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value || ""}
+                            defaultValue=""
+                          >
+                            <SelectTrigger className="w-[200px]">
+                              <SelectValue placeholder="Select resume" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {locationOptions.map((item, index) => (
+                                <SelectItem
+                                  key={index}
+                                  value={item}
+                                >
+                                  {item}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                </div>
+              </div>
+
               <FormField
                 control={createProfile.control}
                 name="skills"
@@ -376,7 +591,7 @@ export default function CreateTalentPoolProfileDialog() {
                     </FormLabel>
                     <FormControl>
                       <ArrayInput
-                        value={field.value}
+                        value={field?.value || []}
                         onChange={field.onChange}
                         placeholder="Enter your skills"
                       />
@@ -386,73 +601,27 @@ export default function CreateTalentPoolProfileDialog() {
                 )}
               />
               <div className="flex gap-4">
-                {/* <FormField
-                  control={createProfile.control}
-                  name="resumeUrl"
-                  render={({ field }) => (
-                    <FormItem className="w-full">
-                      <FormLabel>Select or Upload Resume</FormLabel>
-                      <div className="flex gap-4">
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {resumeList.map((resume, index) => (
-                              <SelectItem
-                                key={resume.id}
-                                value={resume.resumeUrl}
-                              >
-                                {resume.resumeName || `Resume ${index + 1}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          type="file"
-                          accept=".pdf"
-                          placeholder="Upload Resume"
-                          onChange={(e) =>
-                            handleResumeUpload(e).then((url) => {
-                              console.log(url);
-                              if (url) {
-                                field.onChange(url);
-                                createProfile.setValue("resumeUrl", url, {
-                                  shouldValidate: true,
-                                  shouldDirty: true,
-                                });
-                              }
-                            })
-                          }
-                        />
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
                 <FormField
                   control={createProfile.control}
-                  name="resumeUrl"
+                  name="resumeId"
                   render={({ field }) => (
                     <FormItem className="w-full">
                       <FormLabel>Select or Upload Resume</FormLabel>
                       <div className="flex gap-4">
                         <Select
+                          key={resumeList.length}
                           onValueChange={field.onChange}
-                          value={field.value || ""}
+                          value={field.value}
                           defaultValue=""
                         >
                           <SelectTrigger className="w-[200px]">
                             <SelectValue placeholder="Select resume" />
                           </SelectTrigger>
                           <SelectContent>
-                            {resumeList.map((resume, index) => (
+                            {resumeList.map((resume: any, index) => (
                               <SelectItem
-                                key={resume.id}
-                                value={resume.resumeUrl}
+                                key={resume.id + index}
+                                value={String(resume.id)}
                               >
                                 {resume.resumeName || `Resume ${index + 1}`}
                               </SelectItem>
@@ -482,7 +651,7 @@ export default function CreateTalentPoolProfileDialog() {
                               }}
                               className="flex-1"
                             >
-                              {isUploading?(<LoaderIcon className="w-4 h-4 mr-2"/>):(isUploaded?(<Check className="w-4 h-4 mr-2"/>):<Upload className="w-4 h-4 mr-2" />)}
+                              {isUploading ? (<LoaderIcon className="w-4 h-4 mr-2" />) : (isUploaded ? (<Check className="w-4 h-4 mr-2" />) : <Upload className="w-4 h-4 mr-2" />)}
                               Upload Resume
                             </Button>
                           </div>
@@ -536,47 +705,6 @@ export default function CreateTalentPoolProfileDialog() {
                   )}
                 />
               </div>
-              {/* <FormField
-                control={createProfile.control}
-                name="interviewDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Schedule Interview</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-[240px] pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) =>
-                            date < new Date() || date < new Date("2024-12-25")
-                          }
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              /> */}
 
               <FormField
                 control={createProfile.control}
@@ -585,7 +713,7 @@ export default function CreateTalentPoolProfileDialog() {
                   <FormItem className="flex flex-col">
                     <FormLabel>Schedule Interview</FormLabel>
                     <div className="flex gap-2">
-                      <Popover>
+                      <Popover modal={true}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
@@ -600,6 +728,7 @@ export default function CreateTalentPoolProfileDialog() {
                               ) : (
                                 <span>Pick a date</span>
                               )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
@@ -650,10 +779,10 @@ export default function CreateTalentPoolProfileDialog() {
                             const time = `${hours
                               .toString()
                               .padStart(2, "0")}:${minutes
-                              .toString()
-                              .padStart(2, "0")}`;
+                                .toString()
+                                .padStart(2, "0")}`;
                             return (
-                              <SelectItem key={time} value={time}>
+                              <SelectItem key={time} value={time} className="selectedItemBg border-2 border-gray-100 cursor-pointer">
                                 {time}
                               </SelectItem>
                             );
@@ -666,8 +795,8 @@ export default function CreateTalentPoolProfileDialog() {
                 )}
               />
               <DialogFooter>
-                <Button type="submit" className="hover:bg-primary-dark">
-                  Create Profile
+                <Button type="submit" className="hover:bg-primary-dark" disabled={isSubmitting}>
+                  Create Profile {isSubmitting && <LoaderCircleIcon className="ml-2 animate-spin" />}
                 </Button>
               </DialogFooter>
             </form>

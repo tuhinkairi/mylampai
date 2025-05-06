@@ -102,7 +102,7 @@ export function PersonalDetailsForm({
       if (!userData || !userData.id) {
         throw new Error("User not found");
       }
-      console.log("updating at id: ",userData?.id)
+      // console.log("updating at id: ",userData?.id)
       const res = await updateProfile(data, userData.id);
 
       if (res.status !== 200) {

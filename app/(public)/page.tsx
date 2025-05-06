@@ -11,6 +11,7 @@ import HowWizeWork from "@/components/home/HowWizeWork";
 import CommunitySection from "@/components/home/Community";
 // import HomeSlider from "@/components/home/HomeSlider";
 import "./home.css";
+import { useUserStore } from "@/utils/userStore";
 
 // // Define the type for the children prop
 // interface SectionWrapperProps {

@@ -452,7 +452,7 @@ function DetailedProfile({ profile, talentPoolId }: any) {
             <h1 className='p-4 text-xl font-bold'>Experience</h1>
             <div>
               {
-                profile.employment?.map((exp: any, index: any) => (
+                profile.experience?.map((exp: any, index: any) => (
                   <div key={index} className="relative border rounded-lg p-4">
                     <div className='flex gap-2'>
                       <Image src={'/images/org_logo.png'} alt="edu_logo" width={40} height={40} className='rounded-md' />
@@ -492,7 +492,7 @@ function DetailedProfile({ profile, talentPoolId }: any) {
                 <div key={index} className="relative border rounded-lg p-4">
                   <h3 className="font-semibold text-lg">{item.title}</h3>
                   <p className="text-muted-foreground">{item?.role}</p>
-                  <p className="text-muted-foreground">{item?.url}</p>
+                  <a href={item?.url} className="text-muted-foreground">{item?.url}</a>
                   <p className="text-muted-foreground">{item.description}</p>
 
                   {item.skills.length > 0 && (

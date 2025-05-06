@@ -8,9 +8,11 @@ export default function JobProfilePage({
 }: {
   params: Promise<{
     jobProfileId: string;
+
   }>;
 }) {
   const { jobProfileId } = use(params);
+
 
   return (
     <div>

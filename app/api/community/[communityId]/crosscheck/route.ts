@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib'; // Adjust the path as per your project structure
 import jwt from 'jsonwebtoken';
 
-export const POST = async (req: NextRequest, { params }: { params: { communityId: string } }) => {
+export const POST = async (req: NextRequest, { params }: { params: Promise<{ communityId: string }> }) => {
   try {
     // const authHeader = req.headers.get('Authorization');
     // if (!authHeader || !authHeader.startsWith('Bearer ')) {

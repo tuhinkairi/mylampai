@@ -114,7 +114,7 @@ export const matchTalentProfile = async (
         user: true,
         education: true,
         projects: true,
-        employment: true,
+        experience: true,
         favouritedBy: true,
         talentMatch: true,
       },
@@ -204,7 +204,7 @@ export const revokeOfferFromTalents = async (
       },
     });
 
-    console.log("Offers revoked from talents:", deletedMatches);
+    // console.log("Offers revoked from talents:", deletedMatches);
     return { status: "success", message: "Offers revoked successfully" };
   } catch (error) {
     console.error("Error revoking offers from talents:", error);
@@ -281,7 +281,7 @@ export const getFavouriteTalents = async (talentPoolId: string) => {
     // Fetch all favourite TalentProfiles in a given TalentPool
     const favouriteTalents = await prisma.talentPoolFavourite.findMany({
       where: { talentPoolId },
-      include: { talentProfile: true },
+      include: { talentProfile:{include:{user:true}} },
     });
 
     // console.log("Favourite talents:", favouriteTalents);

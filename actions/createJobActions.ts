@@ -42,7 +42,10 @@ export const fetchJob = async () => {
     return { status: "success", data: jobdata };
   } catch (error) {
     console.error("Error fetching job data:", error);
-    return { status: "failed", error: error instanceof Error ? error.message : "Unknown error" };
+    return {
+      status: "failed",
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
   }
 };
 
@@ -94,6 +97,7 @@ export type RoundsType = {
   roundDate: Date;
   jobProfileId: string;
   id?: string
+
 }[];
 
 export const addRounds = async (rounds: RoundsType) => {
@@ -105,7 +109,7 @@ export const addRounds = async (rounds: RoundsType) => {
         });
       })
     );
-    console.log(createdRounds)
+    // console.log(createdRounds)
     return { status: "success", data: createdRounds };
   } catch (error: any) {
     console.error("❌ Error adding rounds:", error);

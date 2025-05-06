@@ -3,38 +3,22 @@ import prisma from "@/lib/index";
 import { uploadFileToAzure } from "./uploadActions";
 
 export const createTalentProfile = async (
-  formData: FormData,
+  resumeUrl: string,
   userId: string
 ) => {
   try {
-    const resume = formData.get("resume") as File;
-
-    if (!resume || resume.type !== "application/pdf") {
-      return {
-        error: "Invalid resume file",
-        status: 400,
-      };
-    }
-
-    const resumeUrl = await uploadFileToAzure(
-      resume,
-      `cv_${new Date().toISOString()}_${userId}.pdf`
-    );
-
     if (!resumeUrl) {
       return {
         error: "Error uploading resume",
         status: 500,
       };
     }
-
-    await prisma.resume.create({
-      data: {
-        userId,
-        resumeUrl,
-      },
-    });
-
+    if (!userId) {
+      return {
+        error: "User not found",
+        status: 500,
+      };
+    }
     const profile = await prisma.talentProfile.create({
       data: {
         userId,
@@ -59,16 +43,30 @@ export const createTalentProfile = async (
   }
 };
 
-export const getTalentProfile=async (talentProfileId:string)=>{
+export const getTalentProfile = async (userId: string) => {
   try {
-    const res=await prisma.talentProfile.findFirst({
-      where:{id:talentProfileId}
-    })
+    const res = await prisma.talentProfile.findFirst({
+      where: { userId: userId },
+      select: {
+        id: true,
+        resumeUrl: true,
+        title: true,
+        bio: true,
+        rate: true,
+        skills: true,
+        profiles: true,
+        hours: true,
+        experience: true,
+        education: true,
+        languages: true,
+        projects: true,
+      },
+    });
     return {
-      status:200,
-      data:res,
-      message:"Talent Profile data received successfully"
-    }
+      status: 200,
+      data: res,
+      message: "Talent Profile data received successfully",
+    };
   } catch (error) {
     console.error("Error fetching talent profile:", error);
     return {
@@ -76,9 +74,9 @@ export const getTalentProfile=async (talentProfileId:string)=>{
       status: 500,
     };
   }
-}
+};
 
-export const createManualProfile= async(userId:string)=>{
+export const createManualProfile = async (userId: string) => {
   try {
     const profile = await prisma.talentProfile.create({
       data: {
@@ -100,7 +98,7 @@ export const createManualProfile= async(userId:string)=>{
       status: 500,
     };
   }
-} 
+};
 
 export const addProfiles = async (
   profiles: string[],
@@ -177,36 +175,52 @@ export const updateTitle = async (title: string, talentProfileId: string) => {
   }
 };
 
-type EmploymentData = {
+type ExperiencesData = {
   company: string;
   position: string;
   location?: string;
+  skills: string[];
   startDate: Date;
   endDate?: Date;
   description?: string;
 };
 
-export const createEmployments = async (
-  employments: EmploymentData[],
+export const createExperiences = async (
+  experiences: ExperiencesData[],
   talentProfileId: string
 ) => {
   try {
-    console.log("creating employment")
-    await prisma.employment.createMany({
-      data: employments.map((employment) => ({
-        ...employment,
-        talentProfileId,
-      })),
-    });
+    // console.log("creating experience")
+    const createdExperiences = await Promise.all(
+      experiences.map((experience) =>
+        prisma.experience.create({
+          data: {
+            ...experience,
+            talentProfileId,
+          },
+          select: {
+            id: true,
+            company: true,
+            position: true,
+            location: true,
+            skills: true,
+            startDate: true,
+            endDate: true,
+            description: true,
+          },
+        })
+      )
+    );
 
     return {
-      message: "Employments added successfully",
+      response: createdExperiences,
+      message: "experiences added successfully",
       status: 200,
     };
   } catch (error) {
-    console.error("Error adding employments:", error);
+    console.error("Error adding experiences:", error);
     return {
-      error: "Error adding employments",
+      error: "Error adding experiences",
       status: 500,
     };
   }
@@ -216,25 +230,42 @@ type EducationData = {
   school: string;
   degree: string;
   field?: string;
-  grade?:string;
-  startDate?: Date;
+  grade?: string;
+  skills: string[];
+  startDate: Date;
   endDate?: Date;
   description?: string;
 };
 
 export const createEducation = async (
-  education: EducationData[],
+  educations: EducationData[],
   talentProfileId: string
 ) => {
   try {
-    await prisma.education.createMany({
-      data: education.map((education) => ({
-        ...education,
-        talentProfileId,
-      })),
-    });
-
+    const res = await Promise.all(
+      educations.map((education) =>
+        prisma.education.create({
+          data: {
+            ...education,
+            talentProfileId,
+          },
+          select: {
+            id: true,
+            school: true,
+            degree: true,
+            field: true,
+            grade: true,
+            skills: true,
+            startDate: true,
+            endDate: true,
+            description: true,
+          },
+        })
+      )
+    );
+    // console.log("debug1234:: ", res);
     return {
+      response: res,
       message: "Education added successfully",
       status: 200,
     };
@@ -257,14 +288,23 @@ export const createLanguages = async (
   talentProfileId: string
 ) => {
   try {
-    await prisma.language.createMany({
-      data: languages.map((language) => ({
-        ...language,
-        talentProfileId,
-      })),
-    });
-
+    const res = await Promise.all(
+      languages.map((language) =>
+        prisma.language.create({
+          data: {
+            ...language,
+            talentProfileId,
+          },
+          select: {
+            id: true,
+            language: true,
+            proficiency: true,
+          },
+        })
+      )
+    );
     return {
+      response: res,
       message: "Languages added successfully",
       status: 200,
     };
@@ -277,10 +317,7 @@ export const createLanguages = async (
   }
 };
 
-export const updateBio = async (
-  bio: string,
-  talentProfileId: string
-) => {
+export const updateBio = async (bio: string, talentProfileId: string) => {
   try {
     await prisma.talentProfile.update({
       where: {
@@ -342,7 +379,7 @@ export const uploadImage = async (formData: FormData, userId: string) => {
       throw new Error("Profile picture not found");
     }
 
-    console.log("Image:", image.name);
+    // console.log("Image:", image.name);
 
     const fileExtension = image.name.split(".").pop()?.toLowerCase();
 
@@ -383,9 +420,9 @@ export const uploadImage = async (formData: FormData, userId: string) => {
 };
 
 type UserProfileData = {
-  name?:string;
-  first_name?:string;
-  last_name?:string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
   dateOfBirth?: Date;
   phone?: string;
   street?: string;

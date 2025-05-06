@@ -4,7 +4,7 @@ import Favourites from "./Favourites";
 export default async function page({
   params,
 }: {
-  params: { talentPoolId: string };
+  params: Promise<{ talentPoolId: string }>;
 }) {
   const { talentPoolId } = params;
 

@@ -1,7 +1,24 @@
-Dockerfile
-.dockerignore
+# Ignore node_modules and dependency files
 node_modules
 npm-debug.log
-README.md
+yarn.lock
+pnpm-lock.yaml
+package-lock.json
+
+# Ignore build files
 .next
+.next/cache
+out
+
+# Ignore Git files
 .git
+.gitignore
+
+# Ignore Docker-related files
+Dockerfile
+.dockerignore
+
+# Ignore IDE/editor files
+.vscode
+.idea
+.DS_Store

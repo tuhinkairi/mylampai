@@ -45,7 +45,15 @@ export const authOptions: NextAuthOptions = {
       return true;
     },
     // async session({ session, token }) {
-    //   session.user.role = token.role || "STUDENT";
+    //   if (token) {
+    //     session.user = {
+    //       id: token.id as string,
+    //       email: token.email as string,
+    //       name: token.name as string,
+    //       role: token.role as string, // Ensure role is included
+    //       image: token.picture as string,
+    //     };
+    //   }
     //   return session;
     // },
     // async jwt({ token, account, user }) {

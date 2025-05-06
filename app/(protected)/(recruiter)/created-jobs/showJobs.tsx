@@ -16,7 +16,7 @@ export default function ShowJobs() {
         try {
             if (!userData?.id) return;
             const jobs = await getRecruiterJobs(userData.id) as JobProfile[];
-            console.log("Fetched jobs:", jobs);
+            // console.log("Fetched jobs:", jobs);
             setJobs(jobs);
         } catch (error) {
             console.error("Error fetching jobs:", error);
